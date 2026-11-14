@@ -13,7 +13,7 @@ PID="$RUN/bot.pid"
 mkdir -p "$RUN"
 
 running() { [[ -f "$PID" ]] && kill -0 -- "-$(cat "$PID")" 2>/dev/null; }
-socket_of() { grep -m1 -o 'BRIDGE socket=.*' "$RUN/bot.log" 2>/dev/null | cut -d= -f2-; }
+socket_of() { grep -m1 -o 'BRIDGE socket=.*' "$RUN/bot.log" 2>/dev/null | cut -d= -f2- || true; }
 
 case "${1:-}" in
 stop)
