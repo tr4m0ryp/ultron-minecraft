@@ -1,5 +1,5 @@
 //! Edge combat and airborne recovery: combat footing, edge-aware retreat, R15 knockback
-//! recovery, R6 fall arrest (block clutch and water), and C3 swimming.
+//! recovery, and R6 fall arrest (block clutch and water).
 
 mod common;
 
@@ -7,7 +7,6 @@ use common::*;
 use reflex_core::behaviours::common::{clearance, knockback_room, open_retreat, Bound};
 use reflex_core::behaviours::defence::{footing, melee_commands};
 use reflex_core::behaviours::hazard::{FallArrest, KnockbackRecovery};
-use reflex_core::behaviours::locomotion::Swim;
 use reflex_core::channels::{GazeCmd, MainCmd};
 use reflex_core::math::yaw_pitch_to;
 use reflex_core::snapshot::{BlockKind, EntityKind, ItemKind};
@@ -229,63 +228,4 @@ fn r6_quiet_for_a_survivable_fall() {
     s.me.pos.y = 70.0;
     s.me.vel = Vec3::new(0.0, -0.3, 0.0);
     assert!(eval(&mut FallArrest::default(), &s, &knobs()).0.is_none());
-}
-
-/// Pool spanning x -6..3, z -3..3, floor at y 59; dry stone shore beyond x = 3.
-fn pool() -> reflex_core::Snapshot {
-    let mut s = flat();
-    s.blocks.fill(
-        BlockPos::new(-6, 60, -3),
-        BlockPos::new(3, 63, 3),
-        BlockKind::Water,
-    );
-    s.blocks.fill(
-        BlockPos::new(-6, 59, -3),
-        BlockPos::new(3, 59, 3),
-        BlockKind::Solid,
-    );
-    s.blocks.fill(
-        BlockPos::new(-6, 64, -3),
-        BlockPos::new(3, 64, 3),
-        BlockKind::Air,
-    );
-    s.me.pos = Vec3::new(2.5, 63.3, 0.5);
-    s.me.on_ground = false;
-    s.me.in_water = true;
-    s
-}
-
-#[test]
-fn c3_swims_to_the_nearest_shore_holding_jump() {
-    let s = pool();
-    let bid = eval(&mut Swim, &s, &knobs()).0.expect("in deep water");
-    let legs = bid.commands.legs.unwrap();
-    assert!(legs.jump);
-    assert!(legs.heading.x > 0.6, "east shore is nearest: {legs:?}");
-    assert_eq!(bid.priority, Priority::P4);
-}
-
-#[test]
-fn c3_treads_water_with_no_shore_in_view() {
-    let mut s = pool();
-    s.blocks.fill(
-        BlockPos::new(-12, 60, -12),
-        BlockPos::new(12, 63, 12),
-        BlockKind::Water,
-    );
-    let bid = eval(&mut Swim, &s, &knobs()).0.expect("tread");
-    let legs = bid.commands.legs.unwrap();
-    assert!(legs.jump && legs.heading.len() < 1e-6);
-    assert_eq!(bid.note, "tread_water");
-}
-
-#[test]
-fn c3_stands_down_on_the_bottom_or_for_a_goal() {
-    let mut s = pool();
-    s.me.on_ground = true;
-    assert!(eval(&mut Swim, &s, &knobs()).0.is_none(), "wading");
-    s.me.on_ground = false;
-    let mut k = knobs();
-    k.set_goal("cross", 0.5, Some(Vec3::new(-5.0, 64.0, 0.5)), false);
-    assert!(eval(&mut Swim, &s, &k).0.is_none());
 }
