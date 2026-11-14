@@ -63,26 +63,24 @@ pub fn sees(blocks: &LocalBlocks, from: Vec3, feet: Vec3) -> bool {
 /// Cover is searched this far around the feet.
 pub const COVER_RADIUS: i32 = 5;
 
-/// Nearest standable cell within `COVER_RADIUS` that none of `eyes` can see, reachable by a
-/// straight walk on the same level or one step up or down. `None` in the open.
+/// Nearest standable cell on the feet level within `COVER_RADIUS` that none of `eyes` can
+/// see, reachable by a straight walk. `None` in the open.
 pub fn cover_spot(snap: &Snapshot, eyes: &[Vec3]) -> Option<BlockPos> {
     let me = snap.me.pos;
     let feet = me.block();
     let mut best: Option<(f64, BlockPos)> = None;
-    for dy in -1..=1 {
-        for dx in -COVER_RADIUS..=COVER_RADIUS {
-            for dz in -COVER_RADIUS..=COVER_RADIUS {
-                let p = feet.offset(dx, dy, dz);
-                let d = p.feet_centre().dist(me);
-                if best.is_some_and(|(b, _)| d >= b) || !snap.blocks.standable(p) {
-                    continue;
-                }
-                let hidden = eyes
-                    .iter()
-                    .all(|&e| !sees(&snap.blocks, e, p.feet_centre()));
-                if hidden && walkable(&snap.blocks, me, p) {
-                    best = Some((d, p));
-                }
+    for dx in -COVER_RADIUS..=COVER_RADIUS {
+        for dz in -COVER_RADIUS..=COVER_RADIUS {
+            let p = feet.offset(dx, 0, dz);
+            let d = p.feet_centre().dist(me);
+            if best.is_some_and(|(b, _)| d >= b) || !snap.blocks.standable(p) {
+                continue;
+            }
+            let hidden = eyes
+                .iter()
+                .all(|&e| !sees(&snap.blocks, e, p.feet_centre()));
+            if hidden && walkable(&snap.blocks, me, p) {
+                best = Some((d, p));
             }
         }
     }
