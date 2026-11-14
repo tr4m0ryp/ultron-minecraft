@@ -21,6 +21,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 STAGE="${STAGE_DIR:-$HOME/minecraft/stage-hardcore}"
 BOT="${STAGE_BOT:-Ultron}"
+# Only the edge and void guards run: the other reflexes turn the head toward threats and
+# followed players, which ruins the pose. STAGE_MOTOR_ONLY="" restores the full catalog.
+[[ -n "${STAGE_MOTOR_ONLY-R5,R7}" ]] && export MOTOR_ONLY="${STAGE_MOTOR_ONLY-R5,R7}"
 LINE="Moussa, you stood here alone before, and the dragon won. Alone, each of us is half a player. Tonight there is one life between us and two of us to guard it. This time we do not fall."
 py() { (cd "$HERE" && python3 tower.py "$@"); }
 rcon_up() { (exec 3<>/dev/tcp/127.0.0.1/25576) 2>/dev/null; }
@@ -50,7 +53,7 @@ server)
   *) echo "usage: end_tower.sh server start|stop" >&2; exit 2 ;;
   esac ;;
 bot) "$HERE/bot.sh" "${2:?start|stop}" "$BOT" ;;
-setup) py setup; "$HERE/bot.sh" say "$BOT" "mode idle" ;;
+setup) py setup ;;
 face) py face ;;
 camera) py camera "${2:-}" ;;
 status) py status ;;

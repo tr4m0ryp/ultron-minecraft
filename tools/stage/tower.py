@@ -79,11 +79,13 @@ def setup(r) -> None:
 
 
 def face(r) -> None:
-    """Turn the bot toward the dragon (or the island centre if it cannot be found)."""
+    """Turn the bot toward the perch area at the island centre (STAGE_AIM=dragon: the dragon)."""
     me = get_pos(r, BOT)
     if me is None:
         sys.exit(f"{BOT} is not online")
-    tgt = floats(in_end(r, f"data get entity {DRAGON} Pos"), 3) or [0.0, 70.0, 0.0]
+    tgt = [0.0, 72.0, 0.0]
+    if os.environ.get("STAGE_AIM") == "dragon":
+        tgt = floats(in_end(r, f"data get entity {DRAGON} Pos"), 3) or tgt
     yaw, pitch = look_angles((me[0], me[1] + 1.62, me[2]), tuple(tgt))
     in_end(r, f"tp {BOT} {me[0]} {me[1]} {me[2]} {yaw} {pitch}")
 
