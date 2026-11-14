@@ -2,8 +2,8 @@
 //! tick sequences over the in-memory port fakes.
 
 mod care;
-mod escape;
 mod combat;
+mod escape;
 mod gather;
 mod items;
 mod runner;
