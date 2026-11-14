@@ -90,6 +90,18 @@ pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
     }
 }
 
+/// A fight bid. Within reach it is at full urgency, and it carries a gaze-free fallback so
+/// that orienting (O2, also P2) turning toward another approaching mob cannot take the gaze
+/// and with it the whole fight: live with four zombies, O2 held the gaze for 2080 of 4900
+/// ticks and the bot swung on 5 ticks in 225 s. The server accepts a hit on any mob in
+/// reach regardless of where we look.
+fn engage(note: &'static str, d: f64, urgency: f32, cmds: Commands) -> Bid {
+    let urgency = if d <= REACH { 1.0 } else { urgency };
+    let mut degraded = cmds.clone();
+    degraded.gaze = None;
+    Bid::new(Priority::P2, urgency, note, cmds).degraded(degraded)
+}
+
 /// D2: zombie, husk, drowned, and spiders at night. Fight with K1 when aggression >= 0.5
 /// and hp above hp_floor; otherwise, or when three or more melee mobs are within 6, retreat
 /// toward the companion or away. Baby zombies trigger the retreat from 10 blocks. Cornered
@@ -123,12 +135,8 @@ impl Behaviour for MeleeDefence {
         let d = target.pos.dist(me.pos);
         let urgency = (1.0 - d / BABY_RETREAT).clamp(0.2, 1.0) as f32;
         if fight {
-            return Some(Bid::new(
-                Priority::P2,
-                urgency,
-                "melee_fight",
-                melee_commands(snap, target),
-            ));
+            let cmds = melee_commands(snap, target);
+            return Some(engage("melee_fight", d, urgency, cmds));
         }
         let heading = snap
             .companion
@@ -139,7 +147,7 @@ impl Behaviour for MeleeDefence {
         let Some(heading) = heading else {
             if d <= CORNERED_REACH {
                 let cmds = melee_commands(snap, target);
-                return Some(Bid::new(Priority::P2, 1.0, "melee_cornered", cmds));
+                return Some(engage("melee_cornered", d, 1.0, cmds));
             }
             return None;
         };
