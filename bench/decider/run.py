@@ -74,9 +74,10 @@ def main():
     n_pass = max(1, -(-a.n_lat // len(cases)))
     for p in range(n_pass):
         for c in cases:
+            st = c["state"] if p == 0 else f"{c['state']} | tick {p * 1000 + len(lat)}"  # unique state: defeats exact-state caches
             t = time.perf_counter()
             try:
-                ans = be.predict(c["state"], {"q": c["question"]})
+                ans = be.predict(st, {"q": c["question"]})
             except Exception as e:
                 errs.append(f"{c['id']}: {type(e).__name__}: {e}"[:200]); continue
             lat.append(time.perf_counter() - t)
@@ -87,6 +88,7 @@ def main():
     blat = []
     for j in range(a.n_batch):
         st, qs = five_questions(cases, j % len(cases))
+        st = f"{st} | tick {90000 + j}"
         t = time.perf_counter()
         try:
             be.predict(st, qs)
