@@ -111,12 +111,12 @@ fn tools_round_trip_compactly() {
         json!({"goal":"go_to","params":{"pos":[9000,64,0]}}),
     );
     assert!(
-        !err && t.starts_with("ok: goal #1 go_to pos=9000,64,0"),
+        !err && t.starts_with("ok: goal #1 go_to 9000 64 0"),
         "{t}"
     );
     let (obs, _) = m.tool("observe", json!({}));
     assert!(
-        obs.contains("goal #1 go_to pos=9000,64,0 p0.5 running"),
+        obs.contains("goal #1 go_to 9000 64 0 p0.5 running"),
         "{obs}"
     );
 
@@ -158,9 +158,9 @@ fn tools_round_trip_compactly() {
 
     let (t, err) = m.tool(
         "set_goal",
-        json!({"goal":"craft","params":{"kind":"bread"}}),
+        json!({"goal":"place","params":{"kind":"stone"}}),
     );
-    assert!(err && t.contains("not supported"), "{t}");
+    assert!(err && t.contains("needs param 'pos'"), "{t}");
     let (t, err) = m.tool("set_gain", json!({"gain":"caution"}));
     assert!(err && t.contains("missing field `value`"), "{t}");
 }

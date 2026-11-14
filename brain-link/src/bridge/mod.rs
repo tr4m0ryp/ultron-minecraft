@@ -9,7 +9,7 @@ mod observe;
 mod shared;
 
 pub use args::reflex_ids;
-pub use goals::SUPPORTED_GOALS;
+pub use goals::{layer_spec, SUPPORTED_GOALS};
 
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver};

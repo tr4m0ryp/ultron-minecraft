@@ -156,7 +156,7 @@ fn malformed_input_gets_an_error_and_the_server_lives() {
         r#"{"op":"set_goal","goal":"dance"}"#,
         r#"{"op":"set_gain","gain":"caution","value":0.1,"extra":1}"#,
         r#"{"op":"set_goal","goal":"go_to"}"#,
-        r#"{"op":"set_goal","goal":"mine","params":{"kind":"iron_ore"}}"#,
+        r#"{"op":"set_goal","goal":"attack","params":{"kind":"dragon"}}"#,
         r#"{"op":"inhibit","reflex":"R99"}"#,
         r#"{"op":"arm","trigger":{"kind":"entity_within","entity":"dragon","dist":4},"response":{"kind":"say","text":"x"}}"#,
         r#"{"op":"say","text":""}"#,
@@ -175,7 +175,7 @@ fn malformed_input_gets_an_error_and_the_server_lives() {
     );
     assert!(errors[4].contains("needs param 'pos'"), "{}", errors[4]);
     assert!(
-        errors[5].contains("not supported by this executor yet"),
+        errors[5].contains("unknown entity kind"),
         "{}",
         errors[5]
     );
