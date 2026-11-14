@@ -5,4 +5,4 @@ pub mod act;
 pub mod run;
 pub mod sense;
 
-pub use run::{State, handle};
+pub use run::{handle, State};

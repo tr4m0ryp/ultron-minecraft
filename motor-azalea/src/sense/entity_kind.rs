@@ -27,10 +27,20 @@ pub fn map_kind(kind: Az) -> EntityKind {
         Az::Villager | Az::WanderingTrader => K::Villager,
         Az::Bee => K::Bee,
         Az::ZombifiedPiglin => K::ZombifiedPiglin,
-        Az::Cow | Az::Mooshroom | Az::Pig | Az::Sheep | Az::Chicken | Az::Rabbit | Az::Horse
-        | Az::Donkey | Az::Mule | Az::Llama | Az::Cat | Az::Goat | Az::Turtle | Az::Parrot => {
-            K::Passive
-        }
+        Az::Cow
+        | Az::Mooshroom
+        | Az::Pig
+        | Az::Sheep
+        | Az::Chicken
+        | Az::Rabbit
+        | Az::Horse
+        | Az::Donkey
+        | Az::Mule
+        | Az::Llama
+        | Az::Cat
+        | Az::Goat
+        | Az::Turtle
+        | Az::Parrot => K::Passive,
         _ => K::Other,
     }
 }

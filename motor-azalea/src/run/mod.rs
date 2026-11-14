@@ -2,4 +2,4 @@
 
 mod state;
 
-pub use state::{State, handle};
+pub use state::{handle, State};

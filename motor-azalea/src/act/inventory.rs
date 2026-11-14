@@ -1,7 +1,7 @@
 use azalea::{
-    Client,
     inventory::operations::SwapClick,
     protocol::packets::game::s_player_action::{Action, ServerboundPlayerAction},
+    Client,
 };
 use reflex_core::channels::InvCmd;
 
@@ -28,10 +28,17 @@ pub fn apply(bot: &Client, cmd: Option<InvCmd>) {
 /// Swap click inside the player inventory menu; skipped while another container is open,
 /// because slot indices differ there.
 fn swap(bot: &Client, from: u8, target: u8) {
-    let Some(source_slot) = menu_index(from) else { return };
-    let Ok(handle) = bot.get_inventory() else { return };
+    let Some(source_slot) = menu_index(from) else {
+        return;
+    };
+    let Ok(handle) = bot.get_inventory() else {
+        return;
+    };
     if handle.id() != 0 {
         return;
     }
-    handle.click(SwapClick { source_slot, target_slot: target });
+    handle.click(SwapClick {
+        source_slot,
+        target_slot: target,
+    });
 }

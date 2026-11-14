@@ -34,19 +34,26 @@ pub struct State {
 impl State {
     /// `companion` is the username of the human player the bot plays alongside.
     pub fn new(companion: Option<String>) -> Self {
-        Self { inner: Arc::default(), companion: companion.map(Into::into) }
+        Self {
+            inner: Arc::default(),
+            companion: companion.map(Into::into),
+        }
     }
 
     fn tick(&self, bot: &Client) {
         let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let inner = &mut *guard;
-        let Some(snap) =
-            sense::snapshot(bot, &mut inner.sense, &mut inner.events, self.companion.as_deref())
-        else {
+        let Some(snap) = sense::snapshot(
+            bot,
+            &mut inner.sense,
+            &mut inner.events,
+            self.companion.as_deref(),
+        ) else {
             return;
         };
         let out = EXECUTOR.with_borrow_mut(|slot| {
-            slot.get_or_insert_with(|| Executor::new(&bot.username())).tick(&snap)
+            slot.get_or_insert_with(|| Executor::new(&bot.username()))
+                .tick(&snap)
         });
         act::apply(bot, &out, &snap.me, &mut inner.hands);
     }

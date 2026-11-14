@@ -1,11 +1,11 @@
 use azalea::{
-    Client,
     core::entity_id::MinecraftEntityId,
     interact::StartUseItemEvent,
     protocol::packets::game::{
         s_interact::InteractionHand,
         s_player_action::{Action, ServerboundPlayerAction},
     },
+    Client,
 };
 use reflex_core::{
     channels::{MainCmd, OffCmd},

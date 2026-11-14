@@ -5,9 +5,11 @@ use azalea::{
     block::fluid_state::FluidKind,
     ecs::{entity::Entity, world::World},
     entity::{
-        ActiveEffects, FluidOnEyes, LookDirection, Physics, Position,
         inventory::Inventory,
-        metadata::{AbstractLivingUsingItem, AirSupply, Health, OnFire, PlayerAbsorption, Sprinting},
+        metadata::{
+            AbstractLivingUsingItem, AirSupply, Health, OnFire, PlayerAbsorption, Sprinting,
+        },
+        ActiveEffects, FluidOnEyes, LookDirection, Physics, Position,
     },
     local_player::Hunger,
     registry::builtin::{ItemKind as AzItem, MobEffect},
@@ -55,7 +57,9 @@ pub fn read(ecs: &World, me: Entity) -> Option<SelfState> {
         s.air = **a;
     }
     s.on_fire = ecs.get::<OnFire>(me).is_some_and(|f| **f);
-    s.head_in_water = ecs.get::<FluidOnEyes>(me).is_some_and(|f| **f == FluidKind::Water);
+    s.head_in_water = ecs
+        .get::<FluidOnEyes>(me)
+        .is_some_and(|f| **f == FluidKind::Water);
     s.sprinting = ecs.get::<Sprinting>(me).is_some_and(|f| **f);
     s.using_item = ecs.get::<AbstractLivingUsingItem>(me).is_some_and(|f| **f);
     if let Some(e) = ecs.get::<ActiveEffects>(me) {

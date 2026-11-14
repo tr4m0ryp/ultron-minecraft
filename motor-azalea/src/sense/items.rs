@@ -3,8 +3,8 @@
 
 use azalea::{
     inventory::{
-        ItemStack as AzStack,
         components::{Damage, Food, MaxDamage},
+        ItemStack as AzStack,
     },
     registry::{builtin::ItemKind as Az, tags::items},
 };
@@ -13,7 +13,11 @@ use reflex_core::snapshot::{ItemKind, ItemStack};
 pub fn map_stack(stack: &AzStack) -> Option<ItemStack> {
     let data = stack.as_present()?;
     let count = data.count.clamp(1, 255) as u8;
-    Some(ItemStack { kind: kind_of(stack), count, durability: durability(stack) })
+    Some(ItemStack {
+        kind: kind_of(stack),
+        count,
+        durability: durability(stack),
+    })
 }
 
 fn durability(stack: &AzStack) -> f32 {

@@ -1,7 +1,10 @@
 //! Azalea block state -> the coarse classes the reflexes reason about.
 
 use azalea::{
-    block::{BlockState, BlockTrait, fluid_state::{FluidKind, FluidState}},
+    block::{
+        fluid_state::{FluidKind, FluidState},
+        BlockState, BlockTrait,
+    },
     physics::collision::BlockWithShape,
     registry::{builtin::BlockKind as Az, tags::blocks},
 };
@@ -19,7 +22,11 @@ pub fn classify(state: BlockState) -> BlockKind {
         Az::Fire | Az::SoulFire => return BlockKind::Fire,
         Az::Campfire | Az::SoulCampfire => {
             let lit = Box::<dyn BlockTrait>::from(state).get_property("lit") == Some("true");
-            return if lit { BlockKind::Campfire } else { BlockKind::Solid };
+            return if lit {
+                BlockKind::Campfire
+            } else {
+                BlockKind::Solid
+            };
         }
         Az::Cactus => return BlockKind::Cactus,
         Az::SweetBerryBush => return BlockKind::BerryBush,

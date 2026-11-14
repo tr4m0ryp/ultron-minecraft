@@ -3,16 +3,16 @@
 use std::collections::HashMap;
 
 use azalea::{
+    core::entity_id::MinecraftEntityId,
     ecs::{entity::Entity, query::Without, world::World},
     entity::{
-        EntityKindComponent, EntityUuid, LocalEntity, Physics, Position,
         metadata::{
             AbstractAgeableBaby, AbstractLivingUsingItem, Health, IsIgnited, SwellDir, ZombieBaby,
         },
+        EntityKindComponent, EntityUuid, LocalEntity, Physics, Position,
     },
     local_player::TabList,
     world::WorldName,
-    core::entity_id::MinecraftEntityId,
 };
 use reflex_core::{
     math::Vec3,
@@ -44,13 +44,21 @@ pub fn read(
     let world_name = ecs.get::<WorldName>(me)?.clone();
     let tab: HashMap<_, _> = ecs
         .get::<TabList>(me)
-        .map(|t| t.iter().map(|(u, p)| (*u, p.profile.name.clone())).collect())
+        .map(|t| {
+            t.iter()
+                .map(|(u, p)| (*u, p.profile.name.clone()))
+                .collect()
+        })
         .unwrap_or_default();
 
-    let mut query = ecs.query_filtered::<
-        (Entity, &MinecraftEntityId, &EntityKindComponent, &Position, &WorldName, &EntityUuid),
-        Without<LocalEntity>,
-    >();
+    let mut query = ecs.query_filtered::<(
+        Entity,
+        &MinecraftEntityId,
+        &EntityKindComponent,
+        &Position,
+        &WorldName,
+        &EntityUuid,
+    ), Without<LocalEntity>>();
     let candidates: Vec<_> = query
         .iter(ecs)
         .filter(|(.., w, _)| **w == world_name)
@@ -71,7 +79,10 @@ pub fn read(
         ent.state = state_of(ecs, e, kind_s, delta.is_some() && vel.len() < INERT_SPEED);
         if kind_s == EntityKind::Player {
             ent.name = tab.get(&uuid).cloned();
-            if companion.is_none() && companion_name.is_some() && ent.name.as_deref() == companion_name {
+            if companion.is_none()
+                && companion_name.is_some()
+                && ent.name.as_deref() == companion_name
+            {
                 companion = Some(Companion {
                     name: ent.name.clone().unwrap_or_default(),
                     entity_id: Some(ent.id),
@@ -84,12 +95,21 @@ pub fn read(
         entities.push(ent);
     }
     *prev = now;
-    Some(EntityView { entities, companion })
+    Some(EntityView {
+        entities,
+        companion,
+    })
 }
 
 fn velocity(ecs: &World, e: Entity, delta: Option<Vec3>) -> Vec3 {
-    let v = ecs.get::<Physics>(e).map_or(Vec3::ZERO, |p| vec3(p.velocity));
-    if v.len() > 1e-6 { v } else { delta.unwrap_or(Vec3::ZERO) }
+    let v = ecs
+        .get::<Physics>(e)
+        .map_or(Vec3::ZERO, |p| vec3(p.velocity));
+    if v.len() > 1e-6 {
+        v
+    } else {
+        delta.unwrap_or(Vec3::ZERO)
+    }
 }
 
 fn state_of(ecs: &World, e: Entity, kind: EntityKind, stationary: bool) -> EntityState {

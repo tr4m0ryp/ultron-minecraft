@@ -1,5 +1,5 @@
-use azalea::{ClientBuilder, prelude::*};
-use motor_azalea::{State, handle};
+use azalea::{prelude::*, ClientBuilder};
+use motor_azalea::{handle, State};
 
 const USAGE: &str = "usage: motor-azalea <host:port> <username> [companion-username]";
 

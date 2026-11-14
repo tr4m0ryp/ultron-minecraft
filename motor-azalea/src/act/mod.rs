@@ -5,7 +5,7 @@ mod inventory;
 mod movement;
 
 use azalea::Client;
-use reflex_core::{MotorOutput, snapshot::SelfState};
+use reflex_core::{snapshot::SelfState, MotorOutput};
 
 pub use hands::HandState;
 

@@ -10,7 +10,7 @@ mod items;
 
 use std::collections::HashMap;
 
-use azalea::{Client, local_player::WorldHolder};
+use azalea::{local_player::WorldHolder, Client};
 use reflex_core::{
     math::Vec3,
     snapshot::{ChatEvent, DamageEvent, LocalBlocks, Snapshot},
@@ -37,7 +37,13 @@ pub fn snapshot(
     let mut ecs = bot.ecs.write();
     let me_state = body::read(&ecs, bot.entity)?;
     let world = ecs.get::<WorldHolder>(bot.entity)?.shared.clone();
-    let view = entities::read(&mut ecs, bot.entity, me_state.pos, &mut st.prev_entity_pos, companion)?;
+    let view = entities::read(
+        &mut ecs,
+        bot.entity,
+        me_state.pos,
+        &mut st.prev_entity_pos,
+        companion,
+    )?;
     drop(ecs);
 
     let mut blocks = LocalBlocks::default();
@@ -62,7 +68,11 @@ pub fn snapshot(
     // The damage packet carries no amount; the health lost this tick is split across the
     // packets, or reported as one source-less event (fall, fire, drowning, starvation).
     if damage.is_empty() && lost > 0.0 {
-        damage.push(DamageEvent { amount: lost, source_pos: None, attacker: None });
+        damage.push(DamageEvent {
+            amount: lost,
+            source_pos: None,
+            attacker: None,
+        });
     } else if !damage.is_empty() {
         let share = lost / damage.len() as f32;
         damage.iter_mut().for_each(|d| d.amount = share);
@@ -76,7 +86,11 @@ pub fn snapshot(
                 .iter()
                 .find(|e| e.name.as_deref() == Some(c.sender.as_str()))
                 .map(|e| e.pos);
-            ChatEvent { sender: c.sender, text: c.text, sender_pos }
+            ChatEvent {
+                sender: c.sender,
+                text: c.text,
+                sender_pos,
+            }
         })
         .collect();
 

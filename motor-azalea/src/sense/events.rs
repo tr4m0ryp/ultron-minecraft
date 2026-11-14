@@ -2,10 +2,10 @@
 //! channel and are drained into the next snapshot.
 
 use azalea::{
-    Client, Event,
     core::{data_registry::DataRegistryWithKey, entity_id::MinecraftEntityId},
     protocol::packets::game::ClientboundGamePacket as Pkt,
-    registry::{Holder, builtin::SoundEvent as Snd, data::WorldClockKey},
+    registry::{builtin::SoundEvent as Snd, data::WorldClockKey, Holder},
+    Client, Event,
 };
 use reflex_core::{
     math::Vec3,
@@ -39,7 +39,8 @@ pub struct EventBuffer {
 
 impl EventBuffer {
     pub fn is_night(&self) -> bool {
-        self.day_time.is_some_and(|t| NIGHT.contains(&(t % DAY_TICKS)))
+        self.day_time
+            .is_some_and(|t| NIGHT.contains(&(t % DAY_TICKS)))
     }
 
     pub fn on_event(&mut self, bot: &Client, event: &Event) {
@@ -76,7 +77,10 @@ impl EventBuffer {
                 }
             }
             Pkt::Explode(e) => {
-                self.sounds.push(SoundEvent { kind: SoundKind::Explosion, pos: vec3(e.center) });
+                self.sounds.push(SoundEvent {
+                    kind: SoundKind::Explosion,
+                    pos: vec3(e.center),
+                });
             }
             Pkt::SetTime(t) => {
                 for (clock, state) in &t.clock_updates {
