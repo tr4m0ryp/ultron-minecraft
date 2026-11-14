@@ -120,12 +120,15 @@ impl Escape {
         self.phase = Phase::Dig(t + u32::from(!preempted));
         let mut cx = GoalCx {
             ctx,
-            nav,
+            nav: &mut *nav,
             world,
             rep: &mut self.rep,
             preempted,
         };
-        match self.walker.walk(&mut cx, NavTarget::Sky { hint, dig: true }, "escape") {
+        let walk = self
+            .walker
+            .walk(&mut cx, NavTarget::Sky { hint, dig: true }, "escape");
+        match walk {
             Walk::Moving(plan) => Some(Bid::new(Priority::P5, 0.3, plan.note, plan.commands)),
             Walk::Arrived => {
                 Self::say(ctx, "out under open sky again");
@@ -134,7 +137,7 @@ impl Escape {
                 self.phase = Phase::Watch;
                 None
             }
-            Walk::Failed(f) => self.give_up(ctx, cx.nav, &format!("{f:?}")),
+            Walk::Failed(f) => self.give_up(ctx, nav, &format!("{f:?}")),
         }
     }
 
