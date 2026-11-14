@@ -30,7 +30,7 @@ impl Trace {
         println!(
             "T {} ms={} pos={:.2},{:.2},{:.2} hp={:.1} food={} sat={:.1} air={} fire={} \
              water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={} \
-             vel={:.3},{:.3},{:.3} off={} shield={}",
+             vel={:.3},{:.3},{:.3} off={} shield={} near={}",
             snap.tick,
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -57,6 +57,7 @@ impl Trace {
             me.vel.z,
             own(Channel::Off),
             me.shield_ticks,
+            nearest(snap),
         );
         if sensed.as_millis() >= 10 {
             println!("P {} sense_ms={}", snap.tick, sensed.as_millis());
@@ -80,4 +81,25 @@ impl Trace {
             );
         }
     }
+}
+
+/// Nearest hostile as kind:distance plus its timing state (archer draw ticks or ticks since
+/// its shot, creeper fuse progress), for offline analysis of the defensive reflexes.
+fn nearest(snap: &Snapshot) -> String {
+    let Some(e) = snap.nearest_hostile(32.0) else {
+        return "-".into();
+    };
+    let st = &e.state;
+    let timing = if e.kind.is_ranged() {
+        match (st.drawing_bow, st.since_shot) {
+            (true, _) => format!(":draw{}", st.draw_ticks),
+            (false, Some(s)) => format!(":shot{s}"),
+            _ => String::new(),
+        }
+    } else if st.fuse_lit || st.swell > 0 {
+        format!(":fuse{}", st.swell)
+    } else {
+        String::new()
+    };
+    format!("{}:{:.1}{timing}", e.kind.label(), e.pos.dist(snap.me.pos))
 }
