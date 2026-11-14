@@ -54,15 +54,19 @@ def come_here():
 
 
 def stay():
+    """Holds its spot while the companion walks off, and walks back when displaced."""
     prep(at=(1410.5, Y + 1, 1010.5), comp_at=(1412.5, Y + 1, 1010.5))
     n = task("stay")
+    time.sleep(1)
     start = pos()
     rc(f"tp {COMP} 1438.5 {Y + 1} 1005.5")
-    time.sleep(12)
-    end = pos()
+    time.sleep(8)
+    held = dist(start, pos())
+    rc(f"tp Ultron 1414.5 {Y + 1} 1013.5")
+    time.sleep(8)
     kind, text, wakes = outcome(n, 0)
-    return dict(case="stay", moved=dist(start, end), outcome=kind,
-                wakes=[w[1:] for w in wakes][-3:])
+    return dict(case="stay", moved_while_companion_left=held,
+                back_after_displaced=dist(start, pos()), outcome=kind)
 
 
 CASES = dict(go_to=go_to, follow=follow, come_here=come_here, stay=stay)
