@@ -130,7 +130,9 @@ impl Navigator for AzaleaNav {
             }
             Poll::Lost => return self.plan(t, snap),
             Poll::Ready(p) => {
-                if p.hops.is_empty() {
+                // A walking probe for the sky that only gets partway means "shut in".
+                let probe = matches!(t, NavTarget::Sky { dig: false, .. });
+                if p.hops.is_empty() || (probe && p.partial) {
                     return if p.partial {
                         NavStatus::Failed(NavFailure::Unreachable)
                     } else {
