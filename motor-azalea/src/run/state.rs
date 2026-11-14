@@ -17,6 +17,7 @@ struct Local {
     exec: Executor,
     inbox: Inbox,
     trace: Trace,
+    goals: reflex_core::goals::GoalHandle,
 }
 
 thread_local! {
@@ -62,13 +63,25 @@ impl State {
         };
         let sensed = started.elapsed();
         let (out, say) = LOCAL.with_borrow_mut(|slot| {
+<<<<<<< HEAD
             let l = slot.get_or_insert_with(|| Local {
                 exec: executor(&bot.username()),
                 inbox: Inbox::spawn_stdin(),
                 trace: Trace::default(),
+=======
+            let l = slot.get_or_insert_with(|| {
+                let (behaviours, goals) = crate::goal_catalog(bot);
+                Local {
+                    exec: Executor::with_behaviours(&bot.username(), behaviours),
+                    inbox: Inbox::spawn_stdin(),
+                    trace: Trace::default(),
+                    goals,
+                }
+>>>>>>> refs/heads/goals-nav
             });
             let say = l.inbox.drain(&mut l.exec);
             let out = l.exec.tick(&snap);
+            l.goals.settle(&mut l.exec.knobs);
             l.trace.tick(&snap, &l.exec, sensed);
             io::publish(&mut l.exec, snap.tick);
             (out, say)

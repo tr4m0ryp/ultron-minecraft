@@ -1,0 +1,144 @@
+use crate::sim::Sim;
+use reflex_core::channels::{Channel, MainCmd};
+use reflex_core::goals::{ItemDrop, ToolNeed};
+use reflex_core::snapshot::{EntityKind, ItemKind};
+use reflex_core::{BlockPos, Vec3};
+
+fn ore_field(s: &mut Sim) {
+    for (x, z) in [(8, 0), (9, 3), (-7, 6)] {
+        s.block(BlockPos::new(x, 64, z), "iron_ore");
+    }
+    s.hotbar(2, ItemKind::Pickaxe, 1);
+    s.world
+        .state()
+        .tools
+        .insert("iron_ore".into(), ToolNeed::Have(2));
+}
+
+#[test]
+fn mine_equips_the_tool_digs_each_block_and_finishes() {
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.goal("mine iron_ore 3", true);
+    assert!(s.run_until(1500, |s| s.has_event("goal_done")));
+    assert_eq!(s.snap.me.selected_slot, 2, "pickaxe selected");
+    assert_eq!(s.world.state().blocks.len(), 0, "all three broken");
+    assert!(s.goal_text("goal_done").contains("mined 3 iron_ore"));
+    let progress = s.events("goal_progress");
+    assert!(!progress.is_empty() && progress.len() <= 3, "{progress:?}");
+}
+
+#[test]
+fn mine_fails_without_tool_block_or_room() {
+    let mut s = Sim::new();
+    s.block(BlockPos::new(5, 64, 0), "diamond_ore");
+    s.world.state().tools.insert(
+        "diamond_ore".into(),
+        ToolNeed::Missing("iron_pickaxe".into()),
+    );
+    s.goal("mine diamond_ore", true);
+    assert!(s.run_until(20, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("missing tool"));
+
+    let mut s = Sim::new();
+    s.goal("mine gold_ore 2", true);
+    assert!(s.run_until(20, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("no gold_ore within"));
+
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.world.state().free_slots = 0;
+    s.goal("mine iron_ore", true);
+    assert!(s.run_until(20, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("inventory full"));
+}
+
+#[test]
+fn mine_skips_unreachable_blocks_then_fails() {
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.nav.state().unreachable = vec![
+        BlockPos::new(8, 64, 0),
+        BlockPos::new(9, 64, 3),
+        BlockPos::new(-7, 64, 6),
+    ];
+    s.goal("mine iron_ore 3", true);
+    assert!(s.run_until(200, |s| s.has_event("goal_failed")));
+    assert!(s.has_event("goal_blocked"));
+    assert!(s.goal_text("goal_failed").contains("no iron_ore within"));
+}
+
+#[test]
+fn mine_is_preempted_by_melee_defence_and_resumes() {
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.goal("mine iron_ore 3", true);
+    assert!(s.run_until(40, |s| s.exec.owner(Channel::Legs) == Some("GOAL")));
+    let me = s.snap.me.pos;
+    s.mob(7, EntityKind::Zombie, me.x - 4.0, me.z);
+    assert!(s.run_until(60, |s| s.exec.owner(Channel::Legs) == Some("D2")));
+    assert!(
+        s.run_until(200, |s| s.snap.entity(7).is_none()),
+        "D2 fought the zombie"
+    );
+    assert!(s.attacked.contains(&7));
+    assert!(
+        s.run_until(1500, |s| s.has_event("goal_done")),
+        "mining resumed and finished"
+    );
+    assert!(s.nav.state().pauses >= 1);
+}
+
+#[test]
+fn mine_digging_holds_gaze_and_main() {
+    let mut s = Sim::new();
+    s.block(BlockPos::new(2, 64, 0), "stone");
+    s.goal("mine stone", true);
+    let mut dug = false;
+    for _ in 0..40 {
+        if s.step().main == Some(MainCmd::Dig(BlockPos::new(2, 64, 0))) {
+            dug = true;
+        }
+    }
+    assert!(dug);
+    assert!(s.has_event("goal_done"));
+}
+
+#[test]
+fn collect_walks_over_drops_until_count() {
+    let mut s = Sim::new();
+    {
+        let mut w = s.world.state();
+        for (i, x) in [3.5, 9.5, -5.5].into_iter().enumerate() {
+            w.drops.push(ItemDrop {
+                entity_id: 50 + i as u32,
+                item: "raw_iron".into(),
+                count: 1,
+                pos: Vec3::new(x, 64.0, 2.5),
+            });
+        }
+    }
+    s.goal("collect raw_iron 3", true);
+    assert!(s.run_until(600, |s| s.has_event("goal_done")));
+    assert_eq!(s.world.state().inventory, vec![("raw_iron".to_string(), 3)]);
+}
+
+#[test]
+fn collect_fails_when_drops_run_out_or_inventory_full() {
+    let mut s = Sim::new();
+    s.world.state().drops.push(ItemDrop {
+        entity_id: 50,
+        item: "raw_iron".into(),
+        count: 1,
+        pos: Vec3::new(3.5, 64.0, 0.5),
+    });
+    s.goal("collect raw_iron 4", true);
+    assert!(s.run_until(300, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("collected 1 of 4"));
+
+    let mut s = Sim::new();
+    s.world.state().free_slots = 0;
+    s.goal("collect raw_iron", true);
+    assert!(s.run_until(10, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("inventory full"));
+}

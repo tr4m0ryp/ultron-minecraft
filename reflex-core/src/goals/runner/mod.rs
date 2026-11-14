@@ -1,0 +1,193 @@
+//! The goal behaviour: one P5 bidder (id `GOAL`) that parses the brain's goal spec into a
+//! resumable state machine, steps it each tick, and reports its status upward.
+
+mod handle;
+mod report;
+
+pub use handle::GoalHandle;
+pub use report::{Reporter, REPEAT_GAP_TICKS};
+
+use super::ports::{Navigator, World};
+use super::spec;
+use super::task::{GoalCx, GoalTask, Intent, Step};
+use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
+use crate::behaviours::GOAL_ID;
+use crate::knobs::{Goal, GOAL_QUEUE_MAX};
+
+struct Active {
+    goal_id: u64,
+    task: Option<Box<dyn GoalTask>>,
+    rep: Reporter,
+}
+
+pub struct GoalRunner {
+    nav: Box<dyn Navigator>,
+    world: Box<dyn World>,
+    handle: GoalHandle,
+    active: Option<Active>,
+    /// Goals replaced by a newer one, kept so they resume where they were when the brain's
+    /// queue promotes them again.
+    suspended: Vec<Active>,
+    bid_last: bool,
+    preempted: bool,
+    intent: Option<Intent>,
+}
+
+impl GoalRunner {
+    pub fn new(nav: Box<dyn Navigator>, world: Box<dyn World>, handle: GoalHandle) -> Self {
+        Self {
+            nav,
+            world,
+            handle,
+            active: None,
+            suspended: Vec::new(),
+            bid_last: false,
+            preempted: false,
+            intent: None,
+        }
+    }
+
+    fn retire_active(&mut self, ctx: &Ctx, keep: bool) {
+        let Some(mut a) = self.active.take() else {
+            return;
+        };
+        if let Some(t) = a.task.as_mut() {
+            t.stop(self.nav.as_mut());
+            if keep {
+                a.rep.suspended(ctx);
+                self.suspended.push(a);
+                if self.suspended.len() > GOAL_QUEUE_MAX {
+                    self.suspended.remove(0);
+                }
+            }
+        }
+        self.nav.cancel();
+        self.preempted = false;
+        self.intent = None;
+    }
+
+    /// Makes `goal` the active one: resumes it if suspended, else parses its spec.
+    fn activate(&mut self, ctx: &Ctx, goal: &Goal) {
+        if let Some(i) = self.suspended.iter().position(|a| a.goal_id == goal.id) {
+            let a = self.suspended.remove(i);
+            a.rep.resumed(ctx);
+            self.active = Some(a);
+            return;
+        }
+        let parsed = spec::parse(&goal.spec, goal.target);
+        let label = parsed.as_ref().map_or("goal", |s| s.label());
+        let rep = Reporter::new(goal.id, label);
+        let task = match parsed {
+            Ok(s) => {
+                rep.started(ctx, &goal.spec);
+                Some(super::build(&s))
+            }
+            Err(e) => {
+                rep.failed(ctx, &format!("cannot parse goal: {e}"));
+                self.handle.finish(goal.id);
+                None
+            }
+        };
+        self.active = Some(Active {
+            goal_id: goal.id,
+            task,
+            rep,
+        });
+    }
+
+    fn finish(&mut self, ctx: &Ctx, step: &Step) {
+        let Some(a) = self.active.as_mut() else {
+            return;
+        };
+        match step {
+            Step::Done(text) => a.rep.done(ctx, text),
+            Step::Failed(reason) => a.rep.failed(ctx, reason),
+            _ => return,
+        }
+        if let Some(mut t) = a.task.take() {
+            t.stop(self.nav.as_mut());
+        }
+        self.nav.cancel();
+        self.handle.finish(a.goal_id);
+    }
+}
+
+impl Behaviour for GoalRunner {
+    fn id(&self) -> &'static str {
+        GOAL_ID
+    }
+
+    fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
+        self.bid_last = false;
+        let Some(goal) = ctx.knobs.goal.as_ref() else {
+            self.retire_active(ctx, false);
+            self.suspended.clear();
+            return None;
+        };
+        if self.active.as_ref().map(|a| a.goal_id) != Some(goal.id) {
+            let queued = |id: u64| ctx.knobs.goal_queue.iter().any(|g| g.id == id);
+            let keep = self.active.as_ref().is_some_and(|a| queued(a.goal_id));
+            self.retire_active(ctx, keep);
+            self.suspended
+                .retain(|a| queued(a.goal_id) || a.goal_id == goal.id);
+            self.activate(ctx, goal);
+        }
+        let a = self.active.as_mut()?;
+        let task = a.task.as_mut()?;
+        let mut cx = GoalCx {
+            ctx,
+            nav: self.nav.as_mut(),
+            world: self.world.as_mut(),
+            rep: &mut a.rep,
+            preempted: self.preempted,
+        };
+        let step = task.step(&mut cx);
+        a.rep.end_tick();
+        match step {
+            Step::Bid(plan) => {
+                self.intent = plan.intent;
+                self.bid_last = true;
+                let mut bid = Bid::new(
+                    Priority::P5,
+                    goal.priority.max(0.05),
+                    plan.note,
+                    plan.commands,
+                )
+                .lock(plan.lock);
+                if let Some(d) = plan.degraded {
+                    bid = bid.degraded(d);
+                }
+                Some(bid)
+            }
+            Step::Idle => None,
+            done => {
+                self.finish(ctx, &done);
+                None
+            }
+        }
+    }
+
+    fn granted(&mut self, won: bool) {
+        self.preempted = self.bid_last && !won;
+        let intent = self.intent.take();
+        if !won {
+            return;
+        }
+        let Some(intent) = intent else {
+            return;
+        };
+        match &intent {
+            Intent::Craft {
+                item,
+                crafts,
+                table,
+            } => self.world.start_craft(item, *crafts, *table),
+            Intent::Toss { item, count } => {
+                self.world.toss(item, *count);
+            }
+        }
+        if let Some(t) = self.active.as_mut().and_then(|a| a.task.as_mut()) {
+            t.committed();
+        }
+    }
+}

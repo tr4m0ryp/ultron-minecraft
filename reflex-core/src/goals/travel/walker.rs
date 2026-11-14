@@ -1,0 +1,146 @@
+use crate::behaviours::common::heading_to;
+use crate::channels::{Commands, LegsCmd, Speed};
+use crate::goals::ports::{NavFailure, NavStatus, NavTarget};
+use crate::goals::task::{GoalCx, Plan};
+use crate::math::Vec3;
+
+/// Planner failures in a row before a walk gives up.
+pub const MAX_NAV_FAILURES: u32 = 3;
+/// Ticks of planning (not pre-empted) before it counts as a failure.
+const PLANNING_LIMIT: u32 = 400;
+
+// One value per goal per tick; boxing the plan would buy nothing.
+#[allow(clippy::large_enum_variant)]
+pub enum Walk {
+    Arrived,
+    /// Bid this plan: a legs command along the path, or standing still while planning.
+    Moving(Plan),
+    Failed(NavFailure),
+}
+
+/// Shared navigation driver. Owns one planner request at a time, yields the legs to
+/// reflexes (pauses the planner while pre-empted) and re-plans from the new position once
+/// it gets them back.
+#[derive(Debug, Default)]
+pub struct Walker {
+    target: Option<NavTarget>,
+    paused: bool,
+    failures: u32,
+    planning: u32,
+    /// Times the walk re-planned after a pre-emption.
+    pub replans: u32,
+}
+
+/// Where a target is now, if the snapshot still shows it.
+pub fn target_pos(cx: &GoalCx, t: NavTarget) -> Option<Vec3> {
+    match t {
+        NavTarget::Block { pos, .. } => Some(pos.feet_centre()),
+        NavTarget::Entity { id, .. } => {
+            let snap = cx.snap();
+            snap.entity(id).map(|e| e.pos).or_else(|| {
+                snap.companion
+                    .as_ref()
+                    .filter(|c| c.entity_id == Some(id))
+                    .map(|c| c.pos)
+            })
+        }
+    }
+}
+
+pub fn arrived(cx: &GoalCx, t: NavTarget) -> bool {
+    let me = cx.me_pos();
+    match t {
+        NavTarget::Block { pos, radius } => {
+            let c = pos.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
+            (me + Vec3::new(0.0, 0.5, 0.0)).dist(c) <= radius.max(0.5)
+        }
+        NavTarget::Entity { distance, .. } => {
+            target_pos(cx, t).is_some_and(|p| p.dist(me) <= distance)
+        }
+    }
+}
+
+impl Walker {
+    pub fn walk(&mut self, cx: &mut GoalCx, target: NavTarget, note: &'static str) -> Walk {
+        if arrived(cx, target) {
+            self.stop(cx);
+            self.failures = 0;
+            return Walk::Arrived;
+        }
+        if cx.preempted {
+            if self.target.is_some() && !self.paused {
+                cx.nav.pause();
+                self.paused = true;
+            }
+            return Walk::Moving(Plan::hold(note));
+        }
+        if self.target != Some(target) || self.paused {
+            if self.paused {
+                self.replans += 1;
+            }
+            let snap = cx.ctx.snap;
+            cx.nav.request(target, snap);
+            self.target = Some(target);
+            self.paused = false;
+        }
+        let snap = cx.ctx.snap;
+        match cx.nav.poll(snap) {
+            NavStatus::Moving(s) => {
+                self.planning = 0;
+                let me = &cx.snap().me;
+                let speed = if s.sprint && me.food > 6 {
+                    Speed::Sprint
+                } else {
+                    Speed::Walk
+                };
+                let mut legs = LegsCmd::toward(heading_to(me.pos, s.waypoint), speed);
+                legs.jump = s.jump;
+                Walk::Moving(Plan::new(note, Commands::default().legs(legs)))
+            }
+            NavStatus::Arrived => {
+                self.stop(cx);
+                Walk::Arrived
+            }
+            NavStatus::Failed(f) => self.fail(cx, f),
+            status => {
+                self.planning += 1;
+                if self.planning > PLANNING_LIMIT {
+                    return self.fail(cx, NavFailure::Stalled);
+                }
+                if status == NavStatus::Idle {
+                    self.target = None;
+                }
+                Walk::Moving(Plan::hold(note))
+            }
+        }
+    }
+
+    fn fail(&mut self, cx: &mut GoalCx, f: NavFailure) -> Walk {
+        self.failures += 1;
+        self.target = None;
+        self.planning = 0;
+        cx.nav.cancel();
+        if self.failures >= MAX_NAV_FAILURES {
+            self.failures = 0;
+            Walk::Failed(f)
+        } else {
+            cx.blocked(format!("path problem ({f:?}), re-planning"));
+            Walk::Moving(Plan::hold("goal_replan"))
+        }
+    }
+
+    pub fn stop(&mut self, cx: &mut GoalCx) {
+        if self.target.take().is_some() {
+            cx.nav.cancel();
+        }
+        self.paused = false;
+        self.planning = 0;
+    }
+
+    /// Forget the request without touching the planner (it was cancelled elsewhere).
+    pub fn reset(&mut self) {
+        self.target = None;
+        self.paused = false;
+        self.planning = 0;
+    }
+}
