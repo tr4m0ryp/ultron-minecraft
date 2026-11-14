@@ -1,6 +1,6 @@
 //! Crafting by inventory clicks: the 2x2 grid of the player inventory, or a crafting table
-//! opened by right-clicking it. UNTESTED LIVE: the click sequence follows the vanilla menu
-//! layout but has never run against a server.
+//! opened by right-clicking it. Verified live on 26.3: planks and sticks in the 2x2 grid, a
+//! wooden pickaxe at a table.
 
 use azalea::{
     entity::inventory::Inventory,
@@ -17,12 +17,22 @@ use super::recipes::{lookup, Shaped};
 
 /// Polls (ticks) to wait for the crafting table menu to open.
 const OPEN_TIMEOUT: u32 = 40;
+/// Polls to keep the table open after the clicks. The server's slot corrections (the
+/// result it computed, the consumed grid) arrive addressed to the table's menu; Azalea
+/// copies that menu's player slots into the inventory on close, so closing in the same
+/// tick as the clicks kept the client's wrong prediction (live: pickaxe crafted on the
+/// server, the bot saw 1 plank and 1 stick and failed the goal).
+const SETTLE_POLLS: u32 = 10;
 
 enum Job {
     Idle,
     Opening {
         recipe: Shaped,
         crafts: u32,
+        polls: u32,
+    },
+    Settling {
+        result: Result<(), String>,
         polls: u32,
     },
     Finished(MenuStatus),
@@ -80,12 +90,9 @@ impl Crafter {
                 polls,
             } => {
                 if table_open(bot) {
-                    let r = run(bot, recipe, *crafts, 3);
-                    if let Ok(h) = bot.get_inventory() {
-                        h.close();
-                    }
-                    self.job = outcome(r);
-                    return self.status(bot);
+                    let result = run(bot, recipe, *crafts, 3);
+                    self.job = Job::Settling { result, polls: 0 };
+                    return MenuStatus::Busy;
                 }
                 *polls += 1;
                 if *polls > OPEN_TIMEOUT {
@@ -93,6 +100,17 @@ impl Crafter {
                         Job::Finished(MenuStatus::Failed("the crafting table did not open".into()));
                     return self.status(bot);
                 }
+                MenuStatus::Busy
+            }
+            Job::Settling { result, polls } => {
+                *polls += 1;
+                if *polls < SETTLE_POLLS {
+                    return MenuStatus::Busy;
+                }
+                if let Ok(h) = bot.get_inventory() {
+                    h.close();
+                }
+                self.job = outcome(result.clone());
                 MenuStatus::Busy
             }
         }
