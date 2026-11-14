@@ -146,3 +146,20 @@ fn place_puts_the_block_and_checks_preconditions() {
     assert!(s.run_until(10, |s| s.has_event("goal_failed")));
     assert!(s.goal_text("goal_failed").contains("no cobblestone"));
 }
+
+#[test]
+fn place_overwrites_ground_cover_like_leaf_litter() {
+    let at = BlockPos::new(6, 64, 2);
+    for cover in ["leaf_litter", "short_dry_grass", "bush", "vine"] {
+        let mut s = Sim::new();
+        s.block(at, cover);
+        s.item("crafting_table", 1, Some(13));
+        s.place_at = Some(at);
+        s.goal("place crafting_table 6 64 2", true);
+        assert!(
+            s.run_until(200, |s| s.has_event("goal_done")),
+            "{cover}: {}",
+            s.goal_text("goal_failed")
+        );
+    }
+}

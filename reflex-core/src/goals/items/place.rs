@@ -11,11 +11,39 @@ const REACH: f64 = 4.0;
 const RETRY_GAP: u32 = 5;
 const MAX_ATTEMPTS: u32 = 8;
 
-/// Blocks a placement may overwrite.
+/// Blocks a placement may overwrite: the server's `#replaceable` tag (plants, litter,
+/// thin layers and fluids that a placed block simply takes the place of).
 pub fn replaceable(name: &str) -> bool {
     matches!(
         name,
-        "air" | "cave_air" | "void_air" | "water" | "short_grass" | "tall_grass" | "fern" | "snow"
+        "air"
+            | "cave_air"
+            | "void_air"
+            | "water"
+            | "lava"
+            | "short_grass"
+            | "tall_grass"
+            | "fern"
+            | "large_fern"
+            | "bush"
+            | "dead_bush"
+            | "short_dry_grass"
+            | "tall_dry_grass"
+            | "leaf_litter"
+            | "snow"
+            | "vine"
+            | "glow_lichen"
+            | "resin_clump"
+            | "seagrass"
+            | "tall_seagrass"
+            | "fire"
+            | "soul_fire"
+            | "crimson_roots"
+            | "warped_roots"
+            | "nether_sprouts"
+            | "hanging_roots"
+            | "light"
+            | "structure_void"
     )
 }
 
