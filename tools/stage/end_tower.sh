@@ -24,7 +24,10 @@ BOT="${STAGE_BOT:-Ultron}"
 # Only the edge and void guards run: the other reflexes turn the head toward threats and
 # followed players, which ruins the pose. STAGE_MOTOR_ONLY="" restores the full catalog.
 [[ -n "${STAGE_MOTOR_ONLY-R5,R7}" ]] && export MOTOR_ONLY="${STAGE_MOTOR_ONLY-R5,R7}"
-LINE="Moussa, you stood here alone before, and the dragon won. Alone, each of us is half a player. Tonight there is one life between us and two of us to guard it. This time we do not fall."
+# The spoken line is personal, so it lives in an untracked file next to this script.
+LINE_FILE="$(dirname "$0")/line.local.txt"
+LINE="${STAGE_LINE:-$( [ -f "$LINE_FILE" ] && head -n 1 "$LINE_FILE" )}"
+[ -n "$LINE" ] || LINE="Alone, each of us is half a player. This time we do not fall."
 py() { (cd "$HERE" && python3 tower.py "$@"); }
 rcon_up() { (exec 3<>/dev/tcp/127.0.0.1/25576) 2>/dev/null; }
 server_pid() { pgrep -f '^[^ ]*java .*-Xmx3G -jar server.jar' | head -1; }
