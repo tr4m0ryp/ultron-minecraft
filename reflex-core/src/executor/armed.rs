@@ -5,9 +5,10 @@ use crate::behaviours::common::{heading_to, safe_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::knobs::{Knobs, Response, Trigger};
 use crate::selector::Candidate;
-use crate::snapshot::{Entity, ItemKind, Snapshot};
+use crate::math::Vec3;
+use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
 
-fn nearest_of<'a>(snap: &'a Snapshot, kind: crate::snapshot::EntityKind, from: crate::math::Vec3, d: f64) -> Option<&'a Entity> {
+fn nearest_of(snap: &Snapshot, kind: EntityKind, from: Vec3, d: f64) -> Option<&Entity> {
     snap.entities
         .iter()
         .filter(|e| e.kind == kind && e.pos.dist(from) <= d)

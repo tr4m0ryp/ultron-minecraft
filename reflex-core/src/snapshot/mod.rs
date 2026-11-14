@@ -41,7 +41,7 @@ impl Snapshot {
     }
 
     /// Entities of a class within `radius` blocks, nearest first.
-    pub fn nearby<'a>(&'a self, radius: f64, pred: impl Fn(&Entity) -> bool) -> Vec<&'a Entity> {
+    pub fn nearby(&self, radius: f64, pred: impl Fn(&Entity) -> bool) -> Vec<&Entity> {
         let mut v: Vec<&Entity> = self
             .entities
             .iter()

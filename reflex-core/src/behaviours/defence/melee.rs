@@ -27,7 +27,7 @@ pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
         return face.legs(LegsCmd::toward(toward, Speed::Sprint));
     }
     let legs = if d < STRAFE_INSIDE {
-        let side = if (snap.tick / 20) % 2 == 0 { 1.0 } else { -1.0 };
+        let side = if (snap.tick / 20).is_multiple_of(2) { 1.0 } else { -1.0 };
         LegsCmd::toward(Vec3::new(-toward.z * side, 0.0, toward.x * side), Speed::Walk)
     } else {
         LegsCmd::stop()
