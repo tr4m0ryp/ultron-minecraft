@@ -1,5 +1,8 @@
 [toolchain]
-# Azalea (26.3 branch) uses #![feature(portable_simd)] via simdnbt, so nightly is required.
-channel = "nightly-2026-09-25"
+# Azalea (26.3 branch) uses #![feature(portable_simd)] via simdnbt and generic_const_exprs
+# via azalea-core, so nightly is required. Nightlies from 2026-08-22 on enable the next
+# trait solver by default, which breaks azalea-entity on FixedBitSet<N> (E0284); 2026-08-21
+# is the newest nightly that builds it.
+channel = "nightly-2026-08-21"
 components = ["clippy", "rustfmt"]
 profile = "minimal"
