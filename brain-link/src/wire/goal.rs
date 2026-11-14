@@ -100,6 +100,7 @@ impl GoalParams {
             "companion" => self.companion.is_some(),
             "distance" => self.distance.is_some(),
             "pos" => self.pos.is_some(),
+            "to" => self.to.is_some(),
             "kind" => self.kind.as_deref().is_some_and(|k| !k.trim().is_empty()),
             "count" => self.count.is_some(),
             _ => false,
@@ -110,8 +111,10 @@ impl GoalParams {
         if let Some(missing) = goal.required().iter().find(|f| !self.has(f)) {
             return Err(format!("goal {} needs param '{missing}'", goal.label()));
         }
-        if self.pos.is_some_and(|p| p.iter().any(|v| !v.is_finite())) {
-            return Err("pos must be three finite numbers".into());
+        for (name, p) in [("pos", self.pos), ("to", self.to)] {
+            if p.is_some_and(|p| p.iter().any(|v| !v.is_finite())) {
+                return Err(format!("{name} must be three finite numbers"));
+            }
         }
         if self.distance.is_some_and(|d| !(d.is_finite() && d > 0.0)) {
             return Err("distance must be a positive number".into());
@@ -130,6 +133,9 @@ impl GoalParams {
         }
         if let Some([x, y, z]) = self.pos {
             s.push_str(&format!(" pos={x},{y},{z}"));
+        }
+        if let Some([x, y, z]) = self.to {
+            s.push_str(&format!(" to={x},{y},{z}"));
         }
         if let Some(k) = &self.kind {
             s.push_str(&format!(" kind={}", k.trim()));

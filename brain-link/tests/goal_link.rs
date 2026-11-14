@@ -50,6 +50,16 @@ fn every_goal_maps_to_a_spec_the_goal_layer_parses() {
         let parsed = goals::parse(&spec, target).unwrap_or_else(|e| panic!("{spec}: {e}"));
         assert_eq!(parsed.label(), goal.label(), "{spec}");
     }
+    let wall = GoalParams {
+        to: Some([4.0, 66.0, 2.0]),
+        ..params(Some("oak_planks"), Some([1.0, 64.0, 2.0]), None)
+    };
+    let (spec, target, _) = layer_spec(&snap, GoalName::Place, &wall).unwrap();
+    assert_eq!(spec, "place oak_planks 1 64 2 4 66 2");
+    assert!(matches!(
+        goals::parse(&spec, target).unwrap(),
+        goals::GoalSpec::Place { to: Some(_), .. }
+    ));
     let give = layer_spec(&snap, GoalName::Give, &params(Some("bread"), None, Some(2))).unwrap();
     assert_eq!(
         goals::parse(&give.0, None).unwrap(),
