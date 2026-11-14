@@ -37,9 +37,12 @@ impl Behaviour for LookAtSpeaker {
             if !(near || named) {
                 continue;
             }
+            // Critical: a human line skips the 5 s wake gap and the repeat filter, so a
+            // reply is never held behind a goal event and "come here" twice wakes twice.
             ctx.emit(
                 ctx.report(EventClass::Wake, "chat", &chat.sender)
-                    .text(format!("<{}> {}", chat.sender, chat.text)),
+                    .text(format!("<{}> {}", chat.sender, chat.text))
+                    .critical(),
             );
             if let Some(p) = pos {
                 self.target = Some((p + Vec3::new(0.0, 1.62, 0.0), snap.tick + HOLD));
