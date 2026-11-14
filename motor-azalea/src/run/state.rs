@@ -4,7 +4,7 @@ use std::{
 };
 
 use azalea::prelude::*;
-use reflex_core::Executor;
+use reflex_core::{Behaviour, Executor};
 
 use crate::{
     act::{self, HandState},
@@ -63,21 +63,14 @@ impl State {
         };
         let sensed = started.elapsed();
         let (out, say) = LOCAL.with_borrow_mut(|slot| {
-<<<<<<< HEAD
-            let l = slot.get_or_insert_with(|| Local {
-                exec: executor(&bot.username()),
-                inbox: Inbox::spawn_stdin(),
-                trace: Trace::default(),
-=======
             let l = slot.get_or_insert_with(|| {
                 let (behaviours, goals) = crate::goal_catalog(bot);
                 Local {
-                    exec: Executor::with_behaviours(&bot.username(), behaviours),
+                    exec: executor(&bot.username(), behaviours),
                     inbox: Inbox::spawn_stdin(),
                     trace: Trace::default(),
                     goals,
                 }
->>>>>>> refs/heads/goals-nav
             });
             let say = l.inbox.drain(&mut l.exec);
             let out = l.exec.tick(&snap);
@@ -95,15 +88,17 @@ impl State {
 
 /// The full catalog, or only the behaviours named in `MOTOR_ONLY` (comma-separated ids such
 /// as `D2,D11`), which live ablation runs use as a crude baseline.
-fn executor(name: &str) -> Executor {
-    let Ok(only) = std::env::var("MOTOR_ONLY") else {
-        return Executor::new(name);
+fn executor(name: &str, catalog: Vec<Box<dyn Behaviour>>) -> Executor {
+    let catalog = match std::env::var("MOTOR_ONLY") {
+        Ok(only) => {
+            let keep: Vec<&str> = only.split(',').map(str::trim).collect();
+            catalog
+                .into_iter()
+                .filter(|b| keep.contains(&b.id()))
+                .collect()
+        }
+        Err(_) => catalog,
     };
-    let keep: Vec<&str> = only.split(',').map(str::trim).collect();
-    let catalog = reflex_core::behaviours::default_catalog()
-        .into_iter()
-        .filter(|b| keep.contains(&b.id()))
-        .collect();
     Executor::with_behaviours(name, catalog)
 }
 
