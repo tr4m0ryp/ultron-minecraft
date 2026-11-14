@@ -64,6 +64,14 @@ pub fn visible_support(eye: Vec3, cell: BlockPos, supports: &[BlockPos]) -> Opti
         })
 }
 
+/// A neighbour that would open a menu when clicked, for saying why nothing else will do.
+pub fn opener_beside(cx: &GoalCx, cell: BlockPos) -> Option<String> {
+    FACES
+        .iter()
+        .filter_map(|&(x, y, z)| cx.world.block_at(cell.offset(x, y, z)))
+        .find(|k| opens_on_click(k))
+}
+
 fn free(cx: &GoalCx, p: BlockPos) -> bool {
     cx.world
         .block_at(p)

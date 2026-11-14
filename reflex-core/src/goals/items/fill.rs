@@ -96,10 +96,14 @@ impl Fill {
         if let Some(p) = self.cleanup.step(cx) {
             return Step::Bid(p);
         }
+        let prefix = match &self.outcome {
+            Some(Step::Failed(p)) => p.clone(),
+            _ => String::new(),
+        };
         if ok && !(self.placed == 0 && !self.failures.is_empty()) {
             Step::Done(self.summary())
         } else {
-            Step::Failed(self.summary())
+            Step::Failed(prefix + &self.summary())
         }
     }
 }
@@ -120,8 +124,7 @@ impl GoalTask for Fill {
                     self.next += 1;
                 }
                 _ if cx.world.item_slot(&self.block).is_none() => {
-                    self.failures.push(format!("ran out of {}", self.block));
-                    self.outcome = Some(Step::Failed(String::new()));
+                    self.outcome = Some(Step::Failed(format!("ran out of {}; ", self.block)));
                     return self.finish(cx, false);
                 }
                 _ => {

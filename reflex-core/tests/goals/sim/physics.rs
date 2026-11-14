@@ -100,6 +100,7 @@ impl Sim {
                 }
             }
             Some(MainCmd::PlaceOn(support)) => self.place(support),
+            Some(MainCmd::PlaceAt { cell, .. }) => self.place_into(cell),
             _ => {}
         }
     }
@@ -114,6 +115,12 @@ impl Sim {
         let Some(at) = on_top.or(self.place_at) else {
             return;
         };
+        drop(w);
+        self.place_into(at);
+    }
+
+    fn place_into(&mut self, at: BlockPos) {
+        let mut w = self.world.state();
         if w.blocks.get(&at).is_some_and(|n| !replaceable(n)) {
             return;
         }

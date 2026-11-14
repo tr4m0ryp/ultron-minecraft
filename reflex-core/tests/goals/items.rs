@@ -223,16 +223,26 @@ fn place_box_stops_when_the_blocks_run_out() {
 }
 
 #[test]
-fn place_refuses_a_roof_block_whose_support_face_is_above_the_eyes() {
-    // Live: a two-high wall, the body inside, every roof block "not accepted".
+fn place_climbs_to_see_a_roof_support_above_the_eyes() {
+    // Live: a two-high wall, the body below, every roof block refused with "stand
+    // higher" and nothing acted on it. Now the skill picks a raised spot that sees the
+    // wall top and asks the route planner to get there (on a pillar).
     let at = BlockPos::new(3, 66, 2);
     let mut s = Sim::new();
     s.block(BlockPos::new(3, 64, 2), "oak_planks");
     s.block(BlockPos::new(3, 65, 2), "oak_planks");
     s.item("oak_planks", 4, Some(13));
+    s.item("dirt", 8, Some(14));
     s.place_at = Some(at);
     s.goal("place oak_planks 3 66 2", true);
-    assert!(s.run_until(300, |s| s.has_event("goal_failed")));
-    let text = s.goal_text("goal_failed");
-    assert!(text.contains("is visible from here"), "{text}");
+    let mut raised = None;
+    for _ in 0..100 {
+        s.step();
+        if let Some(reflex_core::goals::NavTarget::Block { pos, .. }) = s.nav.state().current {
+            raised = Some(pos);
+            break;
+        }
+    }
+    let spot = raised.expect("walks to a spot");
+    assert!(spot.y >= 65, "eye above the wall top: {spot:?}");
 }

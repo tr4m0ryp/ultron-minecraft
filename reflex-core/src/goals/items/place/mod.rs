@@ -147,8 +147,14 @@ impl GoalTask for Place {
         };
         let sup = supports(cx, self.pos);
         if sup.is_empty() {
-            let failed = Step::Failed(format!("nothing to place against at {}", self.at()));
-            return self.conclude(cx, failed);
+            let why = match stand::opener_beside(cx, self.pos) {
+                Some(k) => format!(
+                    "only a {k} to place against at {}; clicking it would open it",
+                    self.at()
+                ),
+                None => format!("nothing to place against at {}", self.at()),
+            };
+            return self.conclude(cx, Step::Failed(why));
         }
         let me = cx.snap().me.clone();
         let feet = me.pos.block();
