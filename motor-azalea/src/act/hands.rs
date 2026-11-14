@@ -28,6 +28,7 @@ pub struct HandState {
     /// Phase of the 1-in-5 movement duty cycle while an item is in use.
     slow_phase: u8,
     dig: DigState,
+    pub(super) menu: super::menu::MenuGuard,
 }
 
 impl HandState {
