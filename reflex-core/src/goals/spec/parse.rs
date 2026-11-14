@@ -62,7 +62,17 @@ pub fn parse(spec: &str, target: Option<Vec3>) -> Result<GoalSpec, String> {
                 .or(target)
                 .ok_or("place needs x y z")?
                 .block();
-            GoalSpec::Place { block, pos }
+            let to = args.get(4..).and_then(coords).map(Vec3::block);
+            if let Some(t) = to {
+                let cells = super::box_cells(pos, t);
+                if cells > crate::goals::items::FILL_MAX as u64 {
+                    return Err(format!(
+                        "place box has {cells} cells; at most {} per goal",
+                        crate::goals::items::FILL_MAX
+                    ));
+                }
+            }
+            GoalSpec::Place { block, pos, to }
         }
         "sleep" | "sleep_in_bed" => GoalSpec::SleepInBed,
         "eat" | "eat_now" => GoalSpec::EatNow,

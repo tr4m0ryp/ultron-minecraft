@@ -49,9 +49,11 @@ pub enum GoalSpec {
         item: String,
         count: u32,
     },
+    /// One block at `pos`, or every open cell of the box from `pos` to `to`.
     Place {
         block: String,
         pos: BlockPos,
+        to: Option<BlockPos>,
     },
     SleepInBed,
     EatNow,
@@ -94,4 +96,10 @@ impl GoalSpec {
             GoalSpec::EatNow => "eat_now",
         }
     }
+}
+
+/// Cells in the box spanned by two corners, both included.
+pub fn box_cells(a: BlockPos, b: BlockPos) -> u64 {
+    let span = |p: i32, q: i32| u64::from(p.abs_diff(q)) + 1;
+    span(a.x, b.x) * span(a.y, b.y) * span(a.z, b.z)
 }

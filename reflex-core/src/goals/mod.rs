@@ -37,7 +37,16 @@ pub fn build(spec: &GoalSpec) -> Box<dyn GoalTask> {
         GoalSpec::Guard(who) => Box::new(combat::Guard::new(who)),
         GoalSpec::Craft { item, count } => Box::new(items::Craft::new(item, count)),
         GoalSpec::Give { who, item, count } => Box::new(items::Give::new(who, item, count)),
-        GoalSpec::Place { block, pos } => Box::new(items::Place::new(block, pos)),
+        GoalSpec::Place {
+            block,
+            pos,
+            to: None,
+        } => Box::new(items::Place::new(block, pos)),
+        GoalSpec::Place {
+            block,
+            pos,
+            to: Some(to),
+        } => Box::new(items::Fill::new(block, pos, to)),
         GoalSpec::SleepInBed => Box::new(care::SleepInBed::new()),
         GoalSpec::EatNow => Box::new(care::EatNow::default()),
     }
