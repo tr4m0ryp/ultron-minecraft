@@ -3,7 +3,11 @@
 
 pub mod act;
 pub mod io;
+pub mod nav;
+pub mod ports;
 pub mod run;
 pub mod sense;
+pub mod world;
 
+pub use ports::goal_catalog;
 pub use run::{handle, State};

@@ -1,0 +1,9 @@
+//! The two library-agnostic ports goals depend on: a path planner and a world model with
+//! recipes and menu actions. The motor adapter implements both; `goals::fakes` holds
+//! in-memory versions for tests.
+
+mod nav;
+mod world;
+
+pub use nav::{NavFailure, NavStatus, NavTarget, Navigator, Steer};
+pub use world::{kind_matches, ItemDrop, MenuStatus, Recipe, ToolNeed, World};

@@ -7,6 +7,7 @@ pub mod behaviours;
 pub mod channels;
 pub mod events;
 pub mod executor;
+pub mod goals;
 pub mod knobs;
 pub mod math;
 pub mod predict;
