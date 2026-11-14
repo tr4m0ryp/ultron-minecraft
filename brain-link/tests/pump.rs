@@ -52,7 +52,11 @@ fn pump_applies_queued_changes_in_order() {
         sender_pos: None,
     });
     let said = bridge.pump(&mut exec, &snap);
-    assert_eq!(said, vec!["one", "two"], "replies to a player are not held back");
+    assert_eq!(
+        said,
+        vec!["one", "two"],
+        "replies to a player are not held back"
+    );
     let replies: Vec<_> = tickets
         .into_iter()
         .map(|t| wire::open(t.wait(NOW)))

@@ -47,7 +47,9 @@ impl ChatGate {
     pub fn admit(&mut self, line: &str, tick: u64) -> Result<(), String> {
         let key = norm(line);
         if self.sent.contains(&key) {
-            return Err("not sent: you said that line recently; say something new or nothing".into());
+            return Err(
+                "not sent: you said that line recently; say something new or nothing".into(),
+            );
         }
         let reply = self
             .last_heard
@@ -117,6 +119,9 @@ mod tests {
         assert!(g.admit("starting a farm", 0).is_ok());
         g.heard(&said("Ultron", "starting a farm"), 1);
         g.heard(&said("", "Ultron joined the game"), 2);
-        assert!(g.admit("next thing", 3).is_err(), "echo opened a reply window");
+        assert!(
+            g.admit("next thing", 3).is_err(),
+            "echo opened a reply window"
+        );
     }
 }
