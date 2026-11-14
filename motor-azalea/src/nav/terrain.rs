@@ -12,6 +12,7 @@ use azalea::{
         BlockState,
     },
     inventory::Menu,
+    physics::collision::BlockWithShape,
     pathfinder::{
         positions::RelBlockPos,
         world::{is_block_state_passable, is_block_state_standable, CachedWorld},
