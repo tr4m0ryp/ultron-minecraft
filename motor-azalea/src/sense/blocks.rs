@@ -1,8 +1,5 @@
 use azalea::world::World;
-use reflex_core::{
-    math::BlockPos,
-    snapshot::{BlockKind, LocalBlocks},
-};
+use reflex_core::{math::BlockPos, snapshot::LocalBlocks};
 
 use super::block_kind::classify;
 
@@ -41,6 +38,3 @@ pub fn read(world: &World, feet: BlockPos, out: &mut LocalBlocks) {
 pub fn world_min_y(world: &World) -> i32 {
     world.chunks.min_y()
 }
-
-#[allow(dead_code)]
-fn _kind_is_used(_: BlockKind) {}
