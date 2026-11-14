@@ -80,9 +80,21 @@ fn parses_every_goal_form() {
         p("place cobblestone 2 64 -1"),
         GoalSpec::Place {
             block: "cobblestone".into(),
-            pos: BlockPos::new(2, 64, -1)
+            pos: BlockPos::new(2, 64, -1),
+            to: None
         }
     );
+    assert_eq!(
+        p("place oak_planks 2 64 -1 6 66 -1"),
+        GoalSpec::Place {
+            block: "oak_planks".into(),
+            pos: BlockPos::new(2, 64, -1),
+            to: Some(BlockPos::new(6, 66, -1))
+        }
+    );
+    assert!(parse("place dirt 0 64 0 9 64 9", None)
+        .unwrap_err()
+        .contains("at most 64"));
     assert_eq!(p("sleep_in_bed"), GoalSpec::SleepInBed);
     assert_eq!(p("eat_now"), GoalSpec::EatNow);
 }

@@ -24,6 +24,8 @@ pub struct Sim {
     pub handle: GoalHandle,
     /// Where a `PlaceOn` puts the held block.
     pub place_at: Option<BlockPos>,
+    /// When set, a `PlaceOn` puts the held block on top of the clicked support instead.
+    pub place_on_top: bool,
     pub dig_ticks: u32,
     /// When set, a dug block drops an item entity this far from its centre instead of
     /// landing in the inventory at once.
@@ -73,6 +75,7 @@ impl Sim {
             world,
             handle,
             place_at: None,
+            place_on_top: false,
             drop_offset: None,
             dig_ticks: 10,
             hits_to_kill: 3,

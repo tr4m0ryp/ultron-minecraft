@@ -109,7 +109,10 @@ impl Sim {
             w.sleeping = true;
             return;
         }
-        let Some(at) = self.place_at else { return };
+        let on_top = self.place_on_top.then(|| support.above());
+        let Some(at) = on_top.or(self.place_at) else {
+            return;
+        };
         if w.blocks.get(&at).is_some_and(|n| !replaceable(n)) {
             return;
         }
