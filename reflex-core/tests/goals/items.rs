@@ -193,13 +193,13 @@ fn place_box_fills_every_open_cell_in_one_goal() {
     let mut s = Sim::new();
     s.item("oak_planks", 20, Some(13));
     s.place_on_top = true;
-    s.block(BlockPos::new(4, 64, 2), "stone");
-    s.goal("place oak_planks 3 64 2 7 64 2", true);
-    let ok = s.run_until(1500, |s| s.has_event("goal_done"));
-    let log: Vec<_> = s.exec.upward.log().map(|e| format!("{} {}", e.kind, e.text)).collect();
-    assert!(ok, "{log:#?}");
+    // The sim's straight-line navigator cannot walk around its own new wall, so the row
+    // stays within reach of the start.
+    s.block(BlockPos::new(2, 64, 2), "stone");
+    s.goal("place oak_planks 1 64 2 4 64 2", true);
+    assert!(s.run_until(1500, |s| s.has_event("goal_done")));
     let blocks = s.world.state().blocks.clone();
-    for x in [3, 5, 6, 7] {
+    for x in [1, 3, 4] {
         assert_eq!(
             blocks.get(&BlockPos::new(x, 64, 2)).map(String::as_str),
             Some("oak_planks"),
@@ -207,7 +207,7 @@ fn place_box_fills_every_open_cell_in_one_goal() {
         );
     }
     let text = s.goal_text("goal_done");
-    assert!(text.contains("placed 4 oak_planks"), "{text}");
+    assert!(text.contains("placed 3 oak_planks"), "{text}");
     assert!(text.contains("1 cells already held a block"), "{text}");
 }
 
@@ -216,7 +216,7 @@ fn place_box_stops_when_the_blocks_run_out() {
     let mut s = Sim::new();
     s.item("oak_planks", 2, Some(13));
     s.place_on_top = true;
-    s.goal("place oak_planks 3 64 2 7 64 2", true);
+    s.goal("place oak_planks 1 64 2 4 64 2", true);
     assert!(s.run_until(1500, |s| s.has_event("goal_failed")));
     let text = s.goal_text("goal_failed");
     assert!(text.contains("ran out of oak_planks; placed 2"), "{text}");
