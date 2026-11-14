@@ -618,13 +618,20 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   | mix | no shield | 2.0 +- 0.7 | 0.0 +- 0.0 | 86 +- 28 | 29 +- 6 | 22 +- 9 | 9.0 +- 0.7 |
   | mix | shield | 1.6 +- 1.5 | 0.0 +- 0.0 | 70 +- 64 | 15 +- 8 | 20 +- 18 | 4.6 +- 2.2 |
   | creepers | no shield | 0.6 +- 0.5 | 0.0 +- 0.0 | 23 +- 16 | 0 +- 0 | 1.2 +- 0.8 | 0 +- 0 |
-  | skeletons, 4 pillars | no shield | 2.4 +- 1.7 | 0.4 +- 0.5 | 108 +- 52 | 27 +- 16 | 31 +- 13 | 7.0 +- 4.6 |
+  | skeletons, 4 pillars | no shield | 2.4 +- 1.7 | 0.2 +- 0.4 (10 runs) | 108 +- 52 | 24 +- 13 | 31 +- 13 | 6.8 +- 3.6 |
 
   Kills per wave after: all 4 skeletons, all 5 creepers (0 before), 6.8 to 7 of 7 in the mix.
   The old build with a shield never lowered it once raised and, with Azalea's missing
   item-use slowdown, walked at full speed behind it, which is why its shielded mix arm
   sometimes took no damage at all; the shield was otherwise of no use to it (skeletons
   4.6 deaths either way).
+  Cover (D3 hides only below hp_floor, or against 3 archers without a shield) is not shown to
+  help here: in the pillar arena it held the legs on under 3 percent of fight ticks, and two
+  variants did no better than the default (5 runs each): cover against 2 archers in sight
+  0.2 +- 0.4 deaths, 24 +- 10 HP; recovery from hp 12 instead of 8, 0.4 +- 0.5 deaths,
+  32 +- 11 HP. Fighting in the reload already keeps health above the cover threshold, so the
+  cover path is exercised by unit tests only; a scenario that drives health low with
+  archers is needed to measure it.
 - Fast ticking is not valid for this bot. Azalea's client loop runs `GameTick` on a fixed
   50 ms timer and leaves the ticking-state packet unhandled, so with `/tick rate` at 40, 80
   and 100 the bot still ticked 20.0 times a second (tick gaps p50 55 ms, p99 61 to 69 ms)
