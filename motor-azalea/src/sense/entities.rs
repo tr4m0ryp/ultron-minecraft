@@ -101,15 +101,15 @@ pub fn read(
     })
 }
 
+/// Azalea runs physics only for the local player, so a remote entity's `Physics::velocity`
+/// is the last motion packet (spawn or knockback) and never decays. Prefer the observed
+/// position delta; fall back to the packet velocity on first sighting (arrows, tnt).
 fn velocity(ecs: &World, e: Entity, delta: Option<Vec3>) -> Vec3 {
-    let v = ecs
-        .get::<Physics>(e)
-        .map_or(Vec3::ZERO, |p| vec3(p.velocity));
-    if v.len() > 1e-6 {
-        v
-    } else {
-        delta.unwrap_or(Vec3::ZERO)
+    if let Some(d) = delta {
+        return d;
     }
+    ecs.get::<Physics>(e)
+        .map_or(Vec3::ZERO, |p| vec3(p.velocity))
 }
 
 fn state_of(ecs: &World, e: Entity, kind: EntityKind, stationary: bool) -> EntityState {
