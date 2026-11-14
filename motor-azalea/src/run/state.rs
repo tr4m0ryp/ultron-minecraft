@@ -8,7 +8,7 @@ use reflex_core::{Behaviour, Executor};
 
 use crate::{
     act::{self, HandState},
-    io::{self, Inbox, Trace},
+    io::{Inbox, Trace},
     sense::{self, EventBuffer, SenseState},
 };
 
@@ -18,6 +18,7 @@ struct Local {
     inbox: Inbox,
     trace: Trace,
     goals: reflex_core::goals::GoalHandle,
+    link: Option<super::Link>,
 }
 
 thread_local! {
@@ -70,13 +71,19 @@ impl State {
                     inbox: Inbox::spawn_stdin(),
                     trace: Trace::default(),
                     goals,
+                    link: super::Link::mount(),
                 }
             });
-            let say = l.inbox.drain(&mut l.exec);
+            let mut say = l.inbox.drain(&mut l.exec);
             let out = l.exec.tick(&snap);
             l.goals.settle(&mut l.exec.knobs);
             l.trace.tick(&snap, &l.exec, sensed);
-            io::publish(&mut l.exec, snap.tick);
+            say.extend(super::link::publish(
+                l.link.as_ref(),
+                &mut l.exec,
+                &l.goals,
+                &snap,
+            ));
             (out, say)
         });
         act::apply(bot, &out, &snap.me, &mut inner.hands);

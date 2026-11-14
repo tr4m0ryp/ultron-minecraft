@@ -59,6 +59,13 @@ impl Inbox {
                 } => {
                     exec.knobs.set_goal(spec, priority, Some(target), false);
                 }
+                BrainCmd::Task(spec) => {
+                    let solo = !matches!(
+                        spec.split_whitespace().next(),
+                        Some("follow" | "come_here" | "come" | "guard" | "give" | "eat_now")
+                    );
+                    exec.knobs.set_goal(spec, 0.6, None, solo);
+                }
                 BrainCmd::GoalEnd => {
                     exec.knobs.end_goal();
                 }
@@ -93,6 +100,7 @@ pub fn parse(line: &str) -> Option<BrainCmd> {
             })
         }
         "goal-end" => Some(BrainCmd::GoalEnd),
+        "task" if !rest.trim().is_empty() => Some(BrainCmd::Task(rest.trim().to_string())),
         "mode" => Some(BrainCmd::Mode(match rest.trim() {
             "explore" => Mode::Explore,
             "mine" => Mode::Mine,

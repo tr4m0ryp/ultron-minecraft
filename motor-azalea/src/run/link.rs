@@ -52,13 +52,13 @@ struct Body<'a> {
 
 impl Host for Body<'_> {
     fn knobs(&mut self) -> &mut Knobs {
-        self.exec.knobs()
+        Host::knobs(self.exec)
     }
     fn upward(&mut self) -> &mut Upward {
         Host::upward(self.exec)
     }
     fn legs_owner(&self) -> Option<String> {
-        self.exec.legs_owner()
+        Host::legs_owner(&*self.exec)
     }
     fn goal_status(&self) -> Option<GoalStatus> {
         self.goals.status()
