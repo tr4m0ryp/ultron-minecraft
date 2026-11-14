@@ -96,7 +96,11 @@ fn planks(item: &str) -> Option<Shaped> {
 /// finish its hut: "no known recipe for oak_door".
 fn door(item: &str) -> Option<Shaped> {
     let wood = item.strip_suffix("_door")?;
-    if matches!(wood, "iron" | "copper" | "exposed_copper" | "weathered_copper") || wood.contains('_') && !wood.starts_with("dark_") && !wood.starts_with("pale_") {
+    const WOODS: [&str; 12] = [
+        "oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "pale_oak",
+        "bamboo", "crimson", "warped",
+    ];
+    if !WOODS.contains(&wood) {
         return None;
     }
     let planks = format!("{wood}_planks");
@@ -142,7 +146,10 @@ mod tests {
         assert!(lookup("beacon").is_none());
         let door = lookup("oak_door").unwrap();
         assert!(door.recipe().needs_table);
-        assert_eq!(door.recipe().ingredients, vec![("oak_planks".to_string(), 6)]);
+        assert_eq!(
+            door.recipe().ingredients,
+            vec![("oak_planks".to_string(), 6)]
+        );
         assert_eq!(door.recipe().yields, 3);
         assert_eq!(lookup("dark_oak_door").unwrap().key[0].1, "dark_oak_planks");
         assert!(lookup("iron_door").is_none());
