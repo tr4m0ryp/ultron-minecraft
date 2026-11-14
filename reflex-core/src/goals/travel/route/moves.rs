@@ -188,7 +188,7 @@ impl Moves<'_> {
         }
         if below.takes_block() {
             self.drop_down(n, c, out);
-            if scaffold > 0 && solid_floor && below != Cell::Water {
+            if scaffold > 0 && solid_floor {
                 let hop = Hop {
                     from: n,
                     to: c,
