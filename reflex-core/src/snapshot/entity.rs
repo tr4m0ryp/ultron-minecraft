@@ -116,6 +116,14 @@ impl EntityKind {
 pub struct EntityState {
     pub fuse_lit: bool,
     pub drawing_bow: bool,
+    /// Ticks the archer has been drawing (0 when not drawing). A skeleton looses its arrow
+    /// after 20 ticks of draw.
+    pub draw_ticks: u16,
+    /// Ticks since this archer last loosed an arrow (a draw of 18 or more ticks that ended),
+    /// `None` until one is seen. On Normal the next draw starts 40 ticks after a shot.
+    pub since_shot: Option<u16>,
+    /// Estimated creeper fuse progress in ticks, 0..=30: +1 per tick lit, -1 per tick not.
+    pub swell: u8,
     pub baby: bool,
     pub holding_trident: bool,
     /// Projectile already stuck in a block or entity.

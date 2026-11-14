@@ -27,6 +27,9 @@ pub struct SelfState {
     pub sprinting: bool,
     /// True while eating, drinking, drawing a bow or raising a shield.
     pub using_item: bool,
+    /// Ticks the shield has been held up (the adapter's efference copy), 0 when lowered.
+    /// A raised shield blocks only from its 5th tick.
+    pub shield_ticks: u32,
     pub wearing_pumpkin: bool,
     /// Attack cooldown progress in 0..=1; 1 means a full-strength swing is ready.
     pub attack_ready: f32,
@@ -58,6 +61,7 @@ impl Default for SelfState {
             fall_distance: 0.0,
             sneaking: false,
             sprinting: false,
+            shield_ticks: 0,
             using_item: false,
             wearing_pumpkin: false,
             attack_ready: 1.0,
