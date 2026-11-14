@@ -9,7 +9,7 @@ pub fn publish(exec: &mut Executor, now: u64) {
     for e in exec.take_wake(now) {
         println!("WAKE t={} {} {} {}", e.tick, e.kind, e.subject, e.text);
     }
-    if now % DIGEST_EVERY == 0 {
+    if now.is_multiple_of(DIGEST_EVERY) {
         let d = exec.take_digest();
         if !d.text.is_empty() {
             println!(
