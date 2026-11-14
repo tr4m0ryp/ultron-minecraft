@@ -32,8 +32,8 @@ pub struct EntityView {
 }
 
 /// `prev` maps entity id to its position on the previous tick; it is replaced with this
-/// tick's positions. Velocity is the client's `Physics` velocity when the server sent one,
-/// else the position delta since the previous tick (zero for a first sighting).
+/// tick's positions. Velocity is the position delta since the previous tick (see
+/// `velocity`).
 pub fn read(
     ecs: &mut World,
     me: Entity,
