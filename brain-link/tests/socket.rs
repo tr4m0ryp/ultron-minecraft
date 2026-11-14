@@ -174,11 +174,7 @@ fn malformed_input_gets_an_error_and_the_server_lives() {
         errors[2]
     );
     assert!(errors[4].contains("needs param 'pos'"), "{}", errors[4]);
-    assert!(
-        errors[5].contains("unknown entity kind"),
-        "{}",
-        errors[5]
-    );
+    assert!(errors[5].contains("unknown entity kind"), "{}", errors[5]);
     assert!(errors[6].contains("unknown reflex"), "{}", errors[6]);
     assert!(errors[7].contains("unknown entity kind"), "{}", errors[7]);
     writeln!(out, r#"{{"op":"observe"}}"#).unwrap();

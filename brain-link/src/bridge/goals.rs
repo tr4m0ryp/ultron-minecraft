@@ -97,7 +97,12 @@ pub fn layer_spec(
 fn person(snap: &Snapshot, p: &GoalParams) -> String {
     match p.companion.as_deref().map(str::trim) {
         None | Some("") => "companion".into(),
-        Some(n) if snap.companion.as_ref().is_some_and(|c| c.name.eq_ignore_ascii_case(n)) => {
+        Some(n)
+            if snap
+                .companion
+                .as_ref()
+                .is_some_and(|c| c.name.eq_ignore_ascii_case(n)) =>
+        {
             "companion".into()
         }
         Some(n) => n.split_whitespace().next().unwrap_or("companion").into(),

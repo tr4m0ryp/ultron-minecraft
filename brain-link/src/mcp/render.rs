@@ -61,11 +61,23 @@ fn observation(o: &Observation) -> String {
         None => s.push_str("\ncompanion not visible"),
     }
     match &o.goal {
-        Some(g) => s.push_str(&format!(
-            "\ngoal #{} {} p{} {}, {} queued",
-            g.id, g.spec, g.priority, g.status, g.queued
-        )),
+        Some(g) => {
+            s.push_str(&format!(
+                "\ngoal #{} {} p{} {}",
+                g.id, g.spec, g.priority, g.status
+            ));
+            if let Some(p) = &g.progress {
+                s.push_str(&format!(" {p}"));
+            }
+            if let Some(n) = &g.note {
+                s.push_str(&format!(" ({n})"));
+            }
+            s.push_str(&format!(", {} queued", g.queued));
+        }
         None => s.push_str("\ngoal none"),
+    }
+    if let Some(last) = &o.last_goal {
+        s.push_str(&format!("\nlast goal {last}"));
     }
     if !o.digest.is_empty() {
         s.push_str(&format!("\ndigest: {}", o.digest));

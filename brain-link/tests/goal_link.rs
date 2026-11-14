@@ -38,7 +38,10 @@ fn every_goal_maps_to_a_spec_the_goal_layer_parses() {
         (GoalName::Guard, params(None, None, None)),
         (GoalName::Craft, params(Some("wooden_pickaxe"), None, None)),
         (GoalName::Give, params(Some("oak_planks"), None, Some(4))),
-        (GoalName::Place, params(Some("cobblestone"), Some([1.0, 64.0, 2.0]), None)),
+        (
+            GoalName::Place,
+            params(Some("cobblestone"), Some([1.0, 64.0, 2.0]), None),
+        ),
         (GoalName::SleepInBed, params(None, None, None)),
         (GoalName::EatNow, params(None, None, None)),
     ];

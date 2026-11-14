@@ -41,14 +41,14 @@ pub fn observe(
                 spec: g.spec.clone(),
                 priority: g.priority,
                 status: goal_status(g, live, legs_owner, snap),
-                progress: live.and_then(|s| s.progress).map(|(d, t)| format!("{d}/{t}")),
+                progress: live
+                    .and_then(|s| s.progress)
+                    .map(|(d, t)| format!("{d}/{t}")),
                 note: live.and_then(|s| s.note.clone()),
                 queued: knobs.goal_queue.len(),
             }
         }),
-        last_goal: status
-            .filter(|s| s.state.is_final())
-            .map(GoalStatus::line),
+        last_goal: status.filter(|s| s.state.is_final()).map(GoalStatus::line),
         digest,
         wakes_pending,
     }

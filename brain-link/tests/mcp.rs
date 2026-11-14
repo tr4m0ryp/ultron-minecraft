@@ -110,10 +110,7 @@ fn tools_round_trip_compactly() {
         "set_goal",
         json!({"goal":"go_to","params":{"pos":[9000,64,0]}}),
     );
-    assert!(
-        !err && t.starts_with("ok: goal #1 go_to 9000 64 0"),
-        "{t}"
-    );
+    assert!(!err && t.starts_with("ok: goal #1 go_to 9000 64 0"), "{t}");
     let (obs, _) = m.tool("observe", json!({}));
     assert!(
         obs.contains("goal #1 go_to 9000 64 0 p0.5 running"),
