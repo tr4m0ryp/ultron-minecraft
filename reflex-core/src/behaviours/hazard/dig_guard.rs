@@ -26,13 +26,15 @@ impl Behaviour for DigGuard {
         let blocks = &ctx.snap.blocks;
         let mut lethal = false;
         let unsafe_dig = if target == feet.below() {
-            (1..=3).any(|d| {
+            let mut hollow = false;
+            for d in 1..=3 {
                 let p = target.offset(0, -d, 0);
                 let k = blocks.get(p);
                 let void = p.y < ctx.snap.world_min_y;
                 lethal |= k == BlockKind::Lava || void;
-                void || matches!(k, BlockKind::Air | BlockKind::Unknown) || k.is_liquid()
-            })
+                hollow |= void || matches!(k, BlockKind::Air | BlockKind::Unknown) || k.is_liquid();
+            }
+            hollow
         } else if target == feet.above().above() {
             blocks.get(target.above()) == BlockKind::Gravity
         } else {

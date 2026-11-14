@@ -18,7 +18,7 @@ pub const FLOOR_Y: i32 = 63;
 pub fn flat() -> Snapshot {
     let mut s = Snapshot { tick: 1000, world_min_y: -64, ..Default::default() };
     let r = 12;
-    s.blocks.fill(BlockPos::new(-r, FLOOR_Y - 2, -r), BlockPos::new(r, FLOOR_Y, r), BlockKind::Solid);
+    s.blocks.fill(BlockPos::new(-r, FLOOR_Y - 8, -r), BlockPos::new(r, FLOOR_Y, r), BlockKind::Solid);
     s.blocks.fill(BlockPos::new(-r, FLOOR_Y + 1, -r), BlockPos::new(r, FLOOR_Y + 4, r), BlockKind::Air);
     s.me.pos = Vec3::new(0.5, 64.0, 0.5);
     s

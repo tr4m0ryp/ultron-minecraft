@@ -4,7 +4,8 @@ use crate::events::EventClass;
 use crate::predict::{expected_step, fall_damage};
 use crate::snapshot::BlockKind;
 
-/// What lies under the next footstep the plan would take.
+/// What lies under the next footstep the plan would take. A landing of `Unknown` means the
+/// sensed column ended; `depth` is then a lower bound.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Drop {
     pub depth: f64,
@@ -14,7 +15,9 @@ pub struct Drop {
 
 /// Lookahead in blocks beyond the commanded step, so the stop lands before the edge.
 const LOOKAHEAD: f64 = 0.45;
-const SCAN_DEPTH: i32 = 48;
+/// Full height of the tallest dimension; columns are hash lookups, so scanning to the void
+/// is cheap.
+const SCAN_DEPTH: i32 = 512;
 
 /// Probes the cell the legs command would carry us into next. `None` if the step keeps
 /// support (or there is no step).
@@ -31,16 +34,12 @@ pub fn probe_drop(ctx: &Ctx, legs: &LegsCmd) -> Option<Drop> {
         return None;
     }
     let feet_y = me.pos.block().y;
-    let depth_to_void = feet_y - ctx.snap.world_min_y;
+    let depth_to_void = cell.below().y - ctx.snap.world_min_y;
     match blocks.floor_below(cell.below(), SCAN_DEPTH.min(depth_to_void)) {
         Some((p, k)) => {
+            // An unknown cell bounds the depth from below: the drop is at least this deep.
             let top = if k.supports() { p.y + 1 } else { p.y };
-            let unknown = k == BlockKind::Unknown;
-            Some(Drop {
-                depth: if unknown { f64::INFINITY } else { (feet_y - top) as f64 },
-                landing: k,
-                void: false,
-            })
+            Some(Drop { depth: (feet_y - top) as f64, landing: k, void: false })
         }
         None if depth_to_void <= SCAN_DEPTH => {
             Some(Drop { depth: f64::INFINITY, landing: BlockKind::Air, void: true })
