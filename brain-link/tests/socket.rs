@@ -61,7 +61,7 @@ fn every_request_round_trips() {
         )
     });
     assert_eq!((mode, leash, vig), (reflex_core::Mode::Build, 6.0, 0.9));
-    assert_eq!(goal, "follow distance=5");
+    assert_eq!(goal, "follow companion 5");
 
     ack(
         &mut c,
@@ -135,7 +135,7 @@ fn wait_event_blocks_then_wakes_and_times_out() {
         (t0.elapsed(), serde_json::from_value::<Events>(v).unwrap())
     });
     std::thread::sleep(Duration::from_millis(400));
-    rig.wake("goal_reached", "", "go_to pos=1,2,3");
+    rig.wake("goal_reached", "", "go_to 1 2 3");
     let (took, e) = waiter.join().unwrap();
     assert!(!e.timed_out && e.events[0].kind == "goal_reached");
     assert!(

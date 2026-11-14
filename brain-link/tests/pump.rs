@@ -58,9 +58,9 @@ fn pump_applies_queued_changes_in_order() {
         "gain applied after the mode preset"
     );
     let active = exec.knobs.goal.as_ref().expect("goal");
-    assert_eq!(active.spec, "go_to pos=20,64,0.5");
+    assert_eq!(active.spec, "go_to 20 64 0.5");
     assert_eq!(exec.knobs.goal_queue.len(), 1);
-    assert_eq!(exec.knobs.goal_queue[0].spec, "go_to pos=10,64,0.5");
+    assert_eq!(exec.knobs.goal_queue[0].spec, "go_to 10 64 0.5");
     let inh = &exec.knobs.inhibitions[0];
     assert_eq!(inh.behaviour, "R5");
     assert_eq!(inh.scope, Scope::UntilGoalEnds(active.id));
@@ -118,7 +118,7 @@ fn real_executor_is_a_host() {
     let obs: wire::Observation =
         serde_json::from_value(wire::open(obs.wait(NOW)).unwrap()).unwrap();
     let goal = obs.goal.expect("goal visible");
-    assert_eq!(goal.spec, "go_to pos=500,64,0.5");
+    assert_eq!(goal.spec, "go_to 500 64 0.5");
     assert!(
         goal.status == "running" || goal.status.starts_with("paused_by:"),
         "{}",
