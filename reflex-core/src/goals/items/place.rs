@@ -1,5 +1,5 @@
 use super::equip::equip;
-use super::surfaces::{opens_on_click, replaceable};
+use super::surfaces::{face_visible, opens_on_click, replaceable};
 use crate::behaviours::common::away_from;
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::goals::ports::{kind_matches, NavTarget, Navigator};
@@ -39,10 +39,14 @@ impl Place {
 
     /// A non-replaceable neighbour to click on, below first. A block that opens on a click
     /// (table, chest, door) is never used: live, clicking the crafting table under a chest
-    /// opened its menu instead, and the open menu then failed every later craft.
-    fn support(&self, cx: &GoalCx) -> Result<BlockPos, String> {
+    /// opened its menu instead, and the open menu then failed every later craft. With an
+    /// `eye`, only a neighbour whose shared face that eye can see counts: live, every roof
+    /// block was refused while the body stood inside the hut below the wall tops, because
+    /// the top face it aimed at was above its eyes and the click landed on another face.
+    fn support(&self, cx: &GoalCx, eye: Option<Vec3>) -> Result<BlockPos, String> {
         let p = self.pos;
         let mut opener = None;
+        let mut hidden = false;
         for (x, y, z) in [
             (0, -1, 0),
             (1, 0, 0),
@@ -54,11 +58,21 @@ impl Place {
             let n = p.offset(x, y, z);
             match cx.world.block_at(n) {
                 Some(k) if opens_on_click(&k) => opener = opener.or(Some(k)),
-                Some(k) if !replaceable(&k) => return Ok(n),
+                Some(k) if !replaceable(&k) => {
+                    if eye.is_none_or(|e| face_visible(e, n, p)) {
+                        return Ok(n);
+                    }
+                    hidden = true;
+                }
                 _ => {}
             }
         }
         Err(match opener {
+            _ if hidden => format!(
+                "no face to place against at {} is visible from here; stand where you can \
+                 see it (higher for a roof, or outside)",
+                self.at()
+            ),
             Some(k) => format!(
                 "only a {k} to place against at {}; clicking it would open it",
                 self.at()
@@ -83,10 +97,9 @@ impl GoalTask for Place {
         let Some(slot) = cx.world.item_slot(&self.block) else {
             return Step::Failed(format!("no {} to place", self.block));
         };
-        let support = match self.support(cx) {
-            Ok(b) => b,
-            Err(e) => return Step::Failed(e),
-        };
+        if let Err(e) = self.support(cx, None) {
+            return Step::Failed(e);
+        }
         let centre = |b: BlockPos| b.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
         if cx.me_pos().dist(centre(self.pos)) > REACH + 1.0 {
             self.in_reach = false;
@@ -114,6 +127,10 @@ impl GoalTask for Place {
         if let Some(c) = equip(&me, slot) {
             return Step::Bid(Plan::new("goal_equip", c));
         }
+        let support = match self.support(cx, Some(me.eye())) {
+            Ok(b) => b,
+            Err(e) => return Step::Failed(e),
+        };
         let face = (centre(support) + centre(self.pos)) * 0.5;
         let aim = Commands::default().legs(LegsCmd::stop()).look_at(face);
         if self.wait > 0 {
