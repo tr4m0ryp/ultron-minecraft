@@ -9,7 +9,8 @@ Survival mode, frozen midnight, iron sword + 8 bread, a 30x30 arena with 5-high 
 y=100 (x 1200..1229, z 1100..1129). Four waves of 225 s (15 min): zombies, skeletons,
 creepers, then a mix; each wave summons named mobs 9 to 13 blocks from the bot, tops up at
 90 s, and kills the leftovers when it ends. On death the bot is brought back with a fresh
-kit. Per wave: damage taken, deaths with cause, kills, reflex onsets and legs ownership.
+kit. Per wave: damage taken, damage events (hits), deaths with cause, kills, reflex onsets
+and legs ownership.
 """
 import json, math, os, random, re, sys, time
 from arena import *
