@@ -1,11 +1,10 @@
+use super::{
+    dig::DigState,
+    protocol::{send, PlayerAction},
+};
 use azalea::{
-    core::entity_id::MinecraftEntityId,
-    interact::StartUseItemEvent,
-    protocol::packets::game::{
-        s_interact::InteractionHand,
-        s_player_action::{Action, ServerboundPlayerAction},
-    },
-    Client,
+    core::entity_id::MinecraftEntityId, interact::StartUseItemEvent,
+    protocol::packets::game::s_interact::InteractionHand, Client,
 };
 use reflex_core::{
     channels::{MainCmd, OffCmd},
@@ -23,6 +22,7 @@ pub struct HandState {
     using_main: bool,
     shield_up: bool,
     idle_ticks: u32,
+    dig: DigState,
 }
 
 impl HandState {
@@ -50,15 +50,20 @@ fn start_use(bot: &Client, hand: InteractionHand) {
 }
 
 fn release_use(bot: &Client) {
-    bot.write_packet(ServerboundPlayerAction {
-        action: Action::ReleaseUseItem,
-        pos: Default::default(),
-        direction: Default::default(),
-        seq: 0,
-    });
+    send(
+        bot,
+        PlayerAction::ReleaseUseItem,
+        Default::default(),
+        Default::default(),
+    );
 }
 
 pub fn apply_main(bot: &Client, cmd: Option<MainCmd>, st: &mut HandState, me: &SelfState) {
+    let dig = match cmd {
+        Some(MainCmd::Dig(p)) => Some(p),
+        _ => None,
+    };
+    st.dig.tick(bot, dig);
     let Some(cmd) = cmd else { return };
     match cmd {
         MainCmd::SelectSlot(slot) => {
@@ -87,7 +92,7 @@ pub fn apply_main(bot: &Client, cmd: Option<MainCmd>, st: &mut HandState, me: &S
         // The face is the one under the crosshair when the gaze already targets the block,
         // otherwise Azalea falls back to the top face.
         MainCmd::PlaceOn(p) => bot.block_interact(azalea::BlockPos::new(p.x, p.y, p.z)),
-        MainCmd::Dig(p) => bot.start_mining(azalea::BlockPos::new(p.x, p.y, p.z)),
+        MainCmd::Dig(_) => {}
     }
 }
 

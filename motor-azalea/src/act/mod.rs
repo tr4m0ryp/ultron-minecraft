@@ -1,8 +1,10 @@
 //! `MotorOutput` -> Azalea client calls.
 
+mod dig;
 mod hands;
 mod inventory;
 mod movement;
+mod protocol;
 
 use azalea::Client;
 use reflex_core::{snapshot::SelfState, MotorOutput};
@@ -15,7 +17,7 @@ pub fn apply(bot: &Client, out: &MotorOutput, me: &SelfState, hands: &mut HandSt
     hands.sync(me.using_item);
     hands::apply_main(bot, out.main, hands, me);
     hands::apply_off(bot, out.off, hands);
-    inventory::apply(bot, out.inv);
+    inventory::apply(bot, out.inv, me.selected_slot);
     if let Some(text) = &out.chat {
         bot.chat(text.as_str());
     }

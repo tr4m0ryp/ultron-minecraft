@@ -1,8 +1,4 @@
-use azalea::{
-    inventory::operations::SwapClick,
-    protocol::packets::game::s_player_action::{Action, ServerboundPlayerAction},
-    Client,
-};
+use azalea::{inventory::operations::SwapClick, Client};
 use reflex_core::channels::InvCmd;
 
 use crate::sense::menu_index;
@@ -10,15 +6,13 @@ use crate::sense::menu_index;
 /// Target slot number the protocol uses for the offhand in a swap click.
 const SWAP_OFFHAND: u8 = 40;
 
-pub fn apply(bot: &Client, cmd: Option<InvCmd>) {
+/// `selected` is the held hotbar slot. The swap-hands key is a player action whose 26.3
+/// ordinal Azalea cannot send (see `protocol`), so it is done as the equivalent inventory
+/// swap click of the held slot with the offhand.
+pub fn apply(bot: &Client, cmd: Option<InvCmd>, selected: u8) {
     let Some(cmd) = cmd else { return };
     match cmd {
-        InvCmd::SwapHands => bot.write_packet(ServerboundPlayerAction {
-            action: Action::SwapItemWithOffhand,
-            pos: Default::default(),
-            direction: Default::default(),
-            seq: 0,
-        }),
+        InvCmd::SwapHands => swap(bot, selected, SWAP_OFFHAND),
         InvCmd::ToOffhand(slot) => swap(bot, slot, SWAP_OFFHAND),
         InvCmd::ToHotbar { from, to } if to < 9 => swap(bot, from, to),
         InvCmd::ToHotbar { .. } => {}

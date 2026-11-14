@@ -110,9 +110,17 @@ fn face_toward(bot: &Client, p: BlockPos) -> Direction {
         pos.z - (p.z as f64 + 0.5),
     );
     if dy.abs() >= dx.abs() && dy.abs() >= dz.abs() {
-        if dy > 0.0 { Direction::Up } else { Direction::Down }
+        if dy > 0.0 {
+            Direction::Up
+        } else {
+            Direction::Down
+        }
     } else if dx.abs() >= dz.abs() {
-        if dx > 0.0 { Direction::East } else { Direction::West }
+        if dx > 0.0 {
+            Direction::East
+        } else {
+            Direction::West
+        }
     } else if dz > 0.0 {
         Direction::South
     } else {
