@@ -137,7 +137,11 @@ fn tools_round_trip_compactly() {
     assert_eq!(caution, 0.7);
 
     let (t, _) = m.tool("wait_event", json!({"timeout_s":0.2}));
-    assert_eq!(t, "no event (timeout)");
+    // The fake host runs no goals, so a timeout reports the body idle.
+    assert!(
+        t.starts_with("no event (timeout)") && t.contains("standing idle"),
+        "{t}"
+    );
     rig.wake("chat", "Steve", "<Steve> come here");
     let (t, _) = m.tool("wait_event", json!({"timeout_s":5}));
     assert!(
