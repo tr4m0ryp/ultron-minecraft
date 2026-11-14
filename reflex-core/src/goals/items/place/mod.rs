@@ -7,7 +7,7 @@ mod cleanup;
 mod stand;
 
 pub use cleanup::Cleanup;
-pub use stand::{find as find_spot, Spot};
+pub use stand::Spot;
 
 use super::equip::equip;
 use super::surfaces::replaceable;
