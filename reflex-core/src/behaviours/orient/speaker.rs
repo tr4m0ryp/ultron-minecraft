@@ -3,9 +3,11 @@ use crate::channels::Commands;
 use crate::events::EventClass;
 use crate::math::Vec3;
 
-/// O1: chat from a player within 16 blocks, or any chat naming the bot. Turn the head to
-/// the speaker and hold for 40 ticks unless something more salient takes the gaze. Wakes
-/// the brain with the line.
+/// O1: chat from the companion at any distance, from another player within 16 blocks, or
+/// any chat naming the bot. Turn the head to the speaker and hold for 40 ticks unless
+/// something more salient takes the gaze. Wakes the brain with the line. Live, the
+/// companion asked "can you come over here?" from 22 blocks without the bot's name, and
+/// the line never reached thought: no reply, no goal.
 #[derive(Default)]
 pub struct LookAtSpeaker {
     target: Option<(Vec3, u64)>,
@@ -34,7 +36,11 @@ impl Behaviour for LookAtSpeaker {
             });
             let near = pos.is_some_and(|p| p.dist(snap.me.pos) <= RANGE);
             let named = !name.is_empty() && chat.text.to_lowercase().contains(&name);
-            if !(near || named) {
+            let companion = snap
+                .companion
+                .as_ref()
+                .is_some_and(|c| c.name.eq_ignore_ascii_case(&chat.sender));
+            if !(near || named || companion) {
                 continue;
             }
             // Critical: a human line skips the 5 s wake gap and the repeat filter, so a

@@ -196,6 +196,24 @@ fn o1_looks_at_speaker_for_40_ticks() {
 }
 
 #[test]
+fn o1_wakes_on_the_companion_at_any_distance() {
+    let mut s = flat();
+    let mut b = LookAtSpeaker::default();
+    s.companion = Some(companion_at(40.0));
+    s.chat.push(ChatEvent {
+        sender: "human".into(),
+        text: "can you come over here?".into(),
+        sender_pos: Some(Vec3::new(40.0, 64.0, 0.5)),
+    });
+    let (_, ev) = eval(&mut b, &s, &knobs());
+    assert!(
+        ev.iter()
+            .any(|e| e.kind == "chat" && e.class == EventClass::Wake),
+        "companion line 40 blocks off, no name"
+    );
+}
+
+#[test]
 fn o2_looming_orients_and_habituates_to_harmless() {
     let mut s = flat();
     let mut z = mob(1, EntityKind::Zombie, 8.0, 0.5);
