@@ -3,12 +3,14 @@ use super::{
     protocol::{send, PlayerAction},
 };
 use azalea::{
-    core::entity_id::MinecraftEntityId, interact::StartUseItemEvent,
-    protocol::packets::game::s_interact::InteractionHand, Client,
+    core::entity_id::MinecraftEntityId,
+    interact::StartUseItemEvent,
+    protocol::packets::game::{s_interact::InteractionHand, s_use_item::ServerboundUseItem},
+    Client,
 };
 use reflex_core::{
     channels::{MainCmd, OffCmd},
-    snapshot::SelfState,
+    snapshot::{ItemKind, SelfState},
 };
 
 /// Ticks without the server confirming an item use before the adapter assumes the use ended
@@ -49,6 +51,19 @@ fn start_use(bot: &Client, hand: InteractionHand) {
     });
 }
 
+/// Right-click with the main-hand item as a use in the air (vanilla `useItem`). Azalea's
+/// start-use sends only `UseItemOn` when the crosshair is on a block, and unlike the vanilla
+/// client never follows up with `UseItem` when the block ignores it, so a bucket aimed at the
+/// ground did nothing. The server ray-casts buckets itself from this packet's rotation.
+fn use_in_air(bot: &Client, look: (f32, f32)) {
+    bot.write_packet(ServerboundUseItem {
+        hand: InteractionHand::MainHand,
+        seq: 0,
+        y_rot: look.0,
+        x_rot: look.1,
+    });
+}
+
 fn release_use(bot: &Client) {
     send(
         bot,
@@ -58,7 +73,14 @@ fn release_use(bot: &Client) {
     );
 }
 
-pub fn apply_main(bot: &Client, cmd: Option<MainCmd>, st: &mut HandState, me: &SelfState) {
+/// `look` is the yaw and pitch this tick's output sets, sent with item uses.
+pub fn apply_main(
+    bot: &Client,
+    cmd: Option<MainCmd>,
+    st: &mut HandState,
+    me: &SelfState,
+    look: (f32, f32),
+) {
     let dig = match cmd {
         Some(MainCmd::Dig(p)) => Some(p),
         _ => None,
@@ -72,8 +94,14 @@ pub fn apply_main(bot: &Client, cmd: Option<MainCmd>, st: &mut HandState, me: &S
             }
         }
         MainCmd::Use => {
-            if !st.using_main && !st.shield_up {
-                start_use(bot, InteractionHand::MainHand);
+            let bucket = me
+                .held()
+                .is_some_and(|s| matches!(s.kind, ItemKind::WaterBucket | ItemKind::EmptyBucket));
+            if bucket {
+                // A bucket use is instant; the reflex issuing it owns the one-shot timing.
+                use_in_air(bot, look);
+            } else if !st.using_main && !st.shield_up {
+                use_in_air(bot, look);
                 st.using_main = true;
                 st.idle_ticks = 0;
             }

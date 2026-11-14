@@ -15,7 +15,7 @@ pub use hands::HandState;
 pub fn apply(bot: &Client, out: &MotorOutput, me: &SelfState, hands: &mut HandState) {
     movement::apply(bot, out);
     hands.sync(me.using_item);
-    hands::apply_main(bot, out.main, hands, me);
+    hands::apply_main(bot, out.main, hands, me, (out.yaw, out.pitch));
     hands::apply_off(bot, out.off, hands);
     inventory::apply(bot, out.inv, me.selected_slot);
     if let Some(text) = &out.chat {
