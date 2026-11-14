@@ -1,5 +1,5 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::{heading_to, open_retreat};
+use crate::behaviours::common::{clearance, heading_to, knockback_room, open_retreat, Bound};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::math::Vec3;
 use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
@@ -13,8 +13,45 @@ const SWARM_RADIUS: f64 = 6.0;
 /// Cornered, fight back once the foe is this close (zombie reach is about 2 blocks).
 const CORNERED_REACH: f64 = 3.5;
 
+/// A mob hit throws the player about 2.5 blocks (0.4 blocks/tick, air drag 0.91, roughly 10
+/// airborne ticks); keep this much ground behind the back when in reach of a foe.
+const KNOCKBACK_ROOM: f64 = 3.0;
+/// Probe length for one footing step.
+const FOOTING_STEP: f64 = 0.8;
+
+fn rotate(v: Vec3, deg: f64) -> Vec3 {
+    let (s, c) = deg.to_radians().sin_cos();
+    Vec3::new(v.x * c - v.z * s, 0.0, v.x * s + v.z * c)
+}
+
+/// Combat footing: with a drop closer behind than a knockback carries, step around the foe
+/// (sideways, or diagonally past it) to the spot with the most room behind, as a skilled
+/// player circles so the edge ends up behind the mob instead. `None` when the footing is
+/// fine or no step improves it.
+pub fn footing(snap: &Snapshot, threat: Vec3) -> Option<LegsCmd> {
+    let me = snap.me.pos;
+    let blocks = &snap.blocks;
+    let room = knockback_room(blocks, me, threat, KNOCKBACK_ROOM);
+    if room >= KNOCKBACK_ROOM {
+        return None;
+    }
+    let toward = heading_to(me, threat);
+    let mut best: Option<(f64, Vec3)> = None;
+    for deg in [90.0, -90.0, 45.0, -45.0, 135.0, -135.0] {
+        let h = rotate(toward, deg);
+        if clearance(blocks, me, h, FOOTING_STEP) != (FOOTING_STEP, Bound::Open) {
+            continue;
+        }
+        let after = knockback_room(blocks, me + h * FOOTING_STEP, threat, KNOCKBACK_ROOM);
+        if after > room + 0.25 && best.is_none_or(|(r, _)| after > r) {
+            best = Some((after, h));
+        }
+    }
+    best.map(|(_, h)| LegsCmd::toward(h, Speed::Walk))
+}
+
 /// K1 melee micro: draw the sword, close in, swing only when the cooldown is ready,
-/// strafe inside the reach boundary.
+/// strafe inside the reach boundary, and keep the back away from drops.
 pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
     let me = &snap.me;
     let d = target.pos.dist(me.pos);
@@ -28,16 +65,20 @@ pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
     if d > REACH {
         return face.legs(LegsCmd::toward(toward, Speed::Sprint));
     }
-    let legs = if d < STRAFE_INSIDE {
+    let legs = if let Some(step) = footing(snap, target.pos) {
+        step
+    } else if d < STRAFE_INSIDE {
         let side = if (snap.tick / 20).is_multiple_of(2) {
             1.0
         } else {
             -1.0
         };
-        LegsCmd::toward(
-            Vec3::new(-toward.z * side, 0.0, toward.x * side),
-            Speed::Walk,
-        )
+        let strafe = |k: f64| Vec3::new(-toward.z * k, 0.0, toward.x * k);
+        let open = |h: Vec3| clearance(&snap.blocks, me.pos, h, 1.0).1 != Bound::Drop;
+        match [side, -side].into_iter().map(strafe).find(|&h| open(h)) {
+            Some(h) => LegsCmd::toward(h, Speed::Walk),
+            None => LegsCmd::stop(),
+        }
     } else {
         LegsCmd::stop()
     };
