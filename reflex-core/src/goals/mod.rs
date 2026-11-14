@@ -15,7 +15,7 @@ pub mod travel;
 
 pub use ports::{
     kind_matches, ItemDrop, MenuStatus, NavFailure, NavStatus, NavTarget, Navigator, Recipe, Steer,
-    ToolNeed, World,
+    ToolNeed, Work, World,
 };
 pub use runner::{GoalHandle, GoalRunner, GoalState, GoalStatus, Reporter};
 pub use spec::{parse, AttackTarget, GoalSpec, Person};

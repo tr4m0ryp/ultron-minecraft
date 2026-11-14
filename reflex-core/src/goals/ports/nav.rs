@@ -1,3 +1,4 @@
+use crate::goals::travel::route::{Placement, Region};
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::Snapshot;
 
@@ -8,6 +9,21 @@ pub enum NavTarget {
     Block { pos: BlockPos, radius: f64 },
     /// Stay within `distance` blocks of a moving entity; the planner re-targets as it moves.
     Entity { id: u32, distance: f64 },
+    /// Stand level with `block` in a neighbouring column, to mine it from the side.
+    Beside { block: BlockPos },
+    /// Get out under open sky (escaping an enclosure); `hint` is the last place known to
+    /// have it.
+    Sky { hint: BlockPos },
+}
+
+/// Hand work a path needs before the legs can go on.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Work {
+    /// Break this block (the way is blocked).
+    Dig(BlockPos),
+    /// Place a scaffold block; `click` is false on the ticks between attempts, when the
+    /// body only aims.
+    Place { at: Placement, click: bool },
 }
 
 /// One tick of steering: the next waypoint along the planned path. The goal turns it into a
@@ -19,6 +35,19 @@ pub struct Steer {
     pub jump: bool,
     /// The remaining straight run is long enough to sprint.
     pub sprint: bool,
+    /// Dig or place first; the legs hold the waypoint meanwhile.
+    pub work: Option<Work>,
+}
+
+impl Steer {
+    pub fn walk(waypoint: Vec3, jump: bool, sprint: bool) -> Self {
+        Self {
+            waypoint,
+            jump,
+            sprint,
+            work: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,6 +58,8 @@ pub enum NavFailure {
     TargetLost,
     /// The path stopped making progress.
     Stalled,
+    /// A placement the path needs has no scaffold block in hand.
+    NoScaffold,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -54,4 +85,10 @@ pub trait Navigator {
     fn pause(&mut self);
     /// Drop the request entirely.
     fn cancel(&mut self);
+    /// Regions the path must never break (the thought layer's protected builds).
+    fn protect(&mut self, _regions: &[Region]) {}
+    /// Scaffold blocks the path placed since the last call, for a goal to clean up.
+    fn take_placed(&mut self) -> Vec<BlockPos> {
+        Vec::new()
+    }
 }

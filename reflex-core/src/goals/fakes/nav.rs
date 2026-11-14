@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget, Navigator, Steer};
+use crate::goals::travel::route::Cell;
 use crate::goals::travel::PathFollower;
 use crate::math::BlockPos;
 use crate::snapshot::Snapshot;
@@ -69,7 +70,7 @@ impl Navigator for FakeNav {
                 if s.unreachable.contains(&pos) {
                     return NavStatus::Failed(NavFailure::Unreachable);
                 }
-                match s.follower.steer(snap) {
+                match s.follower.steer(snap, &|_| Cell::Open) {
                     None => NavStatus::Arrived,
                     Some(Ok(steer)) => NavStatus::Moving(steer),
                     Some(Err(f)) => NavStatus::Failed(f),
@@ -90,11 +91,7 @@ impl Navigator for FakeNav {
                 if d <= distance {
                     return NavStatus::Arrived;
                 }
-                NavStatus::Moving(Steer {
-                    waypoint: pos,
-                    jump: false,
-                    sprint: d > 8.0,
-                })
+                NavStatus::Moving(Steer::walk(pos, false, d > 8.0))
             }
         }
     }

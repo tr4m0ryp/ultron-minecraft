@@ -98,4 +98,42 @@ mod tests {
         s.update(true);
         assert_eq!(s.budget(ASK), Duration::ZERO);
     }
+
+    #[test]
+    fn bridge_wait_returns_at_once_when_the_goal_ends() {
+        use std::time::Instant;
+
+        use reflex_core::goals::{GoalState, GoalStatus};
+
+        use crate::bridge::Bridge;
+        use crate::fake::FakeWorld;
+        use crate::wire::{GoalName, Request};
+
+        let bridge = Bridge::new();
+        let mut w = FakeWorld::new();
+        bridge.pump(&mut w.exec, &w.snap);
+        let set = bridge.enqueue(Request::SetGoal {
+            goal: GoalName::Stay,
+            params: Default::default(),
+            priority: None,
+        });
+        bridge.pump(&mut w.exec, &w.snap);
+        set.wait(Duration::from_millis(100));
+        let e = bridge.wait_event(Duration::from_millis(30));
+        assert!(e.timed_out && !e.idle, "a set goal counts as running");
+
+        let id = w.exec.knobs.goal.as_ref().expect("goal").id;
+        w.exec.status = Some(GoalStatus {
+            goal_id: id,
+            label: "stay",
+            state: GoalState::Done,
+            progress: None,
+            note: None,
+        });
+        bridge.pump(&mut w.exec, &w.snap);
+        let t0 = Instant::now();
+        let e = bridge.wait_event(Duration::from_secs(30));
+        assert!(e.timed_out && e.idle && e.events.is_empty());
+        assert!(t0.elapsed() < Duration::from_secs(1), "{:?}", t0.elapsed());
+    }
 }
