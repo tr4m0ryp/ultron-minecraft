@@ -2078,6 +2078,7 @@ name = "motor-azalea"
 version = "0.1.0"
 dependencies = [
  "azalea",
+ "brain-link",
  "reflex-core",
  "tokio",
 ]

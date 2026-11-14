@@ -17,6 +17,8 @@ pub enum BrainCmd {
         priority: f32,
         spec: String,
     },
+    /// A goal-layer spec with no knob target, e.g. `task mine stone 3`.
+    Task(String),
     GoalEnd,
     Mode(Mode),
     Gain(GainName, f32),
