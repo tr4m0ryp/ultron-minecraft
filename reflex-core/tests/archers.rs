@@ -205,7 +205,11 @@ fn the_shield_stays_up_while_the_arrow_is_in_flight() {
     sk.state.since_shot = Some(1);
     s.entities.push(sk);
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
-    assert_eq!(bid.commands.off, Some(OffCmd::RaiseShield), "arrow still in the air");
+    assert_eq!(
+        bid.commands.off,
+        Some(OffCmd::RaiseShield),
+        "arrow still in the air"
+    );
     s.entities[0].state.since_shot = Some(8);
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
     assert_eq!(bid.commands.off, None, "landed: reload window");

@@ -59,7 +59,12 @@ impl Behaviour for CreeperStance {
             .find(|e| e.state.fuse_lit && e.pos.dist(me.pos) < KEEP)
             .copied()
             .unwrap_or(c);
-        stance_bid(ctx, lit, lit.pos.dist(me.pos), threat_centre(me.pos, &creepers))
+        stance_bid(
+            ctx,
+            lit,
+            lit.pos.dist(me.pos),
+            threat_centre(me.pos, &creepers),
+        )
     }
 }
 
