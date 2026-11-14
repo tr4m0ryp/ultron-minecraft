@@ -80,16 +80,18 @@ def wave_stats(name, t0, L0, rs):
     dmg = sum(max(0.0, a["hp"] - b["hp"]) for a, b in zip(rs, rs[1:]) if b["hp"] > 0 or a["hp"] > 0)
     nd = named_deaths(L0, TAG)
     kills = [n for n, why in nd if re.search(rf"\b{NAME}\b", why)]
-    fired, legs = {}, {}
+    fired, legs, hits = {}, {}, 0
     if rs:
         for e in events(WHO, since_tick=rs[0]["tick"]):
+            if e.startswith("D ") and int(e.split()[1]) <= rs[-1]["tick"]:
+                hits += 1
             m = E_RE.match(e)
             if m and int(m.group(1)) <= rs[-1]["tick"] and re.match(r"^[A-Z]+\d+$", m.group(5)):
                 key = f"{m.group(5)}:{m.group(3)}"
                 fired[key] = fired.get(key, 0) + 1
         for r in rs:
             legs[r["legs"]] = legs.get(r["legs"], 0) + 1
-    return dict(wave=name, damage=round(dmg, 1), deaths=deaths(L0), kills=len(kills),
+    return dict(wave=name, damage=round(dmg, 1), deaths=deaths(L0), kills=len(kills), hits=hits,
                 mob_deaths=[f"{n}: {why}" for n, why in nd], fired=fired, legs_ticks=legs,
                 min_hp=min((r["hp"] for r in rs), default=None),
                 food_end=rs[-1]["food"] if rs else None)
