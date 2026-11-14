@@ -587,8 +587,19 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
 - Critical-hit conditions and w-tap mechanics come from mirrors and mod pages.
 - The LLM decision latency (3 to 20 s) and all token figures are estimates to be measured in
   the first session.
-- Whether placing water on the same tick as landing negates damage must be measured against
-  the 26.3 server; R6 depends on it.
+- Water landing timing, measured on the 26.3 server (tools/live/staged/mlg.py, Resistance IV,
+  2 drops per cell): water used on the last tick before impact (predicted t_land = 1, eye 2.7
+  to 2.85 blocks from the floor) cancelled all fall damage from 20 and 45 blocks (4 of 4);
+  2 ticks out it saved at 20 blocks (eye 4.30) and missed at 45 (eye 4.76, out of the 4.5
+  reach); 3 to 6 ticks out always missed. The window is reach-bound, not tick-bound: R6
+  places on the first tick with t_land <= 2 and the floor within 4.4 of the eye, else on
+  t_land = 1. Near terminal speed (3.9 blocks/tick) a tick inside reach exists only about
+  three times in four, so very long falls stay unreliable.
+- Knock-off recovery, measured on the 21x21 platform (tools/live/staged/knockoff.py, bot held
+  0.35 from the edge, zombie hitting from inside): a zombie push moves the player only about
+  0.45 blocks, so a knock-off takes several hits. Air-strafe alone (R15 airborne) saved 0 of
+  8; adding the on-ground step back once the centre is past the edge saved 7 of 7 valid
+  trials over about 19 hits each; the block clutch (R6, cobblestone) saved 8 of 8.
 - Mindcraft profile defaults for cowardice vs self_defense were not checked.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
