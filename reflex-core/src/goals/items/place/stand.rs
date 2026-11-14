@@ -104,7 +104,8 @@ pub fn find(cx: &GoalCx, cell: BlockPos, keep_clear: &[BlockPos], scaffold: u32)
                     pillar += 1;
                     below = below.below();
                 }
-                if pillar > MAX_PILLAR.min(scaffold) || below.y < feet.y - 4 {
+                let floor = cx.world.block_at(below).unwrap_or_default();
+                if pillar > MAX_PILLAR.min(scaffold) || floor.is_empty() || replaceable(&floor) {
                     continue;
                 }
                 let walk = if feet == here {
