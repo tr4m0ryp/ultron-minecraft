@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use reflex_core::behaviours::homeostasis::{CompanionLeash, Health, Hunger};
+use reflex_core::behaviours::homeostasis::{CompanionLeash, Health, Hunger, GOAL_GRACE};
 use reflex_core::behaviours::locomotion::Unstuck;
 use reflex_core::behaviours::orient::{LookAtSpeaker, Looming};
 use reflex_core::channels::{Channel, InvCmd, MainCmd};
@@ -124,6 +124,40 @@ fn h8_leash_follow_danger_and_far() {
     s.companion = Some(companion_at(40.0));
     let (_, ev) = eval(&mut CompanionLeash::default(), &s, &knobs());
     assert!(ev.iter().any(|e| e.kind == "companion_far"));
+}
+
+#[test]
+fn h8_holds_off_following_for_a_grace_after_a_goal_ends() {
+    let mut s = flat();
+    s.companion = Some(companion_at(20.5));
+    let mut k = knobs();
+    k.set_goal("mine stone", 0.5, None, true);
+    let mut h8 = CompanionLeash::default();
+    assert!(eval(&mut h8, &s, &k).0.is_none(), "solo goal suspends the leash");
+
+    k.end_goal();
+    let t0 = s.tick;
+    assert!(
+        eval(&mut h8, &s, &k).0.is_none(),
+        "no pull on the tick the goal ends"
+    );
+    s.tick = t0 + GOAL_GRACE - 1;
+    assert!(eval(&mut h8, &s, &k).0.is_none(), "still inside the grace");
+    s.tick = t0 + GOAL_GRACE;
+    let bid = eval(&mut h8, &s, &k).0.expect("follow resumes after the grace");
+    assert_eq!(bid.note, "follow_companion");
+
+    // A fresh goal at the spot restarts nothing: the next end opens a new grace.
+    k.set_goal("mine stone", 0.5, None, true);
+    assert!(eval(&mut h8, &s, &k).0.is_none());
+    k.end_goal();
+    s.tick += 1;
+    assert!(eval(&mut h8, &s, &k).0.is_none(), "second grace");
+
+    // Danger to the companion is never held off.
+    s.entities.push(mob(5, EntityKind::Zombie, 22.0, 0.5));
+    let bid = eval(&mut h8, &s, &k).0.expect("danger");
+    assert_eq!(bid.priority, Priority::P2);
 }
 
 #[test]

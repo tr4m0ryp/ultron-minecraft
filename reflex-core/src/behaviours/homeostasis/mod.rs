@@ -5,7 +5,7 @@ mod eat;
 mod health;
 mod hunger;
 
-pub use companion::CompanionLeash;
+pub use companion::{CompanionLeash, GOAL_GRACE};
 pub use eat::{best_food, eat_commands, EATING_TICKS};
 pub use health::Health;
 pub use hunger::Hunger;
