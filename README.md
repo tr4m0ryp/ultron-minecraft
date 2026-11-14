@@ -1,6 +1,20 @@
 # ultron-minecraft
 
-Ultron in Minecraft.
+Ultron as a real player in Minecraft: it joins your world, plays alongside you and talks to you in chat.
+
+## How it works
+
+A language model takes seconds to decide, and Minecraft kills you in less. So the player is built like a body with a brain, in three layers:
+
+- **Brain.** Thought, running in the harness. It decides what to do every few seconds and holds the conversation.
+- **Decider.** A small local model that makes quick choices in tens of milliseconds.
+- **Reflexes.** A Rust layer that acts every game tick (50 ms): backing away from a creeper, eating when hungry, getting out of lava, staying near you.
+
+The brain tunes the reflexes instead of micromanaging them. It can turn one up or down, suppress it for a while, or arm a reaction in advance. It cannot switch off a reflex that is about to save the player's life.
+
+## Status
+
+Early build. The reflex layer and its design note (`notes/reflex-layer.md`) exist; nothing has played against a live server yet.
 
 ## License
 
