@@ -1,0 +1,32 @@
+{
+ "label": "laya-421M",
+ "backend": "laya",
+ "threads": 8,
+ "accuracy": 0.4,
+ "correct": 8,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "4/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 1888.5,
+  "p95": 12192.0,
+  "mean": 3925.6,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 8987.2,
+  "p95": 18452.7,
+  "mean": 11872.4,
+  "n": 3
+ },
+ "load_s": 4.14,
+ "first_call_s": 4.87,
+ "rss_gb": 2.06,
+ "peak_rss_gb": 2.81,
+ "errors": [],
+ "n_errors": 0
+}
