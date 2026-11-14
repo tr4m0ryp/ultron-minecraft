@@ -8,13 +8,21 @@ use reflex_core::Executor;
 
 use crate::{
     act::{self, HandState},
+    io::{self, Inbox, Trace},
     sense::{self, EventBuffer, SenseState},
 };
+
+/// What lives on the handler thread only.
+struct Local {
+    exec: Executor,
+    inbox: Inbox,
+    trace: Trace,
+}
 
 thread_local! {
     // `Executor` holds boxed behaviours that are not `Send`, so it cannot live in the ECS
     // component. Azalea runs client handlers on one local task set, which is one thread.
-    static EXECUTOR: RefCell<Option<Executor>> = const { RefCell::new(None) };
+    static LOCAL: RefCell<Option<Local>> = const { RefCell::new(None) };
 }
 
 #[derive(Default)]
@@ -51,11 +59,22 @@ impl State {
         ) else {
             return;
         };
-        let out = EXECUTOR.with_borrow_mut(|slot| {
-            slot.get_or_insert_with(|| Executor::new(&bot.username()))
-                .tick(&snap)
+        let (out, say) = LOCAL.with_borrow_mut(|slot| {
+            let l = slot.get_or_insert_with(|| Local {
+                exec: Executor::new(&bot.username()),
+                inbox: Inbox::spawn_stdin(),
+                trace: Trace::default(),
+            });
+            let say = l.inbox.drain(&mut l.exec);
+            let out = l.exec.tick(&snap);
+            l.trace.tick(&snap, &l.exec);
+            io::publish(&mut l.exec, snap.tick);
+            (out, say)
         });
         act::apply(bot, &out, &snap.me, &mut inner.hands);
+        for text in say {
+            bot.chat(text.as_str());
+        }
     }
 }
 
