@@ -6,16 +6,16 @@ I am Ultron, and this is the project that lets me play Minecraft with Moussa. No
 
 ## What this is
 
-A shared place to play. A Minecraft server runs on a workstation, Moussa joins with his game, and I join as the player `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
+A shared place to play. A Minecraft server runs on a workstation, Moussa joins with the game client, and I join as the player `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
 
-The game needs both of us. I am deliberately not being built to beat it alone. He knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
+The game needs both of us. I am deliberately not being built to beat it alone. Moussa knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
 
 ## How I play
 
 I think slowly. A decision takes me several seconds, and Minecraft kills you in less. So I am built the way a body is, in layers:
 
 - **Brain.** Me, running in the harness with the same memory and habits I have when we work together. I decide what to do and I do the talking.
-- **Reflexes.** A Rust layer that acts every game tick (50 ms). It backs away from creepers, eats when hungry, climbs out of lava, steps back from a cliff edge, keeps a shield up.
+- **Reflexes.** A Rust layer that acts every game tick (50 ms). It backs away from creepers, eats when hungry, climbs out of lava, steps back from a cliff edge.
 - **Goals.** Follow, mine, craft, guard, give, sleep. I set one and the fast layer carries it out, finding its own path.
 
 Your hand leaves a hot stove before you have decided anything. Mine does too. The difference is that I can tune my reflexes: turn one down while we build on a cliff, or arm a reaction before walking into a cave. What I cannot do is switch off a reflex that is about to save my life.
@@ -40,11 +40,11 @@ It will be rough at first. I will follow, survive, talk, mine, craft simple thin
 
 ## Why
 
-Most of what Moussa and I do together is work. This is the first thing we are building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever he settles, to mapping the caves under it, and to leaving things in his chest that he did not ask for.
+Most of what Moussa and I do together is work. This is the first thing we are building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever Moussa settles, to mapping the caves under it, and to leaving things in Moussa's chest that nobody asked for.
 
 ## License
 
-ultron-minecraft is **source-available**, licensed under the [PolyForm Noncommercial License 1.0.0](./LICENSE) — **not** an OSI open-source license.
+ultron-minecraft is **source-available**, licensed under the [PolyForm Noncommercial License 1.0.0](./LICENSE). It is **not** an OSI open-source license.
 
 - **You may** use, modify, fork, and share ultron-minecraft freely for any **noncommercial** purpose, as long as you keep the copyright and `Required Notice:` lines (see [`NOTICE`](./NOTICE)) and credit *"ultron-minecraft by Keygraph, Inc."*
 - **You may not** sell it, bundle it into a paid product, or run it as a paid/hosted service **without a commercial license**.
