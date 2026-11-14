@@ -11,7 +11,7 @@ use reflex_core::behaviours::locomotion::Swim;
 use reflex_core::channels::{GazeCmd, MainCmd};
 use reflex_core::math::yaw_pitch_to;
 use reflex_core::snapshot::{BlockKind, EntityKind, ItemKind};
-use reflex_core::{BlockPos, Priority, Vec3};
+use reflex_core::{Behaviour, BlockPos, Priority, Vec3};
 
 /// Flat floor that ends at x = 3 with nothing below down to the void.
 fn platform_edge() -> reflex_core::Snapshot {
