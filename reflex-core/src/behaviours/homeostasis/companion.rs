@@ -8,17 +8,23 @@ use crate::snapshot::EntityClass;
 /// H8: attachment homeostat. Danger to the companion (hostile within 4 of them, or their
 /// health dropping) brings us to them at P2 and wakes the brain. Beyond the leash we walk
 /// back to within 3 blocks (P4); beyond 32 the brain is woken. Standing within 1 block while
-/// they walk toward us, we step aside.
+/// they walk toward us, we step aside. When a goal ends the follow holds off for
+/// [`GOAL_GRACE`] ticks, so the body stays where the goal left it (its drops, the spot the
+/// brain's next goal starts from) until the woken brain has issued that next goal.
 #[derive(Default)]
 pub struct CompanionLeash {
     following: bool,
     last_hp: Option<f32>,
     danger_reported: bool,
     far_reported: bool,
+    had_goal: bool,
+    grace_until: u64,
 }
 
 const RETURN_TO: f64 = 3.0;
 const FAR: f64 = 32.0;
+/// Ticks after a goal ends before the straight-line follow may resume (10 s).
+pub const GOAL_GRACE: u64 = 200;
 
 impl Behaviour for CompanionLeash {
     fn id(&self) -> &'static str {
@@ -67,8 +73,13 @@ impl Behaviour for CompanionLeash {
         let solo = ctx.knobs.goal.as_ref().is_some_and(|g| {
             g.solo || crate::goals::parse(&g.spec, g.target).is_ok_and(|s| s.tracks_companion())
         });
+        let has_goal = ctx.knobs.goal.is_some();
+        if self.had_goal && !has_goal {
+            self.grace_until = snap.tick + GOAL_GRACE;
+        }
+        self.had_goal = has_goal;
         let leash = ctx.knobs.gains.leash;
-        if leash <= 0.0 || solo {
+        if leash <= 0.0 || solo || snap.tick < self.grace_until {
             self.following = false;
             return None;
         }
