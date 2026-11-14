@@ -36,10 +36,13 @@ impl Behaviour for LookAtSpeaker {
             });
             let near = pos.is_some_and(|p| p.dist(snap.me.pos) <= RANGE);
             let named = !name.is_empty() && chat.text.to_lowercase().contains(&name);
+            // By the configured name: the companion's entity is not tracked beyond the
+            // server's entity range, but their chat still arrives from any distance.
             let companion = snap
-                .companion
-                .as_ref()
-                .is_some_and(|c| c.name.eq_ignore_ascii_case(&chat.sender));
+                .companion_name
+                .as_deref()
+                .or(snap.companion.as_ref().map(|c| c.name.as_str()))
+                .is_some_and(|n| n.eq_ignore_ascii_case(&chat.sender));
             if !(near || named || companion) {
                 continue;
             }

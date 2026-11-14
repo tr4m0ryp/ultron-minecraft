@@ -29,6 +29,8 @@ pub struct Snapshot {
     /// Lowest buildable y of the dimension; below it is the void.
     pub world_min_y: i32,
     pub is_night: bool,
+    /// The configured companion's name, known even while the server does not track them.
+    pub companion_name: Option<String>,
 }
 
 impl Snapshot {

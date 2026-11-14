@@ -118,14 +118,21 @@ impl Reporter {
         self.blocked.as_deref()
     }
 
+    /// Goal outcomes skip the 5 s wake gap: thought sets the next goal at once instead of
+    /// standing idle while the result waits in the queue.
     pub fn done(&mut self, ctx: &Ctx, text: &str) {
         self.outcome = Some((GoalState::Done, text.to_string()));
-        self.send(ctx, EventClass::Wake, "goal_done", text);
+        self.send_now(ctx, "goal_done", text);
     }
 
     pub fn failed(&mut self, ctx: &Ctx, reason: &str) {
         self.outcome = Some((GoalState::Failed, reason.to_string()));
-        self.send(ctx, EventClass::Wake, "goal_failed", reason);
+        self.send_now(ctx, "goal_failed", reason);
+    }
+
+    fn send_now(&self, ctx: &Ctx, kind: &str, text: &str) {
+        let text = format!("#{} {}: {text}", self.goal_id, self.label);
+        ctx.emit(ctx.report(EventClass::Wake, kind, self.label).text(text).critical());
     }
 
     /// The goal's status for the brain; `preempted` says a reflex holds the body.

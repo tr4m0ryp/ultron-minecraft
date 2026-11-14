@@ -109,5 +109,6 @@ pub fn snapshot(
         sounds: std::mem::take(&mut events.sounds),
         world_min_y,
         is_night: events.is_night(),
+        companion_name: companion.map(str::to_string),
     })
 }
