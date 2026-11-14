@@ -606,6 +606,16 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   gaze starvation and D3's futile retreat, 7 deaths, 324 HP, 3 kills. One seed per arm, so
   per-wave differences of one or two deaths are within run-to-run noise. Skeleton arrows
   remain the main killer (no shield, no cover in the arena), then creepers.
+- Fast ticking is not valid for this bot. Azalea's client loop runs `GameTick` on a fixed
+  50 ms timer and leaves the ticking-state packet unhandled, so with `/tick rate` at 40, 80
+  and 100 the bot still ticked 20.0 times a second (tick gaps p50 55 ms, p99 61 to 69 ms)
+  while the server held 2.6 to 6.2 ms per tick: mobs, arrows and fuses ran 2x to 5x faster
+  than the bot's reflexes, and every reflex latency counted in server ticks scaled with the
+  rate. One full arena run at rate 40 with wall-clock waves halved gave 11 deaths and 424 HP
+  lost (skeletons 6, mix 5) against the 1x noise floor of 7.2 +- 1.5 deaths and 271 +- 55 HP:
+  outside run-to-run noise. Throughput comes instead from parallel arenas
+  (tools/live/staged/batch.py: up to five bots, one walled arena each, 100 blocks apart, at
+  20 Hz; server about 10 ms per tick and bot tick gaps unchanged with four running).
 - Mindcraft profile defaults for cowardice vs self_defense were not checked.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
