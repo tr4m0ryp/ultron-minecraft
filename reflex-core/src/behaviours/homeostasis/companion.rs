@@ -1,0 +1,82 @@
+use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
+use crate::behaviours::common::heading_to;
+use crate::channels::{Commands, LegsCmd, Speed};
+use crate::events::EventClass;
+use crate::math::Vec3;
+use crate::snapshot::EntityClass;
+
+/// H8: attachment homeostat. Danger to the companion (hostile within 4 of them, or their
+/// health dropping) brings us to them at P2 and wakes the brain. Beyond the leash we walk
+/// back to within 3 blocks (P4); beyond 32 the brain is woken. Standing within 1 block while
+/// they walk toward us, we step aside.
+#[derive(Default)]
+pub struct CompanionLeash {
+    following: bool,
+    last_hp: Option<f32>,
+    danger_reported: bool,
+    far_reported: bool,
+}
+
+const RETURN_TO: f64 = 3.0;
+const FAR: f64 = 32.0;
+
+impl Behaviour for CompanionLeash {
+    fn id(&self) -> &'static str {
+        "H8"
+    }
+
+    fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
+        let snap = ctx.snap;
+        let c = snap.companion.as_ref()?;
+        let me = &snap.me;
+        let dist = me.pos.dist(c.pos);
+        let hp_drop = matches!((self.last_hp, c.health), (Some(a), Some(b)) if b < a);
+        self.last_hp = c.health;
+        let hostile_near = snap
+            .entities
+            .iter()
+            .any(|e| e.kind.class() == EntityClass::Hostile && e.pos.dist(c.pos) <= 4.0);
+
+        let danger = hostile_near || hp_drop;
+        if danger && !self.danger_reported {
+            ctx.emit(ctx.report(EventClass::Wake, "companion_danger", &c.name).text("hostile near companion or companion hurt"));
+        }
+        self.danger_reported = danger;
+        let far = dist > FAR;
+        if far && !self.far_reported {
+            ctx.emit(ctx.report(EventClass::Wake, "companion_far", &c.name).magnitude(dist as f32));
+        }
+        self.far_reported = far;
+
+        if danger && dist > 2.0 {
+            let legs = LegsCmd::toward(heading_to(me.pos, c.pos), Speed::Sprint);
+            return Some(Bid::new(Priority::P2, 1.0, "protect_companion", Commands::default().legs(legs)));
+        }
+
+        let solo = ctx.knobs.goal.as_ref().is_some_and(|g| g.solo);
+        let leash = ctx.knobs.gains.leash;
+        if leash <= 0.0 || solo {
+            self.following = false;
+            return None;
+        }
+        if dist > leash {
+            self.following = true;
+        } else if dist <= RETURN_TO {
+            self.following = false;
+        }
+        if self.following {
+            let speed = if dist > 2.0 * leash && me.food > 6 { Speed::Sprint } else { Speed::Walk };
+            let urgency = ((dist - RETURN_TO) / leash).clamp(0.2, 1.0) as f32;
+            let legs = LegsCmd::toward(heading_to(me.pos, c.pos), speed);
+            return Some(Bid::new(Priority::P4, urgency, "follow_companion", Commands::default().legs(legs)));
+        }
+        let toward_us = c.vel.horizontal().dot(me.pos - c.pos) > 0.01;
+        if dist < 1.0 && toward_us {
+            let v = c.vel.horizontal().normalized();
+            let aside = Vec3::new(-v.z, 0.0, v.x);
+            let legs = LegsCmd::toward(aside, Speed::Walk);
+            return Some(Bid::new(Priority::P4, 0.5, "step_aside", Commands::default().legs(legs)));
+        }
+        None
+    }
+}
