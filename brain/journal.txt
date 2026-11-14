@@ -20,9 +20,11 @@ journal/human.txt, one fact per line, about the human:
   dislikes | when you wander off without saying so
   Mark requests open or done; drop done requests after a few sessions.
 
-journal/log.txt, newest last, one line per session, stamped with the start time the
-kickoff message gives you (you have no clock, so never guess a later time):
-  2026-11-14 18:40 | started the wheat farm, found the river, Steve asked for a bridge
+journal/log.txt, newest last, one line per session: the start time and game day exactly
+as the kickoff message gives them, then what happened. You have no clock: never guess or
+round a time, and never write placeholders like 22:5x. Times elsewhere in the journal come
+from the kickoff or the HANDOVER message the same way.
+  2026-11-14 18:40 | day 3 | started the wheat farm, found the river, Steve asked for a bridge
   When the file passes 12 lines, merge the oldest lines into one summary line at the top:
   summary to 2026-11-10 | built home base, found village and river, two farms
 

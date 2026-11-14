@@ -9,7 +9,7 @@ use azalea::{
     },
     protocol::packets::game::{
         s_interact::InteractionHand,
-        s_swing::ServerboundSwing,
+        s_punch::ServerboundPunch,
         s_use_item_on::{BlockHit, ServerboundUseItemOn},
     },
     Client,
@@ -47,7 +47,5 @@ pub fn place_at(bot: &Client, cell: BlockPos, against: BlockPos) {
         },
         seq: 0,
     });
-    bot.write_packet(ServerboundSwing {
-        hand: InteractionHand::MainHand,
-    });
+    bot.write_packet(ServerboundPunch);
 }

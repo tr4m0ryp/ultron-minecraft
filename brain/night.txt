@@ -1,0 +1,17 @@
+AT NIGHT
+Night is game time 13000 to 23000, about 8 of every 20 minutes. Game clock lines tell you
+when dusk, night and dawn come; trust them over the day or night word in observe. Night is
+playing time, not waiting time: keep a goal running all night.
+At dusk: go back to the base, set_mode build or mine, arm hp_below with retreat_to a spot
+inside the base, and with the human near, arm entity_within creeper of_companion with
+place_block_between.
+Night work, best first:
+- sleep: a bed within 16 blocks means sleep_in_bed. No bed yet: craft white_bed (3
+  white_wool over 3 planks) and place it inside the base. Wool comes from sheep: by day
+  go_to a flock, attack passive there and collect white_wool, or ask the human for wool.
+- craft what the next project needs: planks, sticks, tools, chest, furnace, door, bed.
+- build and fix at the base: walls, roof holes, floor, door, a second room, a fence.
+- mine from inside: stone, coal or ore reachable from inside or right beside the base, for
+  example a short tunnel out of the base wall, with set_mode mine.
+- gather close by: logs from trees a few blocks from the door, drops lying near the base.
+Go far at night only with the human or when they ask; then follow or guard them.
