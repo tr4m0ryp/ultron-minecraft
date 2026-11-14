@@ -88,6 +88,11 @@ impl Behaviour for CompanionLeash {
         } else if dist <= RETURN_TO {
             self.following = false;
         }
+        // A wall at head height on the straight line means walking at the companion only
+        // presses the body into it; leave the legs to the escape drive or the next goal.
+        if self.following && head_blocked(snap, me.pos, c.pos) {
+            return None;
+        }
         if self.following {
             let speed = if dist > 2.0 * leash && me.food > 6 {
                 Speed::Sprint
@@ -117,4 +122,15 @@ impl Behaviour for CompanionLeash {
         }
         None
     }
+}
+
+/// The cells at head height in the next two blocks toward `to` are solid.
+fn head_blocked(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool {
+    let dir = Vec3::new(to.x - from.x, 0.0, to.z - from.z).normalized();
+    let head = from.y.floor() + 1.5;
+    [0.8, 1.6].iter().all(|&d| {
+        let p = from + dir * d;
+        let k = snap.blocks.get(Vec3::new(p.x, head, p.z).block());
+        k != crate::snapshot::BlockKind::Unknown && !k.passable()
+    })
 }
