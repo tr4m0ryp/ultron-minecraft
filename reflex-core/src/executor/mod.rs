@@ -30,6 +30,8 @@ pub struct Executor {
     active: HashMap<String, Priority>,
     goal_watch: GoalWatch,
     seen_kinds: HashSet<crate::snapshot::EntityKind>,
+    /// Note of the bid that won the legs last tick, for the trace.
+    legs_note: Option<&'static str>,
 }
 
 /// Tracks how long the goal has bid without owning the legs.
@@ -55,12 +57,18 @@ impl Executor {
             active: HashMap::new(),
             goal_watch: GoalWatch::default(),
             seen_kinds: HashSet::new(),
+            legs_note: None,
         }
     }
 
     /// Id of the behaviour (or "ARM:<n>") that owned `c` on the last tick.
     pub fn owner(&self, c: Channel) -> Option<&str> {
         self.selector.holder(c)
+    }
+
+    /// Note of the bid that won the legs on the last tick (which tactic moved the body).
+    pub fn legs_note(&self) -> Option<&'static str> {
+        self.legs_note
     }
 
     pub fn take_wake(&mut self, now: u64) -> Vec<Event> {
@@ -127,6 +135,7 @@ impl Executor {
         }
 
         let alloc = self.selector.select(&cands, now);
+        self.legs_note = alloc.owners.get(&Channel::Legs).map(|&i| notes[i]);
         let mut won = vec![false; self.behaviours.len()];
         for &w in &alloc.winners {
             if let Some(k) = owners_idx[w] {

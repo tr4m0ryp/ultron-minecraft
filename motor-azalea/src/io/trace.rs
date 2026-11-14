@@ -30,7 +30,7 @@ impl Trace {
         println!(
             "T {} ms={} pos={:.2},{:.2},{:.2} hp={:.1} food={} sat={:.1} air={} fire={} \
              water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={} \
-             vel={:.3},{:.3},{:.3} off={} shield={} near={}",
+             vel={:.3},{:.3},{:.3} off={} shield={} near={} note={}",
             snap.tick,
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -58,6 +58,7 @@ impl Trace {
             own(Channel::Off),
             me.shield_ticks,
             nearest(snap),
+            exec.legs_note().unwrap_or("-"),
         );
         if sensed.as_millis() >= 10 {
             println!("P {} sense_ms={}", snap.tick, sensed.as_millis());
