@@ -31,7 +31,11 @@ def fight(i, secs=30):
     bx, bz, zx, zz = placement(i)
     rc(f"kill @e[type=!player,x=1110,y=150,z=1000,distance=..40]", f"tp Ultron {bx:.2f} {Y} {bz:.2f}")
     prep_bot(night=True)
-    time.sleep(1.5)
+    # Drain food below 18 so natural regeneration stays off (the original low-health setup).
+    rc("effect give Ultron hunger 4 255")
+    time.sleep(4.5)
+    rc("effect clear Ultron")
+    time.sleep(0.5)
     rc("damage Ultron 13 minecraft:generic")
     time.sleep(0.3)
     L0, t0 = log_len(), now_ms()
@@ -48,7 +52,7 @@ def fight(i, secs=30):
         for c in ("legs", "gaze", "main"):
             if r[c] != "-":
                 owners[r[c]] = owners.get(r[c], 0) + 1
-    res = dict(i=i, hp0=hp0, min_hp=min((r["hp"] for r in rs), default=None), dmg=round(dmg, 1),
+    res = dict(i=i, food=rs[0]["food"] if rs else None, hp0=hp0, min_hp=min((r["hp"] for r in rs), default=None), dmg=round(dmg, 1),
                fell=fell, died=bool(d), death=d[0] if d else "", min_y=min((r["y"] for r in rs), default=None),
                owners=owners)
     if d:
