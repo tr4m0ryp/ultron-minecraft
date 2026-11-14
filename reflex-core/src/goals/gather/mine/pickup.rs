@@ -28,6 +28,8 @@ pub struct Pickup {
     before: u32,
     picked: u32,
     walker: Walker,
+    /// The pathfinder found no way to this block's drop; walk straight at it instead.
+    no_path: bool,
 }
 
 impl Pickup {
@@ -35,6 +37,7 @@ impl Pickup {
     pub fn arm(&mut self, held: u32) {
         self.ticks = 0;
         self.before = held;
+        self.no_path = false;
         self.walker.reset();
     }
 
@@ -56,7 +59,7 @@ impl Pickup {
         let Some(d) = near.filter(|_| !give_up) else {
             return self.finish(cx);
         };
-        if d.pos.dist(me) <= DIRECT && straight_clear(cx.snap(), me, d.pos) {
+        if self.no_path || (d.pos.dist(me) <= DIRECT && straight_clear(cx.snap(), me, d.pos)) {
             self.walker.stop(cx);
             let legs = LegsCmd::toward(heading_to(me, d.pos), Speed::Walk);
             return Some(Plan::new("goal_pickup", Commands::default().legs(legs)));
@@ -74,6 +77,7 @@ impl Pickup {
             // No path (a drop on leaves, in a shallow hole): head straight at it for the
             // rest of the pickup time, as a player would, instead of giving up at once.
             Walk::Failed(_) => {
+                self.no_path = true;
                 let legs = LegsCmd::toward(heading_to(me, d.pos), Speed::Walk);
                 Some(Plan::new("goal_pickup", Commands::default().legs(legs)))
             }
