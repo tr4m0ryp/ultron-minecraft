@@ -69,3 +69,10 @@ def server_deaths(since_line=0):
 
 def log_len():
     return len(open(os.path.expanduser("~/minecraft/vanilla-26.3/server.out"), errors="replace").read().splitlines())
+
+def build_arena():
+    """One-off: force-load and build the platform; natural spawns off so tests stay clean."""
+    rc("gamerule spawn_mobs false", "forceload add 944 944 1056 1056",
+       "fill 960 149 960 1040 149 1040 stone", "fill 960 150 960 1040 160 986 air",
+       "fill 960 150 987 1040 160 1013 air", "fill 960 150 1014 1040 160 1040 air",
+       "fill 994 141 994 998 148 998 stone")
