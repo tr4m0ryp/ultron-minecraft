@@ -1,5 +1,7 @@
 # ultron-minecraft
 
+<p align="center"><img src="assets/skin-body.png" alt="The Ultron player skin" width="200"></p>
+
 Ultron as a real player in Minecraft: it joins your world, plays alongside you and talks to you in chat.
 
 ## How it works
