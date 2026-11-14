@@ -9,7 +9,7 @@ mod blocks;
 mod craft;
 mod entities;
 mod inventory;
-mod names;
+pub(crate) mod names;
 mod recipes;
 mod tools;
 
@@ -21,6 +21,21 @@ use reflex_core::{
 };
 
 pub use recipes::lookup as recipe_shape;
+
+/// Scaffold blocks (the route planner's throwaway kinds) held in the inventory.
+pub fn scaffold_count(bot: &Client) -> u32 {
+    reflex_core::goals::travel::route::SCAFFOLD
+        .iter()
+        .map(|b| inventory::count(bot, b))
+        .sum()
+}
+
+/// A copy of the player's inventory menu, for pricing digs with the tools at hand.
+pub fn inventory_menu(bot: &Client) -> Option<azalea::inventory::Menu> {
+    let ecs = bot.ecs.read();
+    ecs.get::<azalea::entity::inventory::Inventory>(bot.entity)
+        .map(|i| i.inventory_menu.clone())
+}
 
 pub struct AzaleaWorld {
     bot: Client,
