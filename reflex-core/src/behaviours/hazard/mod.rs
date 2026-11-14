@@ -13,3 +13,5 @@ pub use edge::{probe_drop, Drop, EdgeGuard, VoidGuard};
 pub use extinguish::Extinguish;
 pub use falling::FallingBlocks;
 pub use lava::LavaWithdrawal;
+mod dig_guard;
+pub use dig_guard::DigGuard;
