@@ -54,6 +54,9 @@ mod tests {
             assert!(!g.observe(true));
         }
         assert!(!g.observe(false));
-        assert!((0..STRAY_TICKS).all(|_| !g.observe(true)), "a crafter's short open resets");
+        assert!(
+            (0..STRAY_TICKS).all(|_| !g.observe(true)),
+            "a crafter's short open resets"
+        );
     }
 }

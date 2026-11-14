@@ -2,6 +2,7 @@
 
 use reflex_core::channels::{InvCmd, MainCmd};
 use reflex_core::goals::items::replaceable;
+use reflex_core::goals::ItemDrop;
 use reflex_core::math::look_vector;
 use reflex_core::snapshot::{BlockKind, ItemKind};
 use reflex_core::{BlockPos, MotorOutput, Vec3};
@@ -58,7 +59,18 @@ impl Sim {
                 if n >= self.dig_ticks {
                     let mut w = self.world.state();
                     if let Some(name) = w.blocks.remove(&p) {
-                        w.add_item(&name, 1);
+                        match self.drop_offset {
+                            Some(off) => {
+                                let id = 500 + w.drops.len() as u32;
+                                w.drops.push(ItemDrop {
+                                    entity_id: id,
+                                    item: name,
+                                    count: 1,
+                                    pos: p.feet_centre() + off,
+                                });
+                            }
+                            None => w.add_item(&name, 1),
+                        }
                     }
                     self.snap.blocks.set(p, BlockKind::Air);
                     self.dig = None;

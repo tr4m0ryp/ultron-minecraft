@@ -25,6 +25,9 @@ pub struct Sim {
     /// Where a `PlaceOn` puts the held block.
     pub place_at: Option<BlockPos>,
     pub dig_ticks: u32,
+    /// When set, a dug block drops an item entity this far from its centre instead of
+    /// landing in the inventory at once.
+    pub drop_offset: Option<Vec3>,
     pub hits_to_kill: u32,
     pub attacked: Vec<u32>,
     pub last: MotorOutput,
@@ -70,6 +73,7 @@ impl Sim {
             world,
             handle,
             place_at: None,
+            drop_offset: None,
             dig_ticks: 10,
             hits_to_kill: 3,
             attacked: Vec::new(),

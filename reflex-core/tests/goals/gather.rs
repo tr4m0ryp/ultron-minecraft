@@ -23,7 +23,9 @@ fn mine_equips_the_tool_digs_each_block_and_finishes() {
     assert!(s.run_until(1500, |s| s.has_event("goal_done")));
     assert_eq!(s.snap.me.selected_slot, 2, "pickaxe selected");
     assert_eq!(s.world.state().blocks.len(), 0, "all three broken");
-    assert!(s.goal_text("goal_done").contains("mined 3 iron_ore"));
+    assert!(s
+        .goal_text("goal_done")
+        .contains("mined 3 iron_ore; picked up 3 items"));
     let progress = s.events("goal_progress");
     assert!(!progress.is_empty() && progress.len() <= 3, "{progress:?}");
 }
@@ -183,4 +185,35 @@ fn collect_fails_when_drops_run_out_or_inventory_full() {
     s.goal("collect raw_iron", true);
     assert!(s.run_until(10, |s| s.has_event("goal_failed")));
     assert!(s.goal_text("goal_failed").contains("inventory full"));
+}
+
+#[test]
+fn mine_walks_to_drops_that_land_away_from_the_block() {
+    // Live: logs fell off the trunk and cobblestone rolled into the pit; the old pickup
+    // walked at the block for 2 s, gave up, and still reported the blocks as mined.
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.drop_offset = Some(Vec3::new(2.5, 0.0, 2.0));
+    s.goal("mine iron_ore 2", true);
+    assert!(s.run_until(2000, |s| s.has_event("goal_done")));
+    assert_eq!(s.world.state().drops.len(), 0, "every drop picked up");
+    assert!(
+        s.goal_text("goal_done").contains("picked up 2 items"),
+        "{}",
+        s.goal_text("goal_done")
+    );
+}
+
+#[test]
+fn mine_says_when_drops_were_left_behind() {
+    let mut s = Sim::new();
+    ore_field(&mut s);
+    s.drop_offset = Some(Vec3::new(0.0, 3.0, 0.0));
+    s.goal("mine iron_ore 1", true);
+    assert!(s.run_until(2000, |s| s.has_event("goal_done")));
+    assert!(
+        s.goal_text("goal_done").contains("picked up only 0 items"),
+        "{}",
+        s.goal_text("goal_done")
+    );
 }
