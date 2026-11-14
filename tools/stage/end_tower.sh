@@ -49,7 +49,7 @@ server)
   stop) server_stop ;;
   *) echo "usage: end_tower.sh server start|stop" >&2; exit 2 ;;
   esac ;;
-bot) "$HERE/bot.sh" "${2:?start|stop}" "$BOT" "${STAGE_HUMAN:-tr4m0ryp}" ;;
+bot) "$HERE/bot.sh" "${2:?start|stop}" "$BOT" ;;
 setup) py setup; "$HERE/bot.sh" say "$BOT" "mode idle" ;;
 face) py face ;;
 camera) py camera "${2:-}" ;;
@@ -63,7 +63,7 @@ reset)
     server_stop
     rm -rf "$STAGE/world/dimensions/minecraft/the_end" "$STAGE/world/players/data"
     server_start
-    "$HERE/bot.sh" start "$BOT" "${STAGE_HUMAN:-tr4m0ryp}"
+    "$HERE/bot.sh" start "$BOT"
     for _ in $(seq 1 30); do py status 2>/dev/null | grep -q 'bot pos \[' && break; sleep 1; done
   fi
   py reset ;;
