@@ -22,15 +22,16 @@ pub fn block_at(bot: &Client, p: BlockPos) -> Option<String> {
     w.get_block_state(az(p)).map(block_name)
 }
 
-/// Squared distance, with blocks two or more below the feet made much dearer. Live, the
-/// player mined stone in a ring under itself: the drops fell into pits it could not path
-/// into (81 stone mined, 11 cobblestone picked up), and one pit trapped it for a stretch.
+/// Squared distance, with blocks outside the body's own rows (feet level minus one to head
+/// level) made much dearer. Live, the player mined stone in a ring under itself and up the
+/// pit walls: drops fell into pits it could not path into or stayed on ledges above its
+/// reach (81 stone mined, 11 cobblestone picked up), and one pit trapped it for a stretch.
 pub fn dig_cost(dx: i32, dy: i32, dz: i32) -> i64 {
     let d2 = i64::from(dx * dx + dy * dy + dz * dz);
-    if dy < -1 {
-        d2 + 15 * i64::from(dy * dy)
-    } else {
+    if (-1..=1).contains(&dy) {
         d2
+    } else {
+        d2 + 15 * i64::from(dy * dy)
     }
 }
 
@@ -75,7 +76,11 @@ mod tests {
             dig_cost(3, 0, 0) < dig_cost(0, -2, 0),
             "beside beats two down"
         );
-        assert!(dig_cost(4, 2, 0) < dig_cost(1, -3, 0), "uphill beats a pit");
+        assert!(dig_cost(4, 1, 0) < dig_cost(1, -3, 0), "level beats a pit");
         assert_eq!(dig_cost(1, -1, 0), 2, "one down stays cheap");
+        assert!(
+            dig_cost(4, 1, 0) < dig_cost(1, 3, 0),
+            "head level beats a ledge above"
+        );
     }
 }
