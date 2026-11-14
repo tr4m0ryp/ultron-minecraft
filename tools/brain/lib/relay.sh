@@ -76,6 +76,7 @@ relay() {
     if (( fails >= MAX_FAILS )); then
       echo "giving up after $fails failed sessions in a row; see $run" >&2; return 1
     fi
+    (( MAXS > 0 && n >= MAXS )) && break
     [[ "$v" == limit ]] && (( wait < 300 )) && wait=300
     echo "backing off $wait s before the next session"
     nap "$wait"
