@@ -58,3 +58,46 @@ impl Cadence {
         self.tracks = next;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use reflex_core::math::Vec3;
+
+    #[test]
+    fn a_full_draw_that_ends_is_a_shot_and_a_short_one_is_not() {
+        let mut c = Cadence::default();
+        let mut sk = Entity::new(1, EntityKind::Skeleton, Vec3::ZERO);
+        let mut step = |tick: u64, drawing: bool| {
+            sk.state.drawing_bow = drawing;
+            let mut v = [sk.clone()];
+            c.update(tick, &mut v);
+            v[0].state
+        };
+        assert_eq!(step(1, true).draw_ticks, 1);
+        assert_eq!(step(10, true).draw_ticks, 10);
+        let st = step(12, false);
+        assert_eq!((st.draw_ticks, st.since_shot), (0, None), "abandoned draw");
+        step(13, true);
+        assert_eq!(step(33, false).since_shot, Some(0), "20-tick draw ended: shot");
+        assert_eq!(step(43, false).since_shot, Some(10));
+    }
+
+    #[test]
+    fn creeper_swell_burns_up_and_cools_down() {
+        let mut c = Cadence::default();
+        let mut cr = Entity::new(2, EntityKind::Creeper, Vec3::ZERO);
+        cr.state.fuse_lit = true;
+        let mut swell = 0;
+        for t in 1..=12 {
+            let mut v = [cr.clone()];
+            c.update(t, &mut v);
+            swell = v[0].state.swell;
+        }
+        assert_eq!(swell, 12);
+        cr.state.fuse_lit = false;
+        let mut v = [cr.clone()];
+        c.update(13, &mut v);
+        assert_eq!(v[0].state.swell, 11);
+    }
+}
