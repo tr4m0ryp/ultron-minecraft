@@ -157,3 +157,35 @@ fn c6_sliding_along_a_wall_still_escalates_to_digging() {
     assert!(dug, "reached the dig stage");
     assert!(woke, "woke the brain");
 }
+
+/// Live: after the goal ended, C6's own strafes kept the stuck episode alive and it kept the
+/// legs (and dug) with nothing left to reach.
+#[test]
+fn c6_releases_the_legs_when_the_goal_ends() {
+    use reflex_core::{Channel, Executor};
+    let mut s = flat();
+    let mut ex = Executor::with_behaviours(
+        "bot",
+        vec![
+            Box::new(Unstuck::default()),
+            Box::new(reflex_core::behaviours::GoalExecutor::default()),
+        ],
+    );
+    ex.knobs
+        .set_goal("walk east", 0.8, Some(Vec3::new(20.0, 64.0, 0.5)), false);
+    for t in 0..60 {
+        s.tick = 1000 + t;
+        ex.tick(&s);
+    }
+    assert_eq!(ex.owner(Channel::Legs), Some("C6"));
+    ex.knobs.end_goal();
+    for t in 60..65 {
+        s.tick = 1000 + t;
+        ex.tick(&s);
+    }
+    assert_eq!(
+        ex.owner(Channel::Legs),
+        None,
+        "nothing left to drive toward"
+    );
+}
