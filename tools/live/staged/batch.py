@@ -5,7 +5,7 @@ Usage: python3 batch.py <outdir> <slots> <job> [<job> ...]
   e.g. "full_s1|/path/motor-azalea||1|0|2,4"  "melee_s1||D2|1||"
 
 Slot k runs bot Ultron (k = 0) or Ultron<k> in the arena 100*k blocks south of the first, so
-up to 4 slots fit under the server's 5-player cap. The server stays at its normal 20 Hz tick
+up to 5 slots fit under the server's 5-player cap. The server stays at its normal 20 Hz tick
 rate: Azalea's client loop ticks at a fixed 20 Hz and ignores the ticking-state packet, so a
 raised server rate would run mobs faster than the bot (measured: bot 20.0 ticks/s at server
 rates 20, 40, 80 and 100). Parallel arenas are the valid way to buy throughput. The global
