@@ -1,4 +1,5 @@
-"""Summarise survival.py outputs: mean and sample sd of deaths, HP lost and kills per wave.
+"""Summarise survival.py outputs: mean and sample sd of deaths, HP lost, kills and damage
+events (hits, when recorded) per wave.
 
 Usage: python3 stats.py <arm>=<glob> [<arm>=<glob> ...]
   e.g. python3 stats.py full='logs/noise/full_*.txt' melee='logs/noise/melee_*.txt'
@@ -31,7 +32,7 @@ def ms(xs):
 
 def summarise(arm, runs):
     print(f"{arm}: {len(runs)} runs")
-    print(f"  {'wave':10} {'n':>2} {'deaths':>12} {'hp_lost':>14} {'kills':>12}")
+    print(f"  {'wave':10} {'n':>2} {'deaths':>12} {'hp_lost':>14} {'kills':>12} {'hits':>12}")
     for wave in WAVES + ["total"]:
         rows = [r for r in runs if wave in r] if wave != "total" else runs
         if not rows:
@@ -41,7 +42,9 @@ def summarise(arm, runs):
         d = [len(r[wave]["deaths"]) if wave != "total" else pick(r, "deaths") for r in rows]
         h = [pick(r, "damage") for r in rows]
         k = [pick(r, "kills") for r in rows]
-        print(f"  {wave:10} {len(rows):>2} {ms(d):>12} {ms(h):>14} {ms(k):>12}")
+        has_hits = all("hits" in w for r in rows for w in r.values())
+        n = [pick(r, "hits") for r in rows] if has_hits else []
+        print(f"  {wave:10} {len(rows):>2} {ms(d):>12} {ms(h):>14} {ms(k):>12} {ms(n):>12}")
 
 
 if __name__ == "__main__":
