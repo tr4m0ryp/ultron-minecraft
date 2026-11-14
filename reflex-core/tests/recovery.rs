@@ -149,6 +149,7 @@ fn r6_water_preselects_aims_down_and_places_once_at_the_lead() {
     assert_eq!(bid.commands.main, None, "too early");
 
     s.me.pos.y = 66.5;
+    s.me.fall_distance = 23.5;
     let (bid, events) = eval(&mut r6, &s, &knobs());
     assert_eq!(bid.unwrap().commands.main, Some(MainCmd::Use));
     assert!(events.iter().any(|e| e.kind == "water_place"));
@@ -163,6 +164,7 @@ fn r6_retrieves_the_water_after_landing() {
     let mut s = high_fall();
     s.me.selected_slot = 8;
     s.me.pos.y = 66.5;
+    s.me.fall_distance = 23.5;
     let mut r6 = FallArrest::default();
     let _ = eval(&mut r6, &s, &knobs());
     r6.granted(true);
