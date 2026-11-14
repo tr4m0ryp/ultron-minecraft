@@ -8,7 +8,7 @@ fn a_shut_in_body_with_no_goal_digs_itself_out() {
     s.world.state().no_sky = true;
     s.nav.state().shut_in = true;
     assert!(
-        s.run_until(ENCLOSED_TICKS as usize + 40, |s| s.has_event("escape")),
+        s.run_until(ENCLOSED_TICKS + 40, |s| s.has_event("escape")),
         "escape started without a goal"
     );
     assert!(s.run_until(100, |s| {
