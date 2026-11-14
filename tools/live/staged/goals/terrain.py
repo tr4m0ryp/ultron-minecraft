@@ -14,8 +14,13 @@ TOP = Y + 16
 
 
 def clear():
+    """The plain site: its 4-thick floor, open air above it, below it and on either side
+    of it where the walls run past the floor."""
     rc(f"fill {X0} {Y + 1} 985 {X1} {TOP} 1055 air",
-       f"fill {X0} {Y - 4} 985 {X1} {Y} 1055 stone",
+       f"fill {X0} {Y - 4} 985 {X1} {Y} {Z0 - 1} air",
+       f"fill {X0} {Y - 4} {Z1 + 1} {X1} {Y} 1055 air",
+       f"fill {X0} {Y - 4} {Z0} {X1} {Y - 4} {Z1} air",
+       f"fill {X0} {Y - 3} {Z0} {X1} {Y} {Z1} stone",
        f"kill @e[type=item,x={CX},y={Y},z={CZ},distance=..80]")
 
 
@@ -85,6 +90,9 @@ def ledge():
 
 def wall():
     rc(f"fill 1420 {Y - 4} 985 1422 {TOP} 1055 stone")
+    # Stone ground on either side of the site too, so walking around takes 35+ blocks.
+    rc(f"fill {X0} {Y - 3} 985 {X1} {Y} {Z0 - 1} stone",
+       f"fill {X0} {Y - 3} {Z1 + 1} {X1} {Y} 1055 stone")
     prep(items=KIT, at=(1410.5, Y + 1, 1020.5))
     goal = (1430.5, Y + 1, 1020.5)
     kind, text, secs = run(f"go_to {goal[0]} {goal[1]} {goal[2]}", "go_to", 120)
@@ -96,9 +104,9 @@ def wall():
 def broken():
     """A 4-deep ditch, a 4-high wall and a mound between the bot and the companion, 38
     blocks apart."""
-    rc(f"fill 1415 {Y - 3} 985 1416 {Y} 1055 air",
-       f"fill 1415 {Y - 4} 985 1416 {Y - 4} 1055 stone",
-       f"fill 1422 {Y + 1} 985 1423 {Y + 4} 1055 stone",
+    rc(f"fill 1415 {Y - 3} {Z0} 1416 {Y} {Z1} air",
+       f"fill 1415 {Y - 4} {Z0} 1416 {Y - 4} {Z1} stone",
+       f"fill 1422 {Y + 1} {Z0} 1423 {Y + 4} {Z1} stone",
        f"fill 1428 {Y + 1} 1026 1432 {Y + 3} 1030 dirt")
     prep(items=KIT, at=(1408.5, Y + 1, 1008.5), comp_at=(1435.5, Y + 1, 1035.5))
     rc(f"gamemode survival {COMP}", f"clear {COMP}")

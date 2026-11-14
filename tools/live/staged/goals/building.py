@@ -8,7 +8,8 @@ Usage: python3 building.py <binary|-> <trials> [mine|roof ...]
   roof  a 5x5 room of oak planks, walls 2 high on the floor at y 100 with a doorway, the
         bot inside with 30 planks and 16 dirt runs one fill goal for the 5x5 roof at
         y 103. Cells placed out of 25, scaffold (dirt) left standing afterwards.
-The site is restored to its plain floor at the end. One JSON line per trial.
+The site is restored to its plain floor (open air below) at the end. One JSON line per
+trial.
 """
 import json, sys
 from kit import *
@@ -84,7 +85,8 @@ if __name__ == "__main__":
     finally:
         stop()
         clear()
-        rc(f"fill {X0} {Y - 14} {Z0} {X1} {Y - 4} {Z1} stone",
+        # Under the site's 4-thick floor was open air: put it back.
+        rc(f"fill {X0} {Y - 14} {Z0} {X1} {Y - 4} {Z1} air",
            "scoreboard objectives remove mined_stone")
         build_site()
         rc("gamerule advance_time true", "gamerule spawn_mobs true")
