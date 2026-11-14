@@ -63,6 +63,11 @@ impl PathFollower {
         self.hops.back().map(|h| h.to)
     }
 
+    /// The next hop still has hand work (a dig or a placement) to finish.
+    pub fn working(&self) -> bool {
+        self.hops.front().is_some_and(|h| h.has_work())
+    }
+
     /// Scaffold blocks this path placed since the last call.
     pub fn take_placed(&mut self) -> Vec<BlockPos> {
         std::mem::take(&mut self.placed)

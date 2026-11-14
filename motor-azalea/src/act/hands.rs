@@ -138,6 +138,7 @@ pub fn apply_main(
         // The face is the one under the crosshair when the gaze already targets the block,
         // otherwise Azalea falls back to the top face.
         MainCmd::PlaceOn(p) => bot.block_interact(azalea::BlockPos::new(p.x, p.y, p.z)),
+        MainCmd::PlaceAt { cell, against } => super::place::place_at(bot, cell, against),
         MainCmd::Dig(_) => {}
     }
 }

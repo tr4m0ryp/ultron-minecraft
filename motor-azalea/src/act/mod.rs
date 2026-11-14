@@ -5,6 +5,7 @@ mod hands;
 mod inventory;
 mod menu;
 mod movement;
+mod place;
 mod protocol;
 
 use azalea::Client;
