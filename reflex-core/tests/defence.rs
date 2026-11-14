@@ -189,7 +189,10 @@ fn d3_ranged_cover_or_close_in() {
 fn d3_closes_in_when_trapped_or_close() {
     let mut s = flat();
     s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 10.0));
-    assert_eq!(eval(&mut RangedCover, &s, &knobs()).0.unwrap().note, "ranged_cover");
+    assert_eq!(
+        eval(&mut RangedCover, &s, &knobs()).0.unwrap().note,
+        "ranged_cover"
+    );
     s.blocks.fill(
         reflex_core::BlockPos::new(-12, 64, -3),
         reflex_core::BlockPos::new(12, 65, -3),
@@ -207,7 +210,10 @@ fn d3_closes_in_when_trapped_or_close() {
     );
     let bid = eval(&mut RangedCover, &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "ranged_trapped_close_in");
-    assert!(bid.commands.legs.unwrap().heading.z > 0.9, "toward the archer");
+    assert!(
+        bid.commands.legs.unwrap().heading.z > 0.9,
+        "toward the archer"
+    );
     let mut s = flat();
     s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 5.0));
     assert_eq!(
@@ -239,8 +245,12 @@ fn d2_keeps_swinging_while_o2_holds_the_gaze() {
 fn d2_retreat_strikes_in_passing() {
     let mut s = flat();
     give(&mut s, 0, ItemKind::Sword, 1);
-    for (i, (x, z)) in [(2.5, 0.5), (0.5, 3.5), (-2.5, 0.5)].into_iter().enumerate() {
-        s.entities.push(mob(10 + i as u32, EntityKind::Zombie, x, z));
+    for (i, (x, z)) in [(2.5, 0.5), (0.5, 3.5), (-2.5, 0.5)]
+        .into_iter()
+        .enumerate()
+    {
+        s.entities
+            .push(mob(10 + i as u32, EntityKind::Zombie, x, z));
     }
     let bid = eval(&mut MeleeDefence, &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "melee_retreat");

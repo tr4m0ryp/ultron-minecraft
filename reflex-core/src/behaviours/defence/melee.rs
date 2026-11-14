@@ -114,9 +114,7 @@ fn kite(snap: &Snapshot, target: &Entity, heading: Vec3, urgency: f32) -> Bid {
             cmds = cmds.main(MainCmd::SelectSlot(slot));
         }
         Some(_) if target.pos.dist(me.pos) <= REACH && me.attack_ready >= 0.95 => {
-            cmds = cmds
-                .look_at(target.head())
-                .main(MainCmd::Attack(target.id));
+            cmds = cmds.look_at(target.head()).main(MainCmd::Attack(target.id));
         }
         _ => {}
     }
