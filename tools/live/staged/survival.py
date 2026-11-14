@@ -129,5 +129,7 @@ def run(label, binary=None, only=None, seed=None):
 
 
 if __name__ == "__main__":
+    import signal
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
     run(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] != "-" else None,
         sys.argv[3] if len(sys.argv) > 3 else None)
