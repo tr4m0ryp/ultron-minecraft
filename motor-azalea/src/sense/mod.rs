@@ -16,7 +16,6 @@ use reflex_core::{
     snapshot::{ChatEvent, DamageEvent, LocalBlocks, Snapshot},
 };
 
-pub use block_kind::classify as classify_block;
 pub use body::menu_index;
 pub use events::EventBuffer;
 
