@@ -49,7 +49,7 @@ def summon(kinds, wave, start, rng):
             if X0 + 1 < x < X0 + N - 1 and Z0 + 1 < z < Z0 + N - 1:
                 break
         name = f"w{wave}{kind[0]}{start + k}"
-        extra = ',HandItems:[{id:"minecraft:bow",count:1},{}]' if kind == "skeleton" else ""
+        extra = ',equipment:{mainhand:{id:"minecraft:bow",count:1}}' if kind == "skeleton" else ""
         rc(f'summon {kind} {x:.1f} {Y} {z:.1f} {{CustomName:"{name}",PersistenceRequired:1b{extra}}}')
 
 
