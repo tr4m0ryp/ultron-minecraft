@@ -165,13 +165,20 @@ impl Bridge {
         let mut gate = self.gate.lock().unwrap_or_else(|e| e.into_inner());
         gate.heard(&snap.chat, snap.tick);
         let mut say = Vec::new();
-        for job in jobs {
-            let reply = apply::run(job.req, host, snap, (&mut say, &mut gate), wakes_pending);
-            let _ = job.reply.send(reply);
-        }
-        // After the jobs, so a goal set this tick already counts as running.
+        let replies: Vec<_> = jobs
+            .into_iter()
+            .map(|job| {
+                let r = apply::run(job.req, host, snap, (&mut say, &mut gate), wakes_pending);
+                (job.reply, r)
+            })
+            .collect();
+        // After the jobs and before their replies: a wait that follows a set_goal reply
+        // must already see the new goal as running.
         let idle = idle::body_idle(host);
         self.lock().body.update(idle);
+        for (tx, r) in replies {
+            let _ = tx.send(r);
+        }
         say
     }
 }
