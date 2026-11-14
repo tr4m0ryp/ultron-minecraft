@@ -8,8 +8,8 @@ import os
 import sys
 import time
 
-from stage_rcon import (END, block_is, connect, dimension_of, entity_is, floats, get_pos,
-                        get_rot, gaze_error, in_end, look_angles, pillar_tops)
+from stage_rcon import (END, block_is, connect, dimension_of, entity_is, floats, gaze_error,
+                        get_pos, get_rot, in_end, look_angles, pillar_tops)
 
 BOT = os.environ.get("STAGE_BOT", "Ultron")
 HUMAN = os.environ.get("STAGE_HUMAN", "tr4m0ryp")
@@ -82,7 +82,6 @@ def face(r) -> None:
     me = get_pos(r, BOT)
     if me is None:
         sys.exit(f"{BOT} is not online")
-    tgt = get_pos(r, DRAGON.replace("@e[", "@e[")) if entity_is(r, DRAGON) else None
     tgt = floats(in_end(r, f"data get entity {DRAGON} Pos"), 3) or [0.0, 70.0, 0.0]
     yaw, pitch = look_angles((me[0], me[1] + 1.62, me[2]), tuple(tgt))
     in_end(r, f"tp {BOT} {me[0]} {me[1]} {me[2]} {yaw} {pitch}")
