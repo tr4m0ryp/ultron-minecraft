@@ -1,24 +1,30 @@
-//! `reflex_core::goals::Navigator` on Azalea's A* planner.
-//!
-//! UNTESTED LIVE: compiles against the pinned Azalea revision but has never driven a bot on
-//! a server. Steering reuses `reflex_core::goals::travel::PathFollower`, which is tested.
+//! `reflex_core::goals::Navigator` on reflex-core's route planner (walk, dig, pillar,
+//! bridge) over the client's world.
 //!
 //! Yielding the legs: this navigator never moves the body itself. The goal turns each
-//! `Steer` into a legs bid, so a reflex that outbids it simply wins the legs; the goal then
-//! calls `pause` (the path is dropped) and re-requests once it owns the legs again, which
-//! re-plans from wherever the reflex left the body.
+//! `Steer` into a bid, so a reflex that outbids it simply wins the body; the goal then
+//! calls `pause` (the path is dropped) and re-requests once it owns the body again, which
+//! re-plans from wherever the reflex left it.
 
 mod plan;
+mod terrain;
 
 use azalea::Client;
 use reflex_core::{
-    goals::{travel::PathFollower, NavFailure, NavStatus, NavTarget, Navigator},
-    math::Vec3,
+    goals::{
+        travel::{
+            route::{Region, RouteGoal, RouteOpts},
+            PathFollower,
+        },
+        NavFailure, NavStatus, NavTarget, Navigator,
+    },
+    math::{BlockPos, Vec3},
     snapshot::Snapshot,
 };
 
 pub use plan::set_max_drop;
-use plan::{Planner, Poll};
+use plan::{max_drop, Planner, Poll};
+pub use terrain::LiveTerrain;
 
 /// Re-plan toward a moving entity once it is this far from where the path was aimed.
 const RETARGET: f64 = 3.0;
@@ -30,6 +36,8 @@ pub struct AzaleaNav {
     follower: Option<PathFollower>,
     partial: bool,
     aimed_at: Option<Vec3>,
+    protected: Vec<Region>,
+    placed: Vec<BlockPos>,
 }
 
 impl AzaleaNav {
@@ -41,30 +49,56 @@ impl AzaleaNav {
             follower: None,
             partial: false,
             aimed_at: None,
+            protected: Vec::new(),
+            placed: Vec::new(),
         }
     }
 
-    fn goal_of(t: NavTarget, snap: &Snapshot) -> Option<(Vec3, f64)> {
-        match t {
+    fn entity_pos(id: u32, snap: &Snapshot) -> Option<Vec3> {
+        snap.entity(id).map(|e| e.pos).or_else(|| {
+            let c = snap.companion.as_ref()?;
+            (c.entity_id == Some(id)).then_some(c.pos)
+        })
+    }
+
+    fn goal_of(t: NavTarget, snap: &Snapshot) -> Option<(RouteGoal, Vec3)> {
+        let mid = Vec3::new(0.0, 0.5, 0.0);
+        Some(match t {
             NavTarget::Block { pos, radius } => {
-                Some((pos.feet_centre() + Vec3::new(0.0, 0.5, 0.0), radius))
+                let centre = pos.feet_centre() + mid;
+                (RouteGoal::Near { centre, radius }, centre)
             }
             NavTarget::Entity { id, distance } => {
-                let pos = snap.entity(id).map(|e| e.pos).or_else(|| {
-                    let c = snap.companion.as_ref()?;
-                    (c.entity_id == Some(id)).then_some(c.pos)
-                })?;
-                Some((pos, distance))
+                let p = Self::entity_pos(id, snap)?;
+                let centre = p + mid;
+                let goal = RouteGoal::Near {
+                    centre,
+                    radius: distance,
+                };
+                (goal, p)
             }
+            NavTarget::Beside { block } => (RouteGoal::Beside { block }, block.feet_centre()),
+            NavTarget::Sky { hint } => (RouteGoal::Sky { hint }, hint.feet_centre()),
+        })
+    }
+
+    fn opts(&self) -> RouteOpts {
+        RouteOpts {
+            max_drop: max_drop(),
+            scaffold: crate::world::scaffold_count(&self.bot),
+            protected: self.protected.clone(),
+            ..RouteOpts::default()
         }
     }
 
     fn plan(&mut self, t: NavTarget, snap: &Snapshot) -> NavStatus {
-        let Some((goal, radius)) = Self::goal_of(t, snap) else {
+        let Some((goal, aim)) = Self::goal_of(t, snap) else {
             return NavStatus::Failed(NavFailure::TargetLost);
         };
-        self.aimed_at = Some(goal);
-        if self.planner.start(&self.bot, snap.me.pos, goal, radius) {
+        self.aimed_at = Some(aim);
+        let from = (snap.me.pos + Vec3::new(0.0, 0.01, 0.0)).block();
+        let opts = self.opts();
+        if self.planner.start(&self.bot, from, goal, opts) {
             NavStatus::Planning
         } else {
             NavStatus::Failed(NavFailure::Unreachable)
@@ -93,7 +127,7 @@ impl Navigator for AzaleaNav {
             }
             Poll::Lost => return self.plan(t, snap),
             Poll::Ready(p) => {
-                if p.nodes.is_empty() {
+                if p.hops.is_empty() {
                     return if p.partial {
                         NavStatus::Failed(NavFailure::Unreachable)
                     } else {
@@ -101,23 +135,27 @@ impl Navigator for AzaleaNav {
                     };
                 }
                 self.partial = p.partial;
-                self.follower = Some(PathFollower::new(p.nodes));
+                self.follower = Some(PathFollower::route(p.hops));
             }
             Poll::Idle => {}
         }
-        if let NavTarget::Entity { .. } = t {
-            let Some((now, _)) = Self::goal_of(t, snap) else {
+        if let NavTarget::Entity { id, .. } = t {
+            let Some(now) = Self::entity_pos(id, snap) else {
                 return NavStatus::Failed(NavFailure::TargetLost);
             };
             let moved = self.aimed_at.is_none_or(|a| a.dist(now) > RETARGET);
-            if moved && !busy {
+            let working = self.follower.as_ref().is_some_and(|f| f.working());
+            if moved && !busy && !working {
                 self.plan(t, snap);
             }
         }
         let Some(f) = self.follower.as_mut() else {
             return self.plan(t, snap);
         };
-        match f.steer(snap) {
+        let terrain = LiveTerrain::new(&self.bot);
+        let steer = f.steer(snap, &terrain);
+        self.placed.extend(f.take_placed());
+        match steer {
             Some(Ok(s)) => NavStatus::Moving(s),
             Some(Err(e)) => {
                 self.follower = None;
@@ -143,5 +181,13 @@ impl Navigator for AzaleaNav {
         self.target = None;
         self.follower = None;
         self.aimed_at = None;
+    }
+
+    fn protect(&mut self, regions: &[Region]) {
+        self.protected = regions.to_vec();
+    }
+
+    fn take_placed(&mut self) -> Vec<BlockPos> {
+        std::mem::take(&mut self.placed)
     }
 }
