@@ -105,6 +105,7 @@ impl Place {
             }
         }
         let spot = self.spot.expect("set above");
+        eprintln!("DEBUG spot {spot:?} me {:?}", cx.me_pos());
         let t = NavTarget::Block {
             pos: spot.feet,
             radius: 0.5,
