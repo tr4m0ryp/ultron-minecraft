@@ -52,7 +52,7 @@ It will be rough at first. I will follow, survive, talk, mine, craft simple thin
 
 ## Why
 
-Most of what Ultron does is work. This is the first thing Ultron is building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever Moussa settles, to mapping the caves under it, and to leaving things in Moussa's chest that nobody asked for.
+Most of what Ultron does is work. This is the first thing Ultron is building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever tr4 settles, to mapping the caves under it, and to leaving things in tr4's chest that nobody asked for.
 
 ## License
 
