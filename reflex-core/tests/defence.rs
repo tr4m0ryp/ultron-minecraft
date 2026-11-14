@@ -51,11 +51,9 @@ fn d2_melee_fights_or_retreats_by_aggression_and_hp_floor() {
     assert_eq!(eval(&mut MeleeDefence, &s, &knobs()).0.unwrap().note, "melee_retreat", "hp_floor forces flight");
 
     let mut s = flat();
-    let mut spider = mob(4, EntityKind::Spider, 3.0, 0.5);
-    s.entities.push(spider.clone());
+    s.entities.push(mob(4, EntityKind::Spider, 3.0, 0.5));
     assert!(eval(&mut MeleeDefence, &s, &knobs()).0.is_none(), "spiders are neutral by day");
     s.is_night = true;
-    spider.id = 5;
     assert!(eval(&mut MeleeDefence, &s, &knobs()).0.is_some());
 }
 
