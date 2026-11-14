@@ -28,14 +28,17 @@ pub struct IdleState {
     pub idle: bool,
     /// The body went idle and no wait has returned since: the next idle wait returns at once.
     nudge: bool,
+    /// `update` has run once, so `idle` describes the body and not the default.
+    seen: bool,
 }
 
 impl IdleState {
     /// Records the body state after a tick; a running-to-idle change arms the nudge.
     pub fn update(&mut self, idle: bool) {
-        if idle && !self.idle {
+        if idle && !self.idle && self.seen {
             self.nudge = true;
         }
+        self.seen = true;
         if !idle {
             self.nudge = false;
         }
