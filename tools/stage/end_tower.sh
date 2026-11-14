@@ -27,6 +27,7 @@ BOT="${STAGE_BOT:-Ultron}"
 LINE="Moussa, you stood here alone before, and the dragon won. Alone, each of us is half a player. Tonight there is one life between us and two of us to guard it. This time we do not fall."
 py() { (cd "$HERE" && python3 tower.py "$@"); }
 rcon_up() { (exec 3<>/dev/tcp/127.0.0.1/25576) 2>/dev/null; }
+server_pid() { pgrep -f '^[^ ]*java .*-Xmx3G -jar server.jar' | head -1; }
 
 server_start() {
   if rcon_up; then echo "staging server already running"; return; fi
@@ -41,8 +42,8 @@ server_start() {
 server_stop() {
   rcon_up || { echo "staging server not running"; return; }
   py stop_server || true
-  for _ in $(seq 1 60); do rcon_up || { echo "staging server stopped"; return; }; sleep 1; done
-  echo "server still up after 60 s" >&2; exit 1
+  for _ in $(seq 1 90); do [[ -z "$(server_pid)" ]] && { echo "staging server stopped"; return; }; sleep 1; done
+  echo "server still up after 90 s" >&2; exit 1
 }
 
 case "${1:-setup}" in
