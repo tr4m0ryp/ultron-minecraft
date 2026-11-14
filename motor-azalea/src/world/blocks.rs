@@ -22,6 +22,18 @@ pub fn block_at(bot: &Client, p: BlockPos) -> Option<String> {
     w.get_block_state(az(p)).map(block_name)
 }
 
+/// Squared distance, with blocks two or more below the feet made much dearer. Live, the
+/// player mined stone in a ring under itself: the drops fell into pits it could not path
+/// into (81 stone mined, 11 cobblestone picked up), and one pit trapped it for a stretch.
+pub fn dig_cost(dx: i32, dy: i32, dz: i32) -> i64 {
+    let d2 = i64::from(dx * dx + dy * dy + dz * dz);
+    if dy < -1 {
+        d2 + 15 * i64::from(dy * dy)
+    } else {
+        d2
+    }
+}
+
 pub fn nearest(
     bot: &Client,
     kind: &str,
@@ -45,9 +57,25 @@ pub fn nearest(
         }
         let q = BlockPos::new(p.x, p.y, p.z);
         let d2 = (dx * dx + dy * dy + dz * dz) as i64;
-        if d2 <= r2 && !exclude.contains(&q) && best.is_none_or(|(bd, _)| d2 < bd) {
-            best = Some((d2, q));
+        let cost = dig_cost(dx, dy, dz);
+        if d2 <= r2 && !exclude.contains(&q) && best.is_none_or(|(bc, _)| cost < bc) {
+            best = Some((cost, q));
         }
     }
     best.map(|(_, p)| p)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::dig_cost;
+
+    #[test]
+    fn level_or_higher_blocks_beat_a_pit_under_the_feet() {
+        assert!(
+            dig_cost(3, 0, 0) < dig_cost(0, -2, 0),
+            "beside beats two down"
+        );
+        assert!(dig_cost(4, 2, 0) < dig_cost(1, -3, 0), "uphill beats a pit");
+        assert_eq!(dig_cost(1, -1, 0), 2, "one down stays cheap");
+    }
 }

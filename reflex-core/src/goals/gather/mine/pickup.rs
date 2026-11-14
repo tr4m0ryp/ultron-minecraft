@@ -19,7 +19,7 @@ const SPAWN_WAIT: u32 = 10;
 /// Ticks spent chasing one block's drop at most.
 const PICKUP_TICKS: u32 = 120;
 /// Closer than this, with a clear straight line, the drop is walked to directly.
-const DIRECT: f64 = 3.0;
+const DIRECT: f64 = 6.0;
 
 #[derive(Default)]
 pub struct Pickup {
@@ -71,7 +71,12 @@ impl Pickup {
                 let legs = LegsCmd::toward(heading_to(me, d.pos), Speed::Walk);
                 Some(Plan::new("goal_pickup", Commands::default().legs(legs)))
             }
-            Walk::Failed(_) => self.finish(cx),
+            // No path (a drop on leaves, in a shallow hole): head straight at it for the
+            // rest of the pickup time, as a player would, instead of giving up at once.
+            Walk::Failed(_) => {
+                let legs = LegsCmd::toward(heading_to(me, d.pos), Speed::Walk);
+                Some(Plan::new("goal_pickup", Commands::default().legs(legs)))
+            }
         }
     }
 
