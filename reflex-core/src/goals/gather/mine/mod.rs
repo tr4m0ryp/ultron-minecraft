@@ -1,17 +1,18 @@
-use crate::behaviours::common::heading_to;
-use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
+use crate::channels::{Commands, LegsCmd, MainCmd};
 use crate::goals::items::equip;
 use crate::goals::ports::{kind_matches, NavTarget, Navigator, ToolNeed};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::{Walk, Walker};
 use crate::math::{BlockPos, Vec3};
 
+mod pickup;
+use pickup::Pickup;
+
 pub const SEARCH_RADIUS: i32 = 32;
 /// Stand within this distance of the block's centre to dig it (survival reach is 4.5).
 const REACH: f64 = 4.0;
 /// Digging one block for longer than this means something (a veto, a wrong tool) stops it.
 pub const DIG_LIMIT_TICKS: u32 = 600;
-const PICKUP_TICKS: u32 = 40;
 /// Blocks given up on (unreachable or unbreakable) before the goal fails.
 const MAX_SKIPPED: usize = 5;
 
@@ -20,7 +21,7 @@ enum Phase {
     Find,
     Approach(BlockPos),
     Dig { pos: BlockPos, ticks: u32 },
-    Pickup { pos: BlockPos, ticks: u32 },
+    Pickup(BlockPos),
 }
 
 pub struct Mine {
@@ -30,6 +31,7 @@ pub struct Mine {
     phase: Phase,
     walker: Walker,
     skipped: Vec<BlockPos>,
+    pickup: Pickup,
 }
 
 impl Mine {
@@ -41,6 +43,7 @@ impl Mine {
             phase: Phase::Find,
             walker: Walker::default(),
             skipped: Vec::new(),
+            pickup: Pickup::default(),
         }
     }
 
@@ -123,8 +126,13 @@ impl Mine {
 
 impl GoalTask for Mine {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
-        if self.mined >= self.count {
-            return Step::Done(format!("mined {} {}", self.mined, self.block));
+        if self.mined >= self.count && !matches!(self.phase, Phase::Pickup(_)) {
+            return Step::Done(format!(
+                "mined {} {}; {}",
+                self.mined,
+                self.block,
+                self.pickup.summary(self.mined)
+            ));
         }
         if cx.world.free_slots() == 0 {
             return Step::Failed(format!(
@@ -164,30 +172,23 @@ impl GoalTask for Mine {
                 self.mined += 1;
                 let (m, n) = (self.mined, self.count);
                 cx.progress(m, n, format!("mined {m}/{n} {}", self.block));
-                self.phase = Phase::Pickup { pos, ticks: 0 };
+                self.pickup.start();
+                self.phase = Phase::Pickup(pos);
                 Step::Bid(Plan::hold("goal_mine"))
             }
-            Phase::Pickup { pos, ticks } => {
-                let me = cx.me_pos();
-                let drop = pos.feet_centre();
-                if (drop - me).horizontal().len() < 0.5 || ticks > PICKUP_TICKS {
+            Phase::Pickup(pos) => match self.pickup.step(cx, pos) {
+                Some(plan) => Step::Bid(plan),
+                None => {
                     self.phase = Phase::Find;
-                    return Step::Bid(Plan::hold("goal_mine"));
+                    Step::Bid(Plan::hold("goal_mine"))
                 }
-                if !cx.preempted {
-                    self.phase = Phase::Pickup {
-                        pos,
-                        ticks: ticks + 1,
-                    };
-                }
-                let legs = LegsCmd::toward(heading_to(me, drop), Speed::Walk);
-                Step::Bid(Plan::new("goal_pickup", Commands::default().legs(legs)))
-            }
+            },
         }
     }
 
     fn stop(&mut self, _nav: &mut dyn Navigator) {
         self.walker.reset();
+        self.pickup.reset_walk();
         if let Phase::Approach(_) = self.phase {
             self.phase = Phase::Find;
         }

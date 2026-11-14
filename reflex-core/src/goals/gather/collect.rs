@@ -88,7 +88,7 @@ impl GoalTask for Collect {
 /// The body fits along the straight line from `from` to `to` at the current feet level:
 /// no step up, no block in the way. Live bug: the direct walk ran into a pillar between the
 /// bot and the drop, and only the unstuck reflex's jumps ever moved it.
-fn straight_clear(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool {
+pub(super) fn straight_clear(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool {
     let flat = Vec3::new(to.x - from.x, 0.0, to.z - from.z);
     let steps = (flat.len() / 0.25).ceil().max(1.0) as u32;
     let feet = from.y.floor();
