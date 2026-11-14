@@ -96,7 +96,7 @@ def camera(r, safe: bool) -> None:
     dx = ux * math.cos(a) - uz * math.sin(a)
     dz = ux * math.sin(a) + uz * math.cos(a)
     px, pz = math.floor(cx + .5 + dx * CAM_DIST), math.floor(cz + .5 + dz * CAM_DIST)
-    py = top - 1  # camera feet one block below the bot's: a slightly low, heroic angle
+    py = top  # camera feet one block below the bot's: a slightly low, heroic angle
     x0, x1, z0, z1 = px - 2, px + 2, pz - 2, pz + 2
     in_end(r, f"fill {x0} {py - 1} {z0} {x1} {py - 1} {z1} minecraft:barrier")
     in_end(r, f"fill {x0} {py} {z0} {x1} {py + WALL} {z1} minecraft:air replace minecraft:barrier")
