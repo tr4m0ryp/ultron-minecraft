@@ -133,7 +133,10 @@ fn h8_holds_off_following_for_a_grace_after_a_goal_ends() {
     let mut k = knobs();
     k.set_goal("mine stone", 0.5, None, true);
     let mut h8 = CompanionLeash::default();
-    assert!(eval(&mut h8, &s, &k).0.is_none(), "solo goal suspends the leash");
+    assert!(
+        eval(&mut h8, &s, &k).0.is_none(),
+        "solo goal suspends the leash"
+    );
 
     k.end_goal();
     let t0 = s.tick;
@@ -144,10 +147,12 @@ fn h8_holds_off_following_for_a_grace_after_a_goal_ends() {
     s.tick = t0 + GOAL_GRACE - 1;
     assert!(eval(&mut h8, &s, &k).0.is_none(), "still inside the grace");
     s.tick = t0 + GOAL_GRACE;
-    let bid = eval(&mut h8, &s, &k).0.expect("follow resumes after the grace");
+    let bid = eval(&mut h8, &s, &k)
+        .0
+        .expect("follow resumes after the grace");
     assert_eq!(bid.note, "follow_companion");
 
-    // A fresh goal at the spot restarts nothing: the next end opens a new grace.
+    // Every goal end opens a fresh grace.
     k.set_goal("mine stone", 0.5, None, true);
     assert!(eval(&mut h8, &s, &k).0.is_none());
     k.end_goal();
