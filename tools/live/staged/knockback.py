@@ -57,7 +57,6 @@ def fight(i, secs=30):
 
 
 if __name__ in ("__main__",):
-    from harness import now_ms
     label = sys.argv[1]
     n = int(sys.argv[2]) if len(sys.argv) > 2 else 10
     binary = sys.argv[3] if len(sys.argv) > 3 else None

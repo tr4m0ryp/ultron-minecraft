@@ -9,7 +9,7 @@ import os, re, subprocess, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from harness import R, rc, send, rows, events, first, log_len, S  # noqa: F401
+from harness import R, rc, send, rows, events, first, log_len, now_ms, S  # noqa: F401
 
 REPO = Path(__file__).resolve().parents[3]
 SERVER_OUT = os.path.expanduser("~/minecraft/vanilla-26.3/server.out")
