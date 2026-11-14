@@ -78,6 +78,9 @@ impl Cache {
 /// A search-time view: chunks copied on first use, so the world lock is held only briefly.
 pub struct PlanTerrain {
     world: CachedWorld,
+    lock: Arc<RwLock<World>>,
+    /// Chunk columns seen, and whether the client has them (unloaded ones read as air).
+    loaded: RefCell<HashMap<(i32, i32), bool>>,
     origin: azalea::BlockPos,
     menu: Option<Menu>,
     min_y: i32,
@@ -93,7 +96,9 @@ impl PlanTerrain {
         };
         let origin = azalea::BlockPos::new(origin.x, origin.y, origin.z);
         Self {
-            world: CachedWorld::new(world, origin),
+            world: CachedWorld::new(world.clone(), origin),
+            lock: world,
+            loaded: RefCell::default(),
             origin,
             menu,
             min_y,
@@ -123,9 +128,14 @@ impl Terrain for PlanTerrain {
 
 impl PlanTerrain {
     fn loaded(&self, p: BlockPos) -> bool {
-        // CachedWorld reads unloaded chunks as air; tell them apart once per chunk column.
-        let _ = p;
-        true
+        let key = (p.x.div_euclid(16), p.z.div_euclid(16));
+        if let Some(&l) = self.loaded.borrow().get(&key) {
+            return l;
+        }
+        let pos = azalea::core::position::ChunkPos::new(key.0, key.1);
+        let l = self.lock.read().chunks.get(&pos).is_some();
+        self.loaded.borrow_mut().insert(key, l);
+        l
     }
 }
 

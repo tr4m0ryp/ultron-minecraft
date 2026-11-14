@@ -22,5 +22,6 @@ dist/
 .no-autocommit
 third_party/
 journal/
+/journal
 /CLAUDE.md
 tools/stage/line.local.txt

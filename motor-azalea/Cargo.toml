@@ -10,3 +10,4 @@ reflex-core = { path = "../reflex-core" }
 brain-link = { path = "../brain-link" }
 azalea = { git = "https://github.com/azalea-rs/azalea", rev = "8041a14706fbdb2b8c481d2e8960d7411e850796" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+parking_lot = "0.12"
