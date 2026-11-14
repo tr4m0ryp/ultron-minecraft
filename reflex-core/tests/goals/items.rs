@@ -195,7 +195,9 @@ fn place_box_fills_every_open_cell_in_one_goal() {
     s.place_on_top = true;
     s.block(BlockPos::new(4, 64, 2), "stone");
     s.goal("place oak_planks 3 64 2 7 64 2", true);
-    assert!(s.run_until(1500, |s| s.has_event("goal_done")));
+    let ok = s.run_until(1500, |s| s.has_event("goal_done"));
+    let log: Vec<_> = s.exec.upward.log().map(|e| format!("{} {}", e.kind, e.text)).collect();
+    assert!(ok, "{log:#?}");
     let blocks = s.world.state().blocks.clone();
     for x in [3, 5, 6, 7] {
         assert_eq!(
