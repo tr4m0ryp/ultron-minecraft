@@ -16,10 +16,16 @@ const HEIGHT: f64 = 1.8;
 /// Every block the player's 0.6 x 1.8 box overlaps. Near a block edge the box straddles up
 /// to four columns, so the centre cell alone misses hazards the body is touching.
 pub fn hitbox_cells(pos: Vec3) -> Vec<BlockPos> {
+    hitbox_cells_within(pos, 0.0)
+}
+
+/// Blocks the player's box overlaps after widening it by `margin` on each horizontal side.
+pub fn hitbox_cells_within(pos: Vec3, margin: f64) -> Vec<BlockPos> {
     let span = |lo: f64, hi: f64| (lo.floor() as i32)..=((hi - 1e-6).floor() as i32);
+    let w = HALF_WIDTH + margin;
     let mut out = Vec::with_capacity(12);
-    for x in span(pos.x - HALF_WIDTH, pos.x + HALF_WIDTH) {
-        for z in span(pos.z - HALF_WIDTH, pos.z + HALF_WIDTH) {
+    for x in span(pos.x - w, pos.x + w) {
+        for z in span(pos.z - w, pos.z + w) {
             for y in span(pos.y, pos.y + HEIGHT) {
                 out.push(BlockPos::new(x, y, z));
             }
