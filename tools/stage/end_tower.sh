@@ -22,7 +22,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 STAGE="${STAGE_DIR:-$HOME/minecraft/stage-hardcore}"
 BOT="${STAGE_BOT:-Ultron}"
 LINE="Moussa, you stood here alone before, and the dragon won. Alone, each of us is half a player. Tonight there is one life between us and two of us to guard it. This time we do not fall."
-py() { python3 -I "$HERE/tower.py" "$@"; }  # -I: no cwd on sys.path; tower.py's dir is set below
 py() { (cd "$HERE" && python3 tower.py "$@"); }
 rcon_up() { (exec 3<>/dev/tcp/127.0.0.1/25576) 2>/dev/null; }
 
@@ -62,7 +61,7 @@ reset)
   if [[ "${2:-}" == hard ]]; then
     "$HERE/bot.sh" stop "$BOT" || true
     server_stop
-    rm -rf "$STAGE/world/dimensions/minecraft/the_end"
+    rm -rf "$STAGE/world/dimensions/minecraft/the_end" "$STAGE/world/players/data"
     server_start
     "$HERE/bot.sh" start "$BOT" "${STAGE_HUMAN:-tr4m0ryp}"
     for _ in $(seq 1 30); do py status 2>/dev/null | grep -q 'bot pos \[' && break; sleep 1; done

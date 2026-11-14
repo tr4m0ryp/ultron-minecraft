@@ -57,6 +57,7 @@ def pillar_cells(r, cx: int, cz: int, top: int) -> set:
 def setup(r) -> None:
     ensure_end(r)
     cx, cz, top = tallest(r)
+    in_end(r, "kill @e[type=minecraft:enderman]")  # they aggro on a player who looks at them
     in_end(r, f"kill @e[type=minecraft:end_crystal,x={cx + .5},y={top + 1},z={cz + .5},distance=..8]")
     in_end(r, f"fill {cx - 5} {top + 1} {cz - 5} {cx + 5} {top + 8} {cz + 5} minecraft:air replace minecraft:iron_bars")
     in_end(r, f"fill {cx - 5} {top + 1} {cz - 5} {cx + 5} {top + 8} {cz + 5} minecraft:air replace minecraft:bedrock")
@@ -135,5 +136,7 @@ def reset(r) -> None:
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "setup"
     conn = connect()
+    if cmd == "stop_server":
+        sys.exit(conn.cmd("stop") and 0)
     {"setup": lambda: setup(conn), "face": lambda: face(conn), "status": lambda: status(conn),
      "reset": lambda: reset(conn), "camera": lambda: camera(conn, "safe" in sys.argv[2:])}[cmd]()
