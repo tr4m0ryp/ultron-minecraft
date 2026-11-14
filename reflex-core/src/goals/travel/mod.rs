@@ -4,6 +4,7 @@ mod come;
 mod follow;
 mod go_to;
 mod path;
+pub mod route;
 mod stay;
 mod walker;
 
