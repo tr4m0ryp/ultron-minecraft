@@ -137,11 +137,17 @@ fn tools_round_trip_compactly() {
     assert_eq!(caution, 0.7);
 
     let (t, _) = m.tool("wait_event", json!({"timeout_s":0.2}));
-    // The fake host runs no goals, so a timeout reports the body idle.
+    assert_eq!(t, "no event (timeout)", "a goal runs, so the body is not idle");
+    let (t, _) = m.tool("set_goal", json!({"goal":"end"}));
+    assert!(t.starts_with("ok: ended #1"), "{t}");
+    // The goal ended, so the next wait returns at once and reports the body idle.
+    let t0 = std::time::Instant::now();
+    let (t, _) = m.tool("wait_event", json!({"timeout_s":30}));
     assert!(
         t.starts_with("no event (timeout)") && t.contains("standing idle"),
         "{t}"
     );
+    assert!(t0.elapsed() < std::time::Duration::from_secs(2), "nudge was not immediate");
     rig.wake("chat", "Steve", "<Steve> come here");
     let (t, _) = m.tool("wait_event", json!({"timeout_s":5}));
     assert!(
