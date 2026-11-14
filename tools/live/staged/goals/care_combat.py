@@ -31,7 +31,7 @@ def sleep():
 
 def eat():
     prep(items=[("hotbar.2", "bread", 4)], comp_at=(CX - 3.5, Y + 1, CZ - 3.5))
-    rc("effect give Ultron hunger 6 120")
+    rc("effect give Ultron hunger 6 255")
     time.sleep(6)
     rc("effect clear Ultron hunger")
     before = nbt("foodLevel")
