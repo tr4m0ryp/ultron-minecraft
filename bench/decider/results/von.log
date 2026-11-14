@@ -1,0 +1,2 @@
+Loading weights:   0%|          | 0/170 [00:00<?, ?it/s]Loading weights: 100%|██████████| 170/170 [00:00<00:00, 4239.21it/s]
+[von] Loaded von-1.3.0 weights from Hugging Face Hub 'wfzyx/von:option_marker.pt' (/home/tr4m0ryp/projects/ultron-minecraft/third_party/decider/.hf/hub/models--wfzyx--von/snapshots/3a34cbdfaa1e90f2a9eb6b3bfc5ac5c92a18cb01/option_marker.pt) (input-conditioned calibration map active)
