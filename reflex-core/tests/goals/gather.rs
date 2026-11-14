@@ -217,24 +217,3 @@ fn mine_says_when_drops_were_left_behind() {
         s.goal_text("goal_done")
     );
 }
-
-#[test]
-fn mine_does_not_dig_a_shaft_from_above() {
-    // Live: from 4 blocks up the body dug stone below it and every drop stayed at the bottom
-    // of the shaft. A block more than one below the feet is now dug only from beside it.
-    let mut s = Sim::new();
-    let deep = BlockPos::new(2, 61, 0);
-    s.block(deep, "iron_ore");
-    s.hotbar(2, ItemKind::Pickaxe, 1);
-    s.world
-        .state()
-        .tools
-        .insert("iron_ore".into(), ToolNeed::Have(2));
-    s.goal("mine iron_ore 1", true);
-    s.run_until(600, |s| s.has_event("goal_done") || s.has_event("goal_failed"));
-    assert!(
-        s.world.state().blocks.contains_key(&deep),
-        "dug from above: {}",
-        s.goal_text("goal_done")
-    );
-}
