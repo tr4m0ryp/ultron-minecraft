@@ -1,5 +1,5 @@
-use crate::behaviours::common::heading_to;
-use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
+use crate::behaviours::defence::melee_commands;
+use crate::channels::{Commands, MainCmd};
 use crate::goals::ports::NavTarget;
 use crate::goals::task::{GoalCx, Plan};
 use crate::goals::travel::{Walk, Walker};
@@ -9,10 +9,10 @@ use crate::snapshot::{Entity, ItemKind};
 pub const MELEE_REACH: f64 = 2.9;
 /// Beyond this the planner closes the distance; inside it the goal steers directly.
 const DIRECT: f64 = 6.0;
-const READY: f32 = 0.9;
 
-/// One tick of closing in on `target` and striking when the cooldown allows. Returns the
-/// plan and whether it swings this tick.
+/// One tick of closing in on `target` and striking when the cooldown allows: the planner
+/// brings the body within `DIRECT`, then the K1 melee micro takes over. Returns the plan
+/// and whether it swings this tick.
 pub fn engage(cx: &mut GoalCx, walker: &mut Walker, target: &Entity) -> (Plan, bool) {
     let me = &cx.snap().me;
     let d = target.pos.dist(me.pos);
@@ -31,25 +31,23 @@ pub fn engage(cx: &mut GoalCx, walker: &mut Walker, target: &Entity) -> (Plan, b
         };
     }
     walker.stop(cx);
-    let me = &cx.snap().me;
-    let legs = if d > MELEE_REACH - 0.4 {
-        LegsCmd::toward(heading_to(me.pos, target.pos), Speed::Walk)
-    } else {
-        LegsCmd::stop()
+    let snap = cx.snap();
+    // Close range is the K1 micro the reflex D2 uses, so the goal's blows land exactly as
+    // the reflex's do. Live, the goal's own swing never killed: its fallback plan dropped
+    // the strike, and orienting (O2, P2) takes the gaze from a P5 goal whenever a mob
+    // closes, so the full plan lost and the fallback ran without the attack.
+    let me = &snap.me;
+    let cmds = match (
+        me.hotbar_find(|k| k == ItemKind::Sword),
+        me.hotbar_find(|k| k == ItemKind::Axe),
+    ) {
+        (None, Some(slot)) if slot != me.selected_slot => Commands::default()
+            .look_at(target.head())
+            .main(MainCmd::SelectSlot(slot)),
+        _ => melee_commands(snap, target),
     };
-    let mut c = Commands::default().legs(legs).look_at(target.head());
-    let weapon = me
-        .hotbar_find(|k| k == ItemKind::Sword)
-        .or_else(|| me.hotbar_find(|k| k == ItemKind::Axe));
-    let mut swing = false;
-    match weapon {
-        Some(s) if s != me.selected_slot => c = c.main(MainCmd::SelectSlot(s)),
-        _ if d <= MELEE_REACH && me.attack_ready >= READY => {
-            c = c.main(MainCmd::Attack(target.id));
-            swing = true;
-        }
-        _ => {}
-    }
-    let degraded = Commands::default().legs(legs);
-    (Plan::new("goal_melee", c).degraded(degraded), swing)
+    let swing = matches!(cmds.main, Some(MainCmd::Attack(_)));
+    let mut degraded = cmds.clone();
+    degraded.gaze = None;
+    (Plan::new("goal_melee", cmds).degraded(degraded), swing)
 }
