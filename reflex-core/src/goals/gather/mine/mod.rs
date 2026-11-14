@@ -11,6 +11,9 @@ use pickup::Pickup;
 pub const SEARCH_RADIUS: i32 = 32;
 /// Stand within this distance of the block's centre to dig it (survival reach is 4.5).
 const REACH: f64 = 4.0;
+/// Reach for a block more than one below the feet: close enough that its drop lands within
+/// pickup range.
+const DEEP_REACH: f64 = 2.0;
 /// Digging one block for longer than this means something (a veto, a wrong tool) stops it.
 pub const DIG_LIMIT_TICKS: u32 = 600;
 /// Blocks given up on (unreachable or unbreakable) before the goal fails.
@@ -153,7 +156,11 @@ impl GoalTask for Mine {
                     self.phase = Phase::Find;
                     return Step::Bid(Plan::hold("goal_mine"));
                 }
-                let t = NavTarget::Block { pos, radius: REACH };
+                // A block well below the feet is dug from beside it, not from above: live,
+                // digging down a shaft from 4 blocks up left every drop at the bottom.
+                let below = f64::from(pos.y) < cx.me_pos().y - 1.5;
+                let radius = if below { DEEP_REACH } else { REACH };
+                let t = NavTarget::Block { pos, radius };
                 match self.walker.walk(cx, t, "goal_mine_walk") {
                     Walk::Arrived => {
                         self.pickup.arm(cx.world.total_items());
