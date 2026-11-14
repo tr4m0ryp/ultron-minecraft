@@ -1,13 +1,13 @@
 """Item 3: staged survival under real pressure, brain absent (no goals, no input).
 
-Usage: python3 survival.py <label> [binary] [only-ids]
+Usage: python3 survival.py <label> [binary|-] [only-ids]   (SURV_WAVES=1,3 runs a subset)
 Survival mode, frozen midnight, iron sword + 8 bread, a 30x30 arena with 5-high walls at
 y=100 (x 1200..1229, z 1100..1129). Four waves of 225 s (15 min): zombies, skeletons,
 creepers, then a mix; each wave summons named mobs 9 to 13 blocks from the bot, tops up at
 90 s, and kills the leftovers when it ends. On death the bot is brought back with a fresh
 kit. Per wave: damage taken, deaths with cause, kills, reflex onsets and legs ownership.
 """
-import json, math, random, re, sys, time
+import json, math, os, random, re, sys, time
 from arena import *
 
 X0, Z0, N, Y = 1200, 1100, 30, 100
@@ -95,7 +95,10 @@ def run(label, binary=None, only=None, seed=7):
         rc(f"tp Ultron {CX} {Y} {CZ}")
         kit()
         time.sleep(2)
+        pick = {int(x) for x in os.environ.get("SURV_WAVES", "1,2,3,4").split(",")}
         for w, (name, first_batch, topup) in enumerate(WAVES, 1):
+            if w not in pick:
+                continue
             L0, t0, seen = log_len(), now_ms(), [0]
             summon(first_batch, w, 1, rng)
             watch(TOPUP_S, L0, seen)
