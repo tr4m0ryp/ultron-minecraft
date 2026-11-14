@@ -63,5 +63,5 @@ def prep_bot(night=True, items=(("hotbar.0", "diamond_sword", 1),), heal=True):
 
 def build_edge():
     rc("forceload add 1084 974 1136 1026",
-       "fill 1084 140 974 1136 165 1026 air",
+       "fill 1084 145 974 1136 155 1026 air",
        "fill 1100 149 990 1120 149 1010 stone")
