@@ -13,7 +13,7 @@ from harness import R, rc, send, rows, events, first, log_len, now_ms, S  # noqa
 
 REPO = Path(__file__).resolve().parents[3]
 SERVER_OUT = os.path.expanduser("~/minecraft/vanilla-26.3/server.out")
-DEATH_RE = re.compile(r"\]: (Ultron (?:was|died|drowned|burned|fell|blew|hit|tried|walked|suffocated|starved|experienced|froze|went|withered).*)$")
+DEATH_RE = re.compile(r"(?:\]: |System chat: )(Ultron (?:was|died|drowned|burned|fell|blew|hit|tried|walked|suffocated|starved|experienced|froze|went|withered).*)$")
 NAMED_RE = re.compile(r"Named entity .*?'(w\d+[a-z]\d+)'.*? died: (.*)$")
 
 
