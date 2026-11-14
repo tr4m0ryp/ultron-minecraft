@@ -21,7 +21,7 @@ use serde_json::Value;
 
 use crate::host::Host;
 use crate::server::Server;
-use crate::wire::{self, ChatLine, Events, Request};
+use crate::wire::{self, ChatLine, Events, Request, WakeEvent};
 use shared::{Job, Shared};
 
 /// How long a socket request waits for the tick loop before reporting it stalled.
@@ -124,12 +124,27 @@ impl Bridge {
     /// Call once per tick after `exec.tick()`: collects WAKE events and chat, applies queued
     /// knob changes in order, and answers their requests. Returns chat lines to send.
     pub fn pump<H: Host>(&self, host: &mut H, snap: &Snapshot) -> Vec<String> {
+        self.pump_echo(host, snap, |_| {})
+    }
+
+    /// `pump`, also handing each new WAKE event to `echo` (the adapter logs them to stdout).
+    pub fn pump_echo<H: Host>(
+        &self,
+        host: &mut H,
+        snap: &Snapshot,
+        mut echo: impl FnMut(&WakeEvent),
+    ) -> Vec<String> {
         let wakes = host.upward().take_wake(snap.tick);
         let (jobs, wakes_pending) = {
             let mut s = self.lock();
             s.hear(snap);
             if !wakes.is_empty() {
+                let before = s.wakes.len();
                 s.push_wakes(wakes);
+                let fresh = s.wakes.len().saturating_sub(before);
+                for w in s.wakes.iter().rev().take(fresh).rev() {
+                    echo(w);
+                }
                 self.woke.notify_all();
             }
             (std::mem::take(&mut s.jobs), s.wakes.len())
