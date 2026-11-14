@@ -46,7 +46,7 @@ impl Behaviour for Looming {
         if !hostile {
             let start = match self.attending {
                 Some((k, s)) if k == e.kind => s,
-                _ => *self.attending.insert((e.kind, now)).1,
+                _ => self.attending.insert((e.kind, now)).1,
             };
             if now >= start + CLASSIFY_TICKS {
                 self.ignore_until.insert(e.kind, now + RETURN_INHIBIT);
