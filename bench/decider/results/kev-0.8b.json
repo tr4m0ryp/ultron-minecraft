@@ -1,0 +1,32 @@
+{
+ "label": "kev-0.8b",
+ "backend": "http",
+ "threads": 8,
+ "accuracy": 0.4,
+ "correct": 8,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "4/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 3636.1,
+  "p95": 13220.5,
+  "mean": 6145.8,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 7896.3,
+  "p95": 8882.7,
+  "mean": 7940.2,
+  "n": 3
+ },
+ "load_s": 0.0,
+ "first_call_s": 4.38,
+ "rss_gb": 5.34,
+ "peak_rss_gb": null,
+ "errors": [],
+ "n_errors": 0
+}
