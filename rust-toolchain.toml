@@ -1,5 +1,5 @@
 [toolchain]
 # Azalea (26.3 branch) uses #![feature(portable_simd)] via simdnbt, so nightly is required.
-channel = "nightly-2026-11-14"
+channel = "nightly-2026-09-25"
 components = ["clippy", "rustfmt"]
 profile = "minimal"
