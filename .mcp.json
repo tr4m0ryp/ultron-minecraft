@@ -2,7 +2,7 @@
   "mcpServers": {
     "minecraft": {
       "type": "stdio",
-      "command": "./target/release/brain-link-mcp",
+      "command": "${CLAUDE_PROJECT_DIR:-.}/tools/brain-link-mcp.sh",
       "args": []
     }
   }
