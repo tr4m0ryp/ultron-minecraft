@@ -25,9 +25,20 @@ pub fn ticks_to_shot(archer: &Entity) -> u16 {
     }
 }
 
-/// Ticks until an arrow from `archer` could reach `at`.
+/// The shot is seen a tick or two late; an arrow counts as in flight this much longer.
+const SEEN_LATE: f64 = 3.0;
+
+/// Ticks until an arrow from `archer` could reach `at`. Right after a shot the arrow may
+/// still be in the air: live, lowering the shield the tick the draw ended let a 3-block
+/// arrow land 2 ticks later behind it, 4 HP a time.
 pub fn ticks_to_hit(archer: &Entity, at: Vec3) -> f64 {
-    ticks_to_shot(archer) as f64 + archer.pos.dist(at) / ARROW_SPEED
+    let flight = archer.pos.dist(at) / ARROW_SPEED;
+    if let (false, Some(s)) = (archer.state.drawing_bow, archer.state.since_shot) {
+        if s as f64 <= flight + SEEN_LATE {
+            return (flight - s as f64).max(0.0);
+        }
+    }
+    ticks_to_shot(archer) as f64 + flight
 }
 
 /// Archers within range that can see us, nearest first.

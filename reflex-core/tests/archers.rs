@@ -99,7 +99,7 @@ fn without_a_shield_the_approach_zigzags_and_holds_its_side_through_a_release() 
     let held = eval(&mut d3, &s, &knobs()).0.unwrap();
     assert_eq!(held.commands.legs.unwrap().heading, h, "arrow due: no flip");
     s.entities = vec![archer(6, 0.5, 11.5, None)];
-    s.entities[0].state.since_shot = Some(1);
+    s.entities[0].state.since_shot = Some(12);
     let flipped = eval(&mut d3, &s, &knobs()).0.unwrap();
     assert!(
         flipped.commands.legs.unwrap().heading.x * h.x < 0.0,
@@ -178,12 +178,12 @@ fn meals_wait_for_the_reload_or_for_cover() {
         eval(&mut Hunger::default(), &s, &knobs()).0.is_none(),
         "may draw now"
     );
-    s.entities[0].state.since_shot = Some(2);
+    s.entities[0].state.since_shot = Some(12);
     let bid = eval(&mut Hunger::default(), &s, &knobs()).0.unwrap();
     assert_eq!(
         bid.commands.main,
         Some(MainCmd::Use),
-        "just shot: 58 ticks of reload"
+        "arrow landed: 48 ticks of reload left"
     );
     s.entities[0].state.since_shot = Some(40);
     assert!(eval(&mut Hunger::default(), &s, &knobs()).0.is_none());
@@ -193,4 +193,20 @@ fn meals_wait_for_the_reload_or_for_cover() {
         "behind the wall"
     );
     assert_eq!(ticks_to_shot(&archer(1, 0.0, 0.0, Some(15))), 5);
+}
+
+#[test]
+fn the_shield_stays_up_while_the_arrow_is_in_flight() {
+    let mut s = flat();
+    give(&mut s, 0, ItemKind::Sword, 1);
+    shield(&mut s);
+    s.me.attack_ready = 0.5;
+    let mut sk = archer(6, 0.5, 4.5, None);
+    sk.state.since_shot = Some(1);
+    s.entities.push(sk);
+    let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
+    assert_eq!(bid.commands.off, Some(OffCmd::RaiseShield), "arrow still in the air");
+    s.entities[0].state.since_shot = Some(8);
+    let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
+    assert_eq!(bid.commands.off, None, "landed: reload window");
 }
