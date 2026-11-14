@@ -4,6 +4,8 @@
 
 mod work;
 
+pub use work::{face_point, DIG_LIMIT};
+
 use std::collections::VecDeque;
 
 use crate::goals::ports::{NavFailure, Steer};
@@ -123,6 +125,10 @@ impl PathFollower {
         let mut dir = None;
         for h in &self.hops {
             let d = (h.to.x - h.from.x, h.to.y - h.from.y, h.to.z - h.from.z);
+            if d == (0, 0, 0) && !h.has_work() {
+                run += 1;
+                continue;
+            }
             if h.has_work() || d.1 != 0 || dir.is_some_and(|x| x != d) {
                 break;
             }
