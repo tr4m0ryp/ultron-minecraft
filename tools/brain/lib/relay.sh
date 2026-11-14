@@ -85,8 +85,21 @@ relay() {
   echo "relay stopped after $n sessions"
 }
 
+# Samples the game clock every CLOCK_EVERY_S into <run>/clock.tsv (for the kickoff, the
+# dusk and dawn notices, and tools/brain/measure/idle). Silent when RCON is unreachable.
+CLOCK_EVERY_S=30
+start_clock() {
+  local run="$1"
+  ( while [[ ! -e "$LOGS/STOP" ]]; do
+      python3 "$HERE/lib/gameclock.py" sample "$run"
+      sleep "$CLOCK_EVERY_S"
+    done ) > /dev/null 2>&1 &
+  echo $! > "$run/clock.pid"
+}
+
 cleanup() {
   rm -f "$LOGS/run.pid"
+  [[ -n "${RUN:-}" && -f "$RUN/clock.pid" ]] && kill "$(cat "$RUN/clock.pid")" 2>/dev/null
   if [[ -n "${RUN:-}" && -f "$RUN/fake.pid" ]]; then
     kill "$(cat "$RUN/fake.pid")" 2>/dev/null
     rm -rf "$(cat "$RUN/fake.sockdir" 2>/dev/null)"

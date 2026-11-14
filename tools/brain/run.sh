@@ -13,7 +13,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
 LOGS="$REPO/logs/brain"
-mkdir -p "$LOGS" "$REPO/journal"
+mkdir -p "$LOGS"
 
 if [[ "${1:-}" == stop ]]; then
   touch "$LOGS/STOP"
@@ -36,11 +36,13 @@ while (( $# )); do
 done
 
 source "$HERE/lib/relay.sh"
+source "$HERE/lib/home.sh"
+check_home "$PLAY_HOME" "$REPO" && adopt_journal "$REPO/journal" "$PLAY_HOME" || exit 1
 RUN="$LOGS/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$RUN"
 rm -f "$LOGS/STOP"
 echo $$ > "$LOGS/run.pid"
-seed_journal "$REPO/journal"
+seed_journal "$PLAY_HOME/journal"
 (cd "$REPO" && nice -n 19 cargo build --release -q -p brain-link -j 2) || exit 1
 
 if (( FAKE )); then
@@ -51,5 +53,10 @@ else
 fi
 trap 'touch "$LOGS/STOP"' INT TERM
 trap 'cleanup' EXIT
+if (( FAKE )); then
+  export BRAIN_CLOCK=0
+else
+  start_clock "$RUN"
+fi
 echo "relay $RUN (socket $SOCK); stop with: tools/brain/run.sh stop"
 relay "$RUN" "$SOCK"

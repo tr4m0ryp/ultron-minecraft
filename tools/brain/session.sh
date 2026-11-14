@@ -4,7 +4,8 @@
 # touch only journal/. Called by run.sh.
 #   session.sh <run-dir> <n> <socket> <stretch-min> <max-turns> <previous-ending>
 # Optional env: BRAIN_EFFORT (low..max), BRAIN_MODEL, BRAIN_TOOL_TIMEOUT_MS, BRAIN_KICKOFF
-# (a kickoff prompt file other than brain/kickoff.txt, for staged tests).
+# (a kickoff prompt file other than brain/kickoff.txt, for staged tests), BRAIN_CLOCK=0 (do
+# not read the game clock over RCON, as in the fake world), ULTRON_PLAY_HOME.
 # Writes <run-dir>/session-<n>.jsonl (stream-json) and session-<n>.err; exits with the harness
 # status (124 when the wall-clock backstop cut it).
 set -uo pipefail
@@ -28,6 +29,7 @@ echo $(( $(date +%s) + STRETCH * 60 )) > "$RUN/deadline"
 size=$(cat "$JOURNAL"/*.txt 2>/dev/null | wc -c)
 # Real values for the journal stamps: the wall clock now and the game clock (RCON samples).
 now="$(date '+%Y-%m-%d %H:%M')"
+[[ "${BRAIN_CLOCK:-1}" == 1 ]] && python3 "$HERE/lib/gameclock.py" sample "$RUN"
 game="$(python3 "$HERE/lib/gameclock.py" now "$RUN" 2>/dev/null || echo "unknown (no game clock)")"
 prompt="$(cat "${BRAIN_KICKOFF:-$REPO/brain/kickoff.txt}")"
 prompt="${prompt//'{N}'/"$N"}"; prompt="${prompt//'{NOW}'/"$now"}"
