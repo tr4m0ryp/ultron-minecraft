@@ -63,13 +63,18 @@ pub fn read(
         .iter(ecs)
         .filter(|(.., w, _)| **w == world_name)
         .map(|(e, id, k, p, _, u)| (e, id.0, k.0, vec3(**p), **u))
-        .filter(|(_, _, _, p, _)| p.dist(my_pos) <= RADIUS)
         .collect();
 
     let mut now = HashMap::with_capacity(candidates.len());
     let mut entities = Vec::with_capacity(candidates.len());
     let mut companion = None;
     for (e, id, kind, pos, uuid) in candidates {
+        // The companion is tracked as far as the server sends it; everything else only
+        // within the sensing radius.
+        let far = pos.dist(my_pos) > RADIUS;
+        if far && !(kind == azalea::registry::builtin::EntityKind::Player && companion.is_none()) {
+            continue;
+        }
         let delta = prev.get(&id).map(|old| pos - *old);
         let vel = velocity(ecs, e, delta);
         now.insert(id, pos);
@@ -91,6 +96,9 @@ pub fn read(
                     health: ecs.get::<Health>(e).map(|h| **h),
                 });
             }
+        }
+        if far {
+            continue;
         }
         entities.push(ent);
     }
