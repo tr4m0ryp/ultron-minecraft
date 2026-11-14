@@ -9,6 +9,9 @@ pub enum BlockKind {
     Unknown,
     Air,
     Solid,
+    /// Collides like a solid block but never suffocates: leaves, glass, and blocks whose
+    /// collision box is not a full cube (slabs, stairs, fences, snow layers).
+    SolidOpen,
     /// Solid but subject to gravity: sand, gravel, concrete powder.
     Gravity,
     Water,
@@ -32,6 +35,7 @@ impl BlockKind {
         matches!(
             self,
             BlockKind::Solid
+                | BlockKind::SolidOpen
                 | BlockKind::Gravity
                 | BlockKind::Magma
                 | BlockKind::Cactus
@@ -66,6 +70,14 @@ impl BlockKind {
                 | BlockKind::BerryBush
                 | BlockKind::WitherRose
                 | BlockKind::PowderSnow
+        )
+    }
+
+    /// A head inside this block takes suffocation damage (full opaque cubes only).
+    pub fn suffocates(self) -> bool {
+        matches!(
+            self,
+            BlockKind::Solid | BlockKind::Gravity | BlockKind::Magma | BlockKind::Cushion
         )
     }
 

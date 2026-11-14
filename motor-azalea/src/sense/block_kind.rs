@@ -51,5 +51,11 @@ pub fn classify(state: BlockState) -> BlockKind {
             FluidKind::Empty => BlockKind::Air,
         };
     }
+    if !state.is_collision_shape_full()
+        || blocks::LEAVES.contains(&kind)
+        || blocks::IMPERMEABLE.contains(&kind)
+    {
+        return BlockKind::SolidOpen;
+    }
     BlockKind::Solid
 }

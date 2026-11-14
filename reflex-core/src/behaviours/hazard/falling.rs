@@ -19,7 +19,7 @@ impl Behaviour for FallingBlocks {
         let feet = me.pos.block();
         let head = feet.above();
         let head_kind = ctx.snap.blocks.get(head);
-        let suffocating = head_kind.supports() && !head_kind.passable();
+        let suffocating = head_kind.suffocates();
         let falling = ctx.snap.entities.iter().any(|e| {
             e.kind == EntityKind::FallingBlock
                 && (e.pos.x - me.pos.x).abs() < 0.9

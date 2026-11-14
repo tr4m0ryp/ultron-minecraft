@@ -46,10 +46,12 @@ impl EventBuffer {
     pub fn on_event(&mut self, bot: &Client, event: &Event) {
         match event {
             Event::Chat(m) => {
-                if let (Some(sender), text) = m.split_sender_and_content() {
-                    if sender != bot.username() {
-                        self.chat.push(RawChat { sender, text });
-                    }
+                // System lines with no recognisable sender (tellraw, death and join
+                // messages) are kept with an empty sender.
+                let (sender, text) = m.split_sender_and_content();
+                let sender = sender.unwrap_or_default();
+                if sender != bot.username() {
+                    self.chat.push(RawChat { sender, text });
                 }
             }
             Event::Packet(p) => self.on_packet(bot, p),
