@@ -21,6 +21,8 @@ pub struct FakeNavState {
     pub pauses: u32,
     pub cancels: u32,
     pub current: Option<NavTarget>,
+    /// The last target requested, kept after the request ends.
+    pub last: Option<NavTarget>,
     planning_left: u32,
     follower: PathFollower,
 }
@@ -60,6 +62,7 @@ impl Navigator for FakeNav {
         let mut s = self.0.borrow_mut();
         s.requests += 1;
         s.current = Some(target);
+        s.last = Some(target);
         s.planning_left = s.plan_ticks;
         let me = snap.me.pos.block();
         match target {

@@ -238,7 +238,7 @@ fn place_climbs_to_see_a_roof_support_above_the_eyes() {
     let mut raised = None;
     for _ in 0..100 {
         s.step();
-        if let Some(reflex_core::goals::NavTarget::Block { pos, .. }) = s.nav.state().current {
+        if let Some(reflex_core::goals::NavTarget::Block { pos, .. }) = s.nav.state().last {
             raised = Some(pos);
             break;
         }
