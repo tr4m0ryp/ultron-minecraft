@@ -71,8 +71,12 @@ impl Mine {
             return Err(format!("missing tool for {}: needs {t}", self.block));
         }
         let from = cx.me_pos().block();
+        // Never the block under the feet: the dig guard (R10) refuses it over any hollow,
+        // and live the goal then spent the whole dig limit on it per block.
+        let mut exclude = self.skipped.clone();
+        exclude.push(from.below());
         cx.world
-            .nearest_block(&self.block, from, SEARCH_RADIUS, &self.skipped)
+            .nearest_block(&self.block, from, SEARCH_RADIUS, &exclude)
             .ok_or_else(|| {
                 format!(
                     "no {} within {SEARCH_RADIUS} blocks; mined {} of {}",
@@ -82,6 +86,11 @@ impl Mine {
     }
 
     fn dig(&mut self, cx: &mut GoalCx, pos: BlockPos, ticks: u32) -> Step {
+        if pos == cx.me_pos().block().below() {
+            // Walked onto the target: pick again from here (the search excludes it).
+            self.phase = Phase::Find;
+            return Step::Bid(Plan::hold("goal_mine"));
+        }
         if !cx.preempted {
             self.phase = Phase::Dig {
                 pos,

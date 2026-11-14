@@ -90,6 +90,22 @@ fn mine_is_preempted_by_melee_defence_and_resumes() {
 }
 
 #[test]
+fn mine_never_digs_the_block_under_its_feet() {
+    // Live bug: after a pickup step into a floor hole the nearest stone was the block under
+    // the feet; R10 vetoed every dig and the goal burned its 600-tick dig limit per block.
+    let mut s = Sim::new();
+    let under = BlockPos::new(0, 63, 0);
+    s.block(under, "stone");
+    s.block(BlockPos::new(3, 64, 0), "stone");
+    s.goal("mine stone 1", true);
+    for _ in 0..60 {
+        assert_ne!(s.step().main, Some(MainCmd::Dig(under)));
+    }
+    assert!(s.has_event("goal_done"));
+    assert!(s.world.state().blocks.contains_key(&under), "floor kept");
+}
+
+#[test]
 fn mine_digging_holds_gaze_and_main() {
     let mut s = Sim::new();
     s.block(BlockPos::new(2, 64, 0), "stone");
