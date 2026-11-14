@@ -70,7 +70,8 @@ impl Behaviour for Unstuck {
         }
         let h = self.intended.unwrap_or(Vec3::new(0.0, 0.0, 1.0));
         let left = Vec3::new(h.z, 0.0, -h.x);
-        let stage = ((self.stuck - STUCK_TICKS) / STAGE_TICKS) % 5;
+        // The dig stage is final: it holds until the way opens or the brain intervenes.
+        let stage = ((self.stuck - STUCK_TICKS) / STAGE_TICKS).min(4);
         let cmds = match stage {
             0 => Commands::default().legs(LegsCmd::toward(h, Speed::Walk).jumping()),
             1 => Commands::default().legs(LegsCmd::toward(left, Speed::Walk)),

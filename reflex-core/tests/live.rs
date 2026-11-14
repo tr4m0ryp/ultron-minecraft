@@ -6,7 +6,10 @@ use common::*;
 use reflex_core::behaviours::defence::MeleeDefence;
 use reflex_core::behaviours::hazard::{ContactHazard, FallingBlocks, LavaWithdrawal};
 use reflex_core::behaviours::homeostasis::Health;
+use reflex_core::behaviours::locomotion::Unstuck;
 use reflex_core::channels::MainCmd;
+use reflex_core::channels::{LegsCmd, Speed};
+use reflex_core::predict::Efference;
 use reflex_core::snapshot::{BlockKind, EntityKind};
 use reflex_core::{BlockPos, Priority, Vec3};
 
@@ -118,4 +121,37 @@ fn cornered_low_hp_fights_back() {
     s.entities.push(mob(7, EntityKind::Zombie, -1.0, -1.0));
     let bid = eval(&mut MeleeDefence, &s, &knobs()).0.expect("D2 bids");
     assert_eq!(bid.note, "melee_retreat");
+}
+
+/// Live: walking east into a wall, C6 strafed, the strafe slid the bot along the wall, the
+/// motion reset the stuck counter, and the goal walked it back into the wall: an endless
+/// jump/strafe loop that never mined and never woke the brain.
+#[test]
+fn c6_sliding_along_a_wall_still_escalates_to_digging() {
+    let mut s = flat();
+    let east = LegsCmd::toward(Vec3::new(1.0, 0.0, 0.0), Speed::Walk);
+    let mut b = Unstuck::default();
+    let mut legs = east;
+    let (mut dug, mut woke) = (false, false);
+    for t in 0..260 {
+        s.tick = 1000 + t;
+        let from = s.me.pos;
+        // The wall blocks x; any sideways input slides along it.
+        s.me.pos.z += legs.heading.z.signum() * 0.2;
+        let eff = Efference {
+            legs: Some(legs),
+            from,
+        };
+        let (bid, events) = eval_eff(&mut b, &s, &knobs(), eff);
+        woke |= events.iter().any(|e| e.kind == "unstuck_failed");
+        legs = match bid {
+            Some(bid) => {
+                dug |= matches!(bid.commands.main, Some(MainCmd::Dig(_)));
+                bid.commands.legs.unwrap_or(east)
+            }
+            None => east,
+        };
+    }
+    assert!(dug, "reached the dig stage");
+    assert!(woke, "woke the brain");
 }
