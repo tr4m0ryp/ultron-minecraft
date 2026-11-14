@@ -3,12 +3,14 @@
 
 mod apply;
 mod args;
+mod chat_gate;
 mod goals;
 mod log;
 mod observe;
 mod shared;
 
 pub use args::reflex_ids;
+pub use chat_gate::{REPLY_WINDOW, UNPROMPTED_GAP};
 pub use goals::{layer_spec, SUPPORTED_GOALS};
 
 use std::path::Path;
@@ -22,6 +24,7 @@ use serde_json::Value;
 use crate::host::Host;
 use crate::server::Server;
 use crate::wire::{self, ChatLine, Events, Request, WakeEvent};
+use chat_gate::ChatGate;
 use shared::{Job, Shared};
 
 /// How long a socket request waits for the tick loop before reporting it stalled.
@@ -34,6 +37,7 @@ pub const WAIT_DEFAULT_S: f64 = 30.0;
 pub struct Bridge {
     shared: Mutex<Shared>,
     woke: Condvar,
+    gate: Mutex<ChatGate>,
 }
 
 /// A queued request's pending reply.
@@ -148,9 +152,11 @@ impl Bridge {
             }
             (std::mem::take(&mut s.jobs), s.wakes.len())
         };
+        let mut gate = self.gate.lock().unwrap_or_else(|e| e.into_inner());
+        gate.heard(&snap.chat, snap.tick);
         let mut say = Vec::new();
         for job in jobs {
-            let reply = apply::run(job.req, host, snap, &mut say, wakes_pending);
+            let reply = apply::run(job.req, host, snap, (&mut say, &mut gate), wakes_pending);
             let _ = job.reply.send(reply);
         }
         say

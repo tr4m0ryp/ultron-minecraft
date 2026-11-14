@@ -45,8 +45,14 @@ fn pump_applies_queued_changes_in_order() {
         bridge.enqueue(Request::Say { text: "one".into() }),
         bridge.enqueue(Request::Say { text: "two".into() }),
     ];
-    let said = bridge.pump(&mut exec, &world.snap);
-    assert_eq!(said, vec!["one", "two"]);
+    let mut snap = world.snap.clone();
+    snap.chat.push(reflex_core::snapshot::ChatEvent {
+        sender: "Steve".into(),
+        text: "hi".into(),
+        sender_pos: None,
+    });
+    let said = bridge.pump(&mut exec, &snap);
+    assert_eq!(said, vec!["one", "two"], "replies to a player are not held back");
     let replies: Vec<_> = tickets
         .into_iter()
         .map(|t| wire::open(t.wait(NOW)))

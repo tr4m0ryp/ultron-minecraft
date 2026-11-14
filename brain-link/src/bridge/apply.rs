@@ -5,6 +5,7 @@ use reflex_core::Snapshot;
 use serde_json::Value;
 
 use super::args::{reflex_ids, scope_of, ticks};
+use super::chat_gate::ChatGate;
 use super::{goals, log, observe};
 use crate::host::Host;
 use crate::wire::{self, mode_label, Ack, Request};
@@ -13,10 +14,10 @@ pub fn run<H: Host>(
     req: Request,
     host: &mut H,
     snap: &Snapshot,
-    say: &mut Vec<String>,
+    chat: (&mut Vec<String>, &mut ChatGate),
     wakes_pending: usize,
 ) -> Value {
-    match apply(req, host, snap, say, wakes_pending) {
+    match apply(req, host, snap, chat, wakes_pending) {
         Ok(v) => wire::ok(v),
         Err(e) => wire::err(e),
     }
@@ -26,7 +27,7 @@ fn apply<H: Host>(
     req: Request,
     host: &mut H,
     snap: &Snapshot,
-    say: &mut Vec<String>,
+    (say, gate): (&mut Vec<String>, &mut ChatGate),
     wakes_pending: usize,
 ) -> Result<Value, String> {
     let now = snap.tick;
@@ -111,7 +112,9 @@ fn apply<H: Host>(
             }
         }
         Request::Say { text } => {
-            say.push(wire::chat_line(&text)?);
+            let line = wire::chat_line(&text)?;
+            gate.admit(&line, now)?;
+            say.push(line);
             Ack {
                 id: None,
                 done: "sent".into(),
