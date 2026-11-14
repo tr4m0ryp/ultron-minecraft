@@ -72,11 +72,16 @@ fn late_fuse_low_health_or_a_second_creeper_falls_back_to_retreat() {
     );
 
     s.me.health = 20.0;
-    let mut other = mob(2, EntityKind::Creeper, 4.5, 2.5);
-    other.vel = reflex_core::Vec3::new(-0.1, 0.0, 0.0);
+    let other = mob(2, EntityKind::Creeper, 4.5, 2.5);
     s.entities.push(other);
     assert_eq!(
         eval(&mut CreeperStance, &s, &knobs()).0.unwrap().note,
-        "creeper_back_away"
+        "creeper_strike",
+        "an unlit second creeper does not stop the duel"
+    );
+    s.entities[1].state.fuse_lit = true;
+    assert_eq!(
+        eval(&mut CreeperStance, &s, &knobs()).0.unwrap().note,
+        "creeper_flee"
     );
 }
