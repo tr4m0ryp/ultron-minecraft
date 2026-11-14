@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::status::{GoalState, GoalStatus};
 use crate::behaviour::Ctx;
 use crate::events::EventClass;
 
@@ -18,6 +19,9 @@ pub struct Reporter {
     blocked: Option<String>,
     blocked_this_tick: bool,
     last_sent: HashMap<String, u64>,
+    progress: Option<(u32, u32)>,
+    note: Option<String>,
+    outcome: Option<(GoalState, String)>,
 }
 
 impl Reporter {
@@ -29,6 +33,9 @@ impl Reporter {
             blocked: None,
             blocked_this_tick: false,
             last_sent: HashMap::new(),
+            progress: None,
+            note: None,
+            outcome: None,
         }
     }
 
@@ -55,9 +62,13 @@ impl Reporter {
     }
 
     pub fn progress(&mut self, ctx: &Ctx, done: u32, total: u32, text: String) {
+        if total > 0 {
+            self.progress = Some((done.min(total), total));
+        }
         if total == 0 || done >= total {
             return;
         }
+        self.note = Some(text.clone());
         let m = done * 4 / total;
         if m > self.milestone {
             self.milestone = m;
@@ -77,6 +88,7 @@ impl Reporter {
     }
 
     pub fn note(&mut self, ctx: &Ctx, text: String) {
+        self.note = Some(text.clone());
         if self.due(&format!("note|{text}"), ctx.snap.tick) {
             self.send(ctx, EventClass::Digest, "goal_progress", &text);
         }
@@ -106,11 +118,30 @@ impl Reporter {
         self.blocked.as_deref()
     }
 
-    pub fn done(&self, ctx: &Ctx, text: &str) {
+    pub fn done(&mut self, ctx: &Ctx, text: &str) {
+        self.outcome = Some((GoalState::Done, text.to_string()));
         self.send(ctx, EventClass::Wake, "goal_done", text);
     }
 
-    pub fn failed(&self, ctx: &Ctx, reason: &str) {
+    pub fn failed(&mut self, ctx: &Ctx, reason: &str) {
+        self.outcome = Some((GoalState::Failed, reason.to_string()));
         self.send(ctx, EventClass::Wake, "goal_failed", reason);
+    }
+
+    /// The goal's status for the brain; `preempted` says a reflex holds the body.
+    pub fn status(&self, preempted: bool) -> GoalStatus {
+        let (state, note) = match (&self.outcome, &self.blocked) {
+            (Some((s, text)), _) => (*s, Some(text.clone())),
+            (None, Some(reason)) => (GoalState::Blocked, Some(reason.clone())),
+            (None, None) if preempted => (GoalState::Preempted, self.note.clone()),
+            (None, None) => (GoalState::Running, self.note.clone()),
+        };
+        GoalStatus {
+            goal_id: self.goal_id,
+            label: self.label,
+            state,
+            progress: self.progress,
+            note,
+        }
     }
 }

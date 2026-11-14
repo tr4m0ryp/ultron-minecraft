@@ -3,9 +3,11 @@
 
 mod handle;
 mod report;
+mod status;
 
 pub use handle::GoalHandle;
 pub use report::{Reporter, REPEAT_GAP_TICKS};
+pub use status::{GoalState, GoalStatus};
 
 use super::ports::{Navigator, World};
 use super::spec;
@@ -76,7 +78,7 @@ impl GoalRunner {
         }
         let parsed = spec::parse(&goal.spec, goal.target);
         let label = parsed.as_ref().map_or("goal", |s| s.label());
-        let rep = Reporter::new(goal.id, label);
+        let mut rep = Reporter::new(goal.id, label);
         let task = match parsed {
             Ok(s) => {
                 rep.started(ctx, &goal.spec);
@@ -85,6 +87,7 @@ impl GoalRunner {
             Err(e) => {
                 rep.failed(ctx, &format!("cannot parse goal: {e}"));
                 self.handle.finish(goal.id);
+                self.handle.publish(rep.status(false));
                 None
             }
         };
@@ -109,6 +112,7 @@ impl GoalRunner {
         }
         self.nav.cancel();
         self.handle.finish(a.goal_id);
+        self.handle.publish(a.rep.status(false));
     }
 }
 
@@ -143,6 +147,7 @@ impl Behaviour for GoalRunner {
         };
         let step = task.step(&mut cx);
         a.rep.end_tick();
+        self.handle.publish(a.rep.status(self.preempted));
         match step {
             Step::Bid(plan) => {
                 self.intent = plan.intent;
