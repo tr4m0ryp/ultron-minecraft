@@ -5,6 +5,7 @@ use reflex_core::events::Event;
 use reflex_core::Snapshot;
 use serde_json::Value;
 
+use super::idle::IdleState;
 use crate::wire::{ChatLine, Request, WakeEvent};
 
 pub const CHAT_KEEP: usize = 50;
@@ -21,8 +22,8 @@ pub struct Shared {
     pub jobs: VecDeque<Job>,
     pub wakes: VecDeque<WakeEvent>,
     pub chat: VecDeque<ChatLine>,
-    /// No goal is running (none set, or the last one ended).
-    pub idle: bool,
+    /// Whether a goal runs, and the one-shot nudge for the first wait after it ended.
+    pub body: IdleState,
 }
 
 impl Shared {

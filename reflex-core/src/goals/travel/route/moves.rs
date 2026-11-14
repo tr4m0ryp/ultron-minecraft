@@ -177,8 +177,7 @@ impl Moves<'_> {
         let below = self.t.cell(c.below());
         if below.is_floor() {
             let hop = Hop::walk(n, c);
-            Self::push_dug(out, hop, dig, WALK + body);
-            return;
+            Self::push_dug(out, hop, dig.clone(), WALK + body);
         }
         // Staircase down: break the floor ahead, stand one lower on what is under it.
         if below.is_solid() && self.t.cell(c.offset(0, -2, 0)).is_floor() {
@@ -188,7 +187,7 @@ impl Moves<'_> {
                 Self::push_dug(out, Hop::walk(n, to), d2, WALK + body + k + JUMP);
             }
         }
-        if !dig.is_empty() {
+        if !dig.is_empty() || below.is_solid() {
             return;
         }
         if below.takes_block() {

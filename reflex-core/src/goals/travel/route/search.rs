@@ -4,59 +4,11 @@
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 
-use super::cell::{Cell, Terrain};
+use super::cell::Terrain;
+use super::goal::RouteGoal;
 use super::hop::{Hop, HopKind};
-use super::moves::{Edge, Moves, RouteOpts, WALK};
-use crate::math::{BlockPos, Vec3};
-
-/// Cells above the head scanned for open sky.
-pub const SKY_SCAN: i32 = 48;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RouteGoal {
-    /// Stand within `radius` of `centre` (measured from the body's middle).
-    Near { centre: Vec3, radius: f64 },
-    /// Stand anywhere with open sky overhead; `hint` (the last place known to have it)
-    /// steers the search.
-    Sky { hint: BlockPos },
-    /// Stand level with `block` (at feet or head height) in a cardinal neighbour column,
-    /// where a player mines it from the side.
-    Beside { block: BlockPos },
-}
-
-impl RouteGoal {
-    pub fn reached(&self, t: &dyn Terrain, n: BlockPos) -> bool {
-        match *self {
-            RouteGoal::Near { centre, radius } => {
-                (n.feet_centre() + Vec3::new(0.0, 0.5, 0.0)).dist(centre) <= radius.max(0.5)
-            }
-            RouteGoal::Sky { .. } => open_sky(t, n),
-            RouteGoal::Beside { block } => {
-                let (dx, dz) = ((block.x - n.x).abs(), (block.z - n.z).abs());
-                dx + dz == 1 && (block.y == n.y || block.y == n.y + 1)
-            }
-        }
-    }
-
-    fn estimate(&self, n: BlockPos) -> f32 {
-        let d = match *self {
-            RouteGoal::Near { centre, radius } => {
-                ((n.feet_centre() + Vec3::new(0.0, 0.5, 0.0)).dist(centre) - radius).max(0.0)
-            }
-            RouteGoal::Sky { hint } => {
-                let up = f64::from((hint.y - n.y).max(0));
-                up + (n.feet_centre() - hint.feet_centre()).horizontal().len() * 0.3
-            }
-            RouteGoal::Beside { block } => (n.feet_centre().dist(block.feet_centre()) - 1.0).max(0.0),
-        };
-        d as f32 * WALK
-    }
-}
-
-/// Nothing but open air (or the world's top) above the head.
-pub fn open_sky(t: &dyn Terrain, n: BlockPos) -> bool {
-    (2..=SKY_SCAN).all(|dy| matches!(t.cell(n.offset(0, dy, 0)), Cell::Open | Cell::Unknown))
-}
+use super::moves::{Edge, Moves, RouteOpts};
+use crate::math::BlockPos;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Route {
@@ -132,8 +84,9 @@ pub fn search(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts)
         },
     );
     let w = o.weight.max(1.0);
-    heap.push(Open(w * goal.estimate(start), 0.0, start));
-    let (mut best, mut best_h) = (start, goal.estimate(start));
+    let est = |n: BlockPos| goal.estimate(t, n, o.dig);
+    heap.push(Open(w * est(start), 0.0, start));
+    let (mut best, mut best_h) = (start, est(start));
     let mut expanded = 0;
     let mut edges: Vec<Edge> = Vec::new();
     let mut found = None;
@@ -154,7 +107,7 @@ pub fn search(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts)
         if expanded > o.max_nodes {
             break;
         }
-        let h = goal.estimate(n);
+        let h = est(n);
         if h < best_h {
             (best, best_h) = (n, h);
         }
@@ -166,7 +119,7 @@ pub fn search(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts)
             let spends = e.hop.place.is_some();
             let better = recs.get(&to).is_none_or(|r| !r.closed && g2 < r.g);
             if better {
-                heap.push(Open(g2 + w * goal.estimate(to), g2, to));
+                heap.push(Open(g2 + w * est(to), g2, to));
                 recs.insert(
                     to,
                     Rec {

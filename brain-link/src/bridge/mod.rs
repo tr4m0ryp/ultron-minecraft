@@ -5,6 +5,7 @@ mod apply;
 mod args;
 mod chat_gate;
 mod goals;
+mod idle;
 mod log;
 mod observe;
 mod shared;
@@ -12,13 +13,13 @@ mod shared;
 pub use args::reflex_ids;
 pub use chat_gate::{REPLY_WINDOW, UNPROMPTED_GAP};
 pub use goals::{layer_spec, SUPPORTED_GOALS};
+pub use idle::IDLE_WAIT_MAX_S;
 
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
-use reflex_core::goals::GoalState;
 use reflex_core::Snapshot;
 use serde_json::Value;
 
@@ -94,9 +95,15 @@ impl Bridge {
     }
 
     /// Returns pending WAKE events at once, or blocks until one arrives or `timeout` passes.
+    /// With no goal running the block is shorter: none for the first wait after a goal
+    /// ended, at most `IDLE_WAIT_MAX_S` otherwise (see `idle`).
     pub fn wait_event(&self, timeout: Duration) -> Events {
-        let deadline = Instant::now() + timeout;
         let mut s = self.lock();
+        let deadline = if s.wakes.is_empty() {
+            Instant::now() + s.body.budget(timeout)
+        } else {
+            Instant::now()
+        };
         loop {
             if !s.wakes.is_empty() {
                 return Events {
@@ -110,7 +117,7 @@ impl Bridge {
                 return Events {
                     events: Vec::new(),
                     timed_out: true,
-                    idle: s.idle,
+                    idle: s.body.idle,
                 };
             }
             s = self
@@ -142,12 +149,8 @@ impl Bridge {
         mut echo: impl FnMut(&WakeEvent),
     ) -> Vec<String> {
         let wakes = host.upward().take_wake(snap.tick);
-        let idle = host
-            .goal_status()
-            .is_none_or(|g| matches!(g.state, GoalState::Done | GoalState::Failed));
         let (jobs, wakes_pending) = {
             let mut s = self.lock();
-            s.idle = idle;
             s.hear(snap);
             if !wakes.is_empty() {
                 let fresh = wakes.len();
@@ -166,6 +169,9 @@ impl Bridge {
             let reply = apply::run(job.req, host, snap, (&mut say, &mut gate), wakes_pending);
             let _ = job.reply.send(reply);
         }
+        // After the jobs, so a goal set this tick already counts as running.
+        let idle = idle::body_idle(host);
+        self.lock().body.update(idle);
         say
     }
 }

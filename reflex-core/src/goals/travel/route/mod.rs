@@ -4,6 +4,7 @@
 //! make walking win whenever a walkable route exists.
 
 mod cell;
+mod goal;
 mod grid;
 mod hop;
 mod moves;
@@ -15,4 +16,5 @@ pub use cell::{drop_of, natural, Cell, Region, Terrain, SCAFFOLD};
 pub use grid::Grid;
 pub use hop::{Hop, HopKind, Placement};
 pub use moves::RouteOpts;
-pub use search::{open_sky, plan, search, Route, RouteGoal, SKY_SCAN};
+pub use goal::{escaped, open_sky, RouteGoal, SKY_SCAN};
+pub use search::{plan, search, Route};

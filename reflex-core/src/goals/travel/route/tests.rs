@@ -96,7 +96,7 @@ fn a_sealed_pocket_is_escaped_by_a_staircase() {
     assert!(r.digs() > 0);
     never_digs_down(&r);
     let end = r.hops.last().unwrap().to;
-    assert!(open_sky(&g, end) && end.y >= 64, "{end:?} {:?}", r.hops);
+    assert!(escaped(&g, end) && end.y >= 64, "{end:?} {:?}", r.hops);
 }
 
 #[test]
