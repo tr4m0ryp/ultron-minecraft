@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex},
+};
 
 use azalea::prelude::*;
 use reflex_core::Executor;
@@ -8,9 +11,14 @@ use crate::{
     sense::{self, EventBuffer, SenseState},
 };
 
+thread_local! {
+    // `Executor` holds boxed behaviours that are not `Send`, so it cannot live in the ECS
+    // component. Azalea runs client handlers on one local task set, which is one thread.
+    static EXECUTOR: RefCell<Option<Executor>> = const { RefCell::new(None) };
+}
+
 #[derive(Default)]
 struct Inner {
-    executor: Option<Executor>,
     sense: SenseState,
     events: EventBuffer,
     hands: HandState,
@@ -37,8 +45,9 @@ impl State {
         else {
             return;
         };
-        let exec = inner.executor.get_or_insert_with(|| Executor::new(&bot.username()));
-        let out = exec.tick(&snap);
+        let out = EXECUTOR.with_borrow_mut(|slot| {
+            slot.get_or_insert_with(|| Executor::new(&bot.username())).tick(&snap)
+        });
         act::apply(bot, &out, &snap.me, &mut inner.hands);
     }
 }

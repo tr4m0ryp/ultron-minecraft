@@ -3,7 +3,7 @@
 
 use azalea::{
     Client, Event,
-    core::entity_id::MinecraftEntityId,
+    core::{data_registry::DataRegistryWithKey, entity_id::MinecraftEntityId},
     protocol::packets::game::ClientboundGamePacket as Pkt,
     registry::{Holder, builtin::SoundEvent as Snd, data::WorldClockKey},
 };
@@ -80,7 +80,8 @@ impl EventBuffer {
             }
             Pkt::SetTime(t) => {
                 for (clock, state) in &t.clock_updates {
-                    if let Ok(Some(WorldClockKey::Overworld)) = bot.resolve_registry_key(clock) {
+                    let key = bot.with_registry_holder(|r| clock.key_owned(r));
+                    if let Ok(Some(WorldClockKey::Overworld)) = key {
                         self.day_time = Some(state.total_ticks);
                     }
                 }
