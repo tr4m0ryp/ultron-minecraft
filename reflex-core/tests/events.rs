@@ -121,3 +121,26 @@ fn executor_reports_reflex_onset_once_into_the_digest() {
     assert_eq!(d.text.matches("lava_withdraw").count(), 1, "{}", d.text);
     assert!(d.text.contains("x1"));
 }
+
+#[test]
+fn first_sighting_of_a_threat_class_wakes_once() {
+    let mut s = flat();
+    s.entities.push(mob(
+        1,
+        reflex_core::snapshot::EntityKind::Skeleton,
+        20.0,
+        20.0,
+    ));
+    let mut ex = Executor::new(BOT);
+    ex.tick(&s);
+    assert!(ex
+        .take_wake(s.tick)
+        .iter()
+        .any(|e| e.kind == "first_sighting" && e.subject == "skeleton"));
+    s.tick += 200;
+    ex.tick(&s);
+    assert!(ex
+        .take_wake(s.tick)
+        .iter()
+        .all(|e| e.kind != "first_sighting"));
+}

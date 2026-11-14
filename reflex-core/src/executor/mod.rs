@@ -3,7 +3,7 @@
 mod armed;
 mod report;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::behaviour::{Behaviour, Ctx, Priority};
 use crate::behaviours::default_catalog;
@@ -29,6 +29,7 @@ pub struct Executor {
     /// Ids that won a channel (or vetoed) last tick, for onset-only reporting.
     active: HashMap<String, Priority>,
     goal_watch: GoalWatch,
+    seen_kinds: HashSet<crate::snapshot::EntityKind>,
 }
 
 /// Tracks how long the goal has bid without owning the legs.
@@ -53,6 +54,7 @@ impl Executor {
             efference: Efference::default(),
             active: HashMap::new(),
             goal_watch: GoalWatch::default(),
+            seen_kinds: HashSet::new(),
         }
     }
 
@@ -179,6 +181,7 @@ impl Executor {
             now_active.insert(c.id.clone(), c.priority);
         }
         self.goal_watch.update(&ctx, &cands, &alloc.owners);
+        report::first_sightings(&ctx, &mut self.seen_kinds);
         let events = ctx.take_events();
         drop(ctx);
 

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use azalea::{
     ecs::{entity::Entity, query::Without, world::World},
     entity::{
-        EntityKindComponent, EntityUuid, LocalEntity, Position,
+        EntityKindComponent, EntityUuid, LocalEntity, Physics, Position,
         metadata::{
             AbstractAgeableBaby, AbstractLivingUsingItem, Health, IsIgnited, SwellDir, ZombieBaby,
         },
@@ -23,6 +23,7 @@ use super::{body::vec3, entity_kind::map_kind};
 
 pub const RADIUS: f64 = 32.0;
 /// A projectile moving slower than this (blocks per tick) is treated as stuck in place.
+/// Heuristic: Azalea exposes no in-ground flag for arrows.
 const INERT_SPEED: f64 = 0.02;
 
 pub struct EntityView {
@@ -31,8 +32,8 @@ pub struct EntityView {
 }
 
 /// `prev` maps entity id to its position on the previous tick; it is replaced with this
-/// tick's positions. Velocities are position deltas, because the client does not keep a
-/// reliable velocity for remote entities.
+/// tick's positions. Velocity is the client's `Physics` velocity when the server sent one,
+/// else the position delta since the previous tick (zero for a first sighting).
 pub fn read(
     ecs: &mut World,
     me: Entity,
@@ -61,12 +62,13 @@ pub fn read(
     let mut entities = Vec::with_capacity(candidates.len());
     let mut companion = None;
     for (e, id, kind, pos, uuid) in candidates {
-        let vel = prev.get(&id).map_or(Vec3::ZERO, |old| pos - *old);
+        let delta = prev.get(&id).map(|old| pos - *old);
+        let vel = velocity(ecs, e, delta);
         now.insert(id, pos);
         let kind_s = map_kind(kind);
         let mut ent = SnapEntity::new(id as u32, kind_s, pos);
         ent.vel = vel;
-        ent.state = state_of(ecs, e, kind_s, vel);
+        ent.state = state_of(ecs, e, kind_s, delta.is_some() && vel.len() < INERT_SPEED);
         if kind_s == EntityKind::Player {
             ent.name = tab.get(&uuid).cloned();
             if companion.is_none() && companion_name.is_some() && ent.name.as_deref() == companion_name {
@@ -85,7 +87,12 @@ pub fn read(
     Some(EntityView { entities, companion })
 }
 
-fn state_of(ecs: &World, e: Entity, kind: EntityKind, vel: Vec3) -> EntityState {
+fn velocity(ecs: &World, e: Entity, delta: Option<Vec3>) -> Vec3 {
+    let v = ecs.get::<Physics>(e).map_or(Vec3::ZERO, |p| vec3(p.velocity));
+    if v.len() > 1e-6 { v } else { delta.unwrap_or(Vec3::ZERO) }
+}
+
+fn state_of(ecs: &World, e: Entity, kind: EntityKind, stationary: bool) -> EntityState {
     let mut st = EntityState::default();
     match kind {
         EntityKind::Creeper => {
@@ -103,7 +110,7 @@ fn state_of(ecs: &World, e: Entity, kind: EntityKind, vel: Vec3) -> EntityState 
             st.baby = ecs.get::<AbstractAgeableBaby>(e).is_some_and(|b| **b);
         }
         EntityKind::Arrow | EntityKind::Trident => {
-            st.inert = vel.len() < INERT_SPEED;
+            st.inert = stationary;
         }
         _ => {}
     }

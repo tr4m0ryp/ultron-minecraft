@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use crate::behaviour::{Ctx, Priority};
 use crate::events::{Event, EventClass};
 use crate::knobs::Knobs;
+use crate::snapshot::{EntityClass, EntityKind};
 
 /// A brain inhibition was ignored because predicted harm is lethal; the brain must know.
 pub fn override_event(ctx: &Ctx, id: &str, note: &str) -> Event {
@@ -48,4 +51,17 @@ pub fn goal_interrupted(ctx: &Ctx, holder: &str) -> Event {
         .text(format!(
             "goal \"{spec}\" has lost the legs to {holder} for 200 ticks"
         ))
+}
+
+/// A threat class seen for the first time this session wakes the brain.
+pub fn first_sightings(ctx: &Ctx, seen: &mut HashSet<EntityKind>) {
+    for e in &ctx.snap.entities {
+        let notable = e.kind.class() == EntityClass::Hostile || e.kind == EntityKind::Enderman;
+        if notable && seen.insert(e.kind) {
+            ctx.emit(
+                ctx.report(EventClass::Wake, "first_sighting", e.kind.label())
+                    .text(format!("first {} this session", e.kind.label())),
+            );
+        }
+    }
 }
