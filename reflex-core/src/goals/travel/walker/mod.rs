@@ -1,8 +1,12 @@
+mod work;
+
+pub use work::scaffold_slot;
+
 use crate::behaviours::common::heading_to;
 use crate::channels::{Commands, LegsCmd, Speed};
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget};
 use crate::goals::task::{GoalCx, Plan};
-use crate::math::Vec3;
+use crate::math::{BlockPos, Vec3};
 
 /// Planner failures in a row before a walk gives up.
 pub const MAX_NAV_FAILURES: u32 = 3;
@@ -29,12 +33,16 @@ pub struct Walker {
     planning: u32,
     /// Times the walk re-planned after a pre-emption.
     pub replans: u32,
+    /// Scaffold blocks the paths of this walker placed, for the goal to clean up.
+    pub placed: Vec<BlockPos>,
 }
 
 /// Where a target is now, if the snapshot still shows it.
 pub fn target_pos(cx: &GoalCx, t: NavTarget) -> Option<Vec3> {
     match t {
         NavTarget::Block { pos, .. } => Some(pos.feet_centre()),
+        NavTarget::Beside { block } => Some(block.feet_centre()),
+        NavTarget::Sky { .. } => None,
         NavTarget::Entity { id, .. } => {
             let snap = cx.snap();
             snap.entity(id).map(|e| e.pos).or_else(|| {
@@ -57,6 +65,14 @@ pub fn arrived(cx: &GoalCx, t: NavTarget) -> bool {
         NavTarget::Entity { distance, .. } => {
             target_pos(cx, t).is_some_and(|p| p.dist(me) <= distance)
         }
+        NavTarget::Beside { block } => {
+            let n = me.block();
+            let (dx, dz) = ((block.x - n.x).abs(), (block.z - n.z).abs());
+            let level = block.y == n.y || block.y == n.y + 1;
+            dx + dz == 1 && level && (me - n.feet_centre()).horizontal().len() < 0.4
+        }
+        // Only the navigator can tell open sky; it reports Arrived.
+        NavTarget::Sky { .. } => false,
     }
 }
 
@@ -79,12 +95,23 @@ impl Walker {
                 self.replans += 1;
             }
             let snap = cx.ctx.snap;
+            cx.nav.protect(&cx.ctx.knobs.protected);
             cx.nav.request(target, snap);
             self.target = Some(target);
             self.paused = false;
         }
         let snap = cx.ctx.snap;
-        match cx.nav.poll(snap) {
+        let status = cx.nav.poll(snap);
+        self.placed.extend(cx.nav.take_placed());
+        match status {
+            NavStatus::Moving(s) if s.work.is_some() => {
+                self.planning = 0;
+                let w = s.work.expect("checked");
+                match work::work_plan(cx, s, w, note) {
+                    Ok(plan) => Walk::Moving(plan),
+                    Err(f) => self.fail(cx, f),
+                }
+            }
             NavStatus::Moving(s) => {
                 self.planning = 0;
                 let me = &cx.snap().me;
