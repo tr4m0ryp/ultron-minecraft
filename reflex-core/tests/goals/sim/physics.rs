@@ -97,7 +97,7 @@ impl Sim {
             return;
         }
         let Some(at) = self.place_at else { return };
-        if w.blocks.contains_key(&at) {
+        if w.blocks.get(&at).is_some_and(|n| !replaceable(n)) {
             return;
         }
         let sel = self.snap.me.selected_slot;
