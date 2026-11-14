@@ -54,7 +54,7 @@ impl State {
         let started = std::time::Instant::now();
         let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let inner = &mut *guard;
-        let Some(snap) = sense::snapshot(
+        let Some(mut snap) = sense::snapshot(
             bot,
             &mut inner.sense,
             &mut inner.events,

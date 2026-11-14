@@ -3,6 +3,7 @@
 mod block_kind;
 mod blocks;
 mod body;
+mod cadence;
 mod entities;
 mod entity_kind;
 mod events;
@@ -25,6 +26,7 @@ pub struct SenseState {
     tick: u64,
     prev_entity_pos: HashMap<i32, Vec3>,
     prev_hp: Option<f32>,
+    cadence: cadence::Cadence,
 }
 
 /// Build one snapshot, draining `events`. `None` while the bot is not yet in a loaded world.
@@ -37,7 +39,7 @@ pub fn snapshot(
     let mut ecs = bot.ecs.write();
     let me_state = body::read(&ecs, bot.entity)?;
     let world = ecs.get::<WorldHolder>(bot.entity)?.shared.clone();
-    let view = entities::read(
+    let mut view = entities::read(
         &mut ecs,
         bot.entity,
         me_state.pos,
@@ -95,6 +97,7 @@ pub fn snapshot(
         .collect();
 
     st.tick += 1;
+    st.cadence.update(st.tick, &mut view.entities);
     Some(Snapshot {
         tick: st.tick,
         me: me_state,

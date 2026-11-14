@@ -22,11 +22,18 @@ const USE_GRACE_TICKS: u32 = 6;
 pub struct HandState {
     using_main: bool,
     shield_up: bool,
+    /// Ticks the shield has been up; it blocks from the 5th.
+    shield_ticks: u32,
     idle_ticks: u32,
     dig: DigState,
 }
 
 impl HandState {
+    /// Efference copy of the off hand for the next snapshot.
+    pub fn shield_ticks(&self) -> u32 {
+        self.shield_ticks
+    }
+
     /// Reconcile with the server-reported using-item flag from the latest snapshot.
     pub fn sync(&mut self, server_using: bool) {
         if server_using {
@@ -103,6 +110,9 @@ pub fn apply_main(
                 st.using_main = false;
             }
         }
+        // A vanilla client discards attack clicks while an item is in use, so a raised shield
+        // must come down (any tick without RaiseShield) before the strike lands next tick.
+        MainCmd::Attack(_) if st.shield_up => {}
         MainCmd::Attack(id) => {
             if let Ok(Some(target)) = bot.entity_id_by_minecraft_id(MinecraftEntityId(id as i32)) {
                 bot.attack(target);
@@ -115,6 +125,10 @@ pub fn apply_main(
     }
 }
 
+/// Hold-to-block, as a player holds right click: the shield stays up only while some
+/// behaviour commands `RaiseShield` every tick, and comes down on the first tick without it.
+/// Before this nothing ever lowered it, so one raise blocked eating and kept the bot at
+/// shield walking speed for good.
 pub fn apply_off(bot: &Client, cmd: Option<OffCmd>, st: &mut HandState, look: (f32, f32)) {
     match cmd {
         Some(OffCmd::RaiseShield) if !st.shield_up && !st.using_main => {
@@ -122,10 +136,12 @@ pub fn apply_off(bot: &Client, cmd: Option<OffCmd>, st: &mut HandState, look: (f
             st.shield_up = true;
             st.idle_ticks = 0;
         }
-        Some(OffCmd::LowerShield) if st.shield_up => {
+        Some(OffCmd::RaiseShield) => {}
+        _ if st.shield_up => {
             release_use(bot);
             st.shield_up = false;
         }
         _ => {}
     }
+    st.shield_ticks = if st.shield_up { st.shield_ticks + 1 } else { 0 };
 }
