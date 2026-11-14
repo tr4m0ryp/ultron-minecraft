@@ -13,6 +13,27 @@ fn attack_by_id_chases_and_kills() {
 }
 
 #[test]
+fn attack_target_killed_by_someone_else_is_done_not_lost() {
+    // Live bug: the melee reflex killed the zombie while it held the body; the goal had
+    // landed no hit and reported "lost sight of the zombie".
+    let mut s = Sim::new();
+    s.mob(13, EntityKind::Zombie, 5.5, 0.5);
+    s.goal("attack zombie", true);
+    s.step();
+    s.snap.entities.retain(|e| e.id != 13);
+    assert!(s.run_until(100, |s| s.has_event("goal_done")));
+    assert!(s.goal_text("goal_done").contains("zombie is dead"));
+
+    let mut s = Sim::new();
+    s.mob(14, EntityKind::Zombie, 20.5, 0.5);
+    s.goal("attack zombie", true);
+    s.step();
+    s.snap.entities.retain(|e| e.id != 14);
+    assert!(s.run_until(100, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("lost sight"));
+}
+
+#[test]
 fn attack_respects_the_mask_and_reports_missing_targets() {
     let mut s = Sim::new();
     s.mob(12, EntityKind::Villager, 4.5, 0.5);

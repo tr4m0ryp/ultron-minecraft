@@ -8,12 +8,17 @@ use crate::snapshot::{Entity, EntityClass};
 pub const SIGHT: f64 = 24.0;
 /// Ticks a locked target may be out of view before the goal ends.
 const GONE_TICKS: u32 = 40;
+/// A target last seen this close that vanishes has died (it is well inside the sensing
+/// radius), whoever landed the blow: live, the melee reflex D2 killed the zombie while it
+/// held the body, and the goal reported "lost sight" with the zombie dead.
+const DIED_WITHIN: f64 = 12.0;
 
 pub struct Attack {
     target: AttackTarget,
     locked: Option<u32>,
     swings: u32,
     missing: u32,
+    last_dist: f64,
     walker: Walker,
 }
 
@@ -24,6 +29,7 @@ impl Attack {
             locked: None,
             swings: 0,
             missing: 0,
+            last_dist: f64::INFINITY,
             walker: Walker::default(),
         }
     }
@@ -71,6 +77,8 @@ impl GoalTask for Attack {
                         self.describe(),
                         self.swings
                     ))
+                } else if self.last_dist <= DIED_WITHIN {
+                    Step::Done(format!("{} is dead", self.describe()))
                 } else {
                     Step::Failed(format!("lost sight of the {}", self.describe()))
                 };
@@ -85,6 +93,7 @@ impl GoalTask for Attack {
         }
         self.locked = Some(e.id);
         self.missing = 0;
+        self.last_dist = e.pos.dist(cx.me_pos());
         let (plan, swing) = engage(cx, &mut self.walker, &e);
         if swing && !cx.preempted {
             self.swings += 1;
