@@ -64,7 +64,8 @@ impl GoalName {
     pub fn required(self) -> &'static [&'static str] {
         match self {
             GoalName::GoTo => &["pos"],
-            GoalName::Mine | GoalName::Collect | GoalName::Craft | GoalName::Place => &["kind"],
+            GoalName::Mine | GoalName::Collect | GoalName::Craft => &["kind"],
+            GoalName::Place => &["kind", "pos"],
             GoalName::Attack => &["kind"],
             GoalName::Give => &["kind"],
             _ => &[],
@@ -115,7 +116,7 @@ impl GoalParams {
         Ok(())
     }
 
-    /// Canonical spec text handed to the executor, e.g. `mine kind=iron_ore count=3`.
+    /// Canonical key=value form of the request, e.g. `mine kind=iron_ore count=3`, for logs.
     pub fn spec(&self, goal: GoalName) -> String {
         let mut s = goal.label().to_string();
         if let Some(c) = &self.companion {
