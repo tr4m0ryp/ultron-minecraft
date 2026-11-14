@@ -46,6 +46,16 @@ pub enum Request {
     Say {
         text: String,
     },
+    /// Mark a box the body must never break (min and max corners), or with `clear`, lift
+    /// protection from every box containing that point.
+    Protect {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        min: Option<[f64; 3]>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        max: Option<[f64; 3]>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        clear: Option<[f64; 3]>,
+    },
     RecentChat {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         limit: Option<usize>,

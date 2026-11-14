@@ -1,6 +1,8 @@
 //! Applies one queued request to the executor on the tick thread.
 
+use reflex_core::goals::travel::route::Region;
 use reflex_core::knobs::{Response, Trigger};
+use reflex_core::math::BlockPos;
 use reflex_core::Snapshot;
 use serde_json::Value;
 
@@ -120,6 +122,7 @@ fn apply<H: Host>(
                 done: "sent".into(),
             }
         }
+        Request::Protect { min, max, clear } => protect(host, min, max, clear)?,
         Request::Log { page, page_size } => return Ok(log::page(host, page, page_size)),
         Request::WaitEvent { .. } | Request::RecentChat { .. } => {
             return Err("answered by the socket thread, not the tick loop".into())
@@ -127,6 +130,38 @@ fn apply<H: Host>(
     };
     Ok(serde_json::to_value(ack).expect("ack serialises"))
 }
+
+fn block(p: [f64; 3]) -> BlockPos {
+    BlockPos::new(p[0].floor() as i32, p[1].floor() as i32, p[2].floor() as i32)
+}
+
+fn protect<H: Host>(
+    host: &mut H,
+    min: Option<[f64; 3]>,
+    max: Option<[f64; 3]>,
+    clear: Option<[f64; 3]>,
+) -> Result<Ack, String> {
+    let done = match (min, max, clear) {
+        (None, None, Some(p)) => {
+            let n = host.knobs().unprotect(block(p));
+            format!("lifted {n} protected region(s)")
+        }
+        (Some(a), Some(b), None) => {
+            let r = Region::new(block(a), block(b));
+            let size = (r.max.x - r.min.x + 1) * (r.max.y - r.min.y + 1) * (r.max.z - r.min.z + 1);
+            if size > PROTECT_MAX_BLOCKS {
+                return Err(format!("region too large ({size} blocks, at most {PROTECT_MAX_BLOCKS})"));
+            }
+            let n = host.knobs().protect(r);
+            format!("protected; {n} region(s) marked")
+        }
+        _ => return Err("give min and max to protect a box, or clear alone to lift one".into()),
+    };
+    Ok(Ack { id: None, done })
+}
+
+/// A protected box covers a base, not a landscape.
+const PROTECT_MAX_BLOCKS: i32 = 200_000;
 
 fn label(g: &wire::WireGain) -> String {
     serde_json::to_value(g)

@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use crate::bridge::{reflex_ids, SUPPORTED_GOALS};
 use crate::wire::{entity_labels, GoalName};
 
-pub const TOOL_NAMES: [&str; 10] = [
+pub const TOOL_NAMES: [&str; 11] = [
     "observe",
     "wait_event",
     "set_goal",
@@ -15,6 +15,7 @@ pub const TOOL_NAMES: [&str; 10] = [
     "inhibit",
     "arm",
     "say",
+    "protect",
     "recent_chat",
     "log",
 ];
@@ -77,6 +78,9 @@ pub fn tool_list() -> Vec<Value> {
             "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 1},
             "ttl_s": {"type": "number", "exclusiveMinimum": 0, "description": "omit for no expiry"},
         }), &["reflex"]),
+        tool("protect", "Mark a box the body must never break while it digs its way around (your base, the companion's builds, a farm), with min and max corners. Builds made of planks, cobblestone, glass and the like are never dug anyway; protect natural-block builds (a dirt hut) and anything precious. clear: lift protection from every box containing that point.".into(), json!({
+            "min": xyz(), "max": xyz(), "clear": xyz(),
+        }), &[]),
         tool("arm", "Prepare an if-then response the body runs instantly without asking you. Arm ahead of predictable danger, e.g. creeper near companion: place_block_between creeper.".into(), json!({
             "trigger": {"type": "object", "additionalProperties": false, "required": ["kind"], "properties": {
                 "kind": {"type": "string", "enum": ["entity_within", "hp_below", "companion_hp_below", "chat_matches"]},
