@@ -33,13 +33,23 @@ pub struct EventBuffer {
     pub chat: Vec<RawChat>,
     pub damage: Vec<RawDamage>,
     pub sounds: Vec<SoundEvent>,
-    /// Last known overworld day clock; `None` until the server sends a time packet.
-    pub day_time: Option<u64>,
+    /// Last overworld clock update: total ticks, rate, and when it arrived. 26.3 sends the
+    /// clock only at login and on a change (`/time set`, sleeping); the client runs it on
+    /// from there. Before this the flag stayed at its login value for the whole session.
+    pub clock: Option<(u64, f32, std::time::Instant)>,
 }
 
 impl EventBuffer {
+    /// The overworld clock now, extrapolated at the server's rate since the last update.
+    pub fn day_time(&self) -> Option<u64> {
+        self.clock.map(|(total, rate, at)| {
+            let ran = at.elapsed().as_secs_f64() * 20.0 * f64::from(rate.max(0.0));
+            total + ran as u64
+        })
+    }
+
     pub fn is_night(&self) -> bool {
-        self.day_time
+        self.day_time()
             .is_some_and(|t| NIGHT.contains(&(t % DAY_TICKS)))
     }
 
@@ -88,7 +98,8 @@ impl EventBuffer {
                 for (clock, state) in &t.clock_updates {
                     let key = bot.with_registry_holder(|r| clock.key_owned(r));
                     if let Ok(Some(WorldClockKey::Overworld)) = key {
-                        self.day_time = Some(state.total_ticks);
+                        let now = std::time::Instant::now();
+                        self.clock = Some((state.total_ticks, state.rate, now));
                     }
                 }
             }
