@@ -1,6 +1,9 @@
 """Item 3: staged survival under real pressure, brain absent (no goals, no input).
 
 Usage: python3 survival.py <label> [binary|-] [only-ids]   (SURV_WAVES=1,3 runs a subset)
+Env: SURV_SEED (summon seed, default 7), SURV_SHIELD=1 (shield in the offhand), SURV_SLOT=k
+(site k sits 100*k blocks south, mob names carry an s<k> prefix), SURV_SHARED=1 (leave the
+global gamerules to the caller, as batch.py does when it runs several slots at once).
 Survival mode, frozen midnight, iron sword + 8 bread, a 30x30 arena with 5-high walls at
 y=100 (x 1200..1229, z 1100..1129). Four waves of 225 s (15 min): zombies, skeletons,
 creepers, then a mix; each wave summons named mobs 9 to 13 blocks from the bot, tops up at
@@ -10,7 +13,10 @@ kit. Per wave: damage taken, deaths with cause, kills, reflex onsets and legs ow
 import json, math, os, random, re, sys, time
 from arena import *
 
-X0, Z0, N, Y = 1200, 1100, 30, 100
+SLOT = int(os.environ.get("SURV_SLOT", "0"))
+TAG = f"s{SLOT}" if SLOT else ""
+SHARED = os.environ.get("SURV_SHARED") == "1"
+X0, Z0, N, Y = 1200, 1100 + 100 * SLOT, 30, 100
 CX, CZ = X0 + N / 2, Z0 + N / 2
 WAVE_S, TOPUP_S = 225, 90
 WAVES = [
@@ -20,12 +26,13 @@ WAVES = [
     ("mix", ["zombie", "zombie", "skeleton", "creeper"], ["zombie", "skeleton", "creeper"]),
 ]
 E_RE = re.compile(r"^E (\d+) (\w+) (\S+) (\S*) ?(\S+)")
-KIT = (("hotbar.0", "iron_sword", 1), ("hotbar.7", "bread", 8))
+KIT = (("hotbar.0", "iron_sword", 1), ("hotbar.7", "bread", 8)) + (
+    (("weapon.offhand", "shield", 1),) if os.environ.get("SURV_SHIELD") == "1" else ())
 
 
 def build():
     x1, z1 = X0 + N - 1, Z0 + N - 1
-    rc("forceload add 1184 1084 1246 1146",
+    rc(f"forceload add {X0 - 16} {Z0 - 16} {x1 + 17} {z1 + 17}",
        f"fill {X0 - 1} {Y - 4} {Z0 - 1} {x1 + 1} {Y - 1} {z1 + 1} stone",
        f"fill {X0 - 1} {Y} {Z0 - 1} {x1 + 1} {Y + 4} {z1 + 1} stone",
        f"fill {X0} {Y} {Z0} {x1} {Y + 12} {z1} air")
@@ -36,7 +43,7 @@ def kit():
 
 
 def bot_pos():
-    rs = rows(since_ms=now_ms() - 1500)
+    rs = rows(WHO, since_ms=now_ms() - 1500)
     return (rs[-1]["x"], rs[-1]["z"]) if rs else (CX, CZ)
 
 
@@ -48,7 +55,7 @@ def summon(kinds, wave, start, rng):
             x, z = bx + d * math.cos(a), bz + d * math.sin(a)
             if X0 + 1 < x < X0 + N - 1 and Z0 + 1 < z < Z0 + N - 1:
                 break
-        name = f"w{wave}{kind[0]}{start + k}"
+        name = f"{TAG}w{wave}{kind[0]}{start + k}"
         extra = ',equipment:{mainhand:{id:"minecraft:bow",count:1}}' if kind == "skeleton" else ""
         rc(f'summon {kind} {x:.1f} {Y} {z:.1f} {{CustomName:"{name}",PersistenceRequired:1b{extra}}}')
 
@@ -61,17 +68,17 @@ def watch(seconds, L0, deaths_seen):
         if len(d) > deaths_seen[0]:
             deaths_seen[0] = len(d)
             time.sleep(2.5)
-            rc(f"tp Ultron {CX} {Y} {CZ}")
+            rc(f"tp {NAME} {CX} {Y} {CZ}")
             kit()
 
 
 def wave_stats(name, t0, L0, rs):
     dmg = sum(max(0.0, a["hp"] - b["hp"]) for a, b in zip(rs, rs[1:]) if b["hp"] > 0 or a["hp"] > 0)
-    nd = named_deaths(L0)
-    kills = [n for n, why in nd if "Ultron" in why]
+    nd = named_deaths(L0, TAG)
+    kills = [n for n, why in nd if re.search(rf"\b{NAME}\b", why)]
     fired, legs = {}, {}
     if rs:
-        for e in events(since_tick=rs[0]["tick"]):
+        for e in events(WHO, since_tick=rs[0]["tick"]):
             m = E_RE.match(e)
             if m and int(m.group(1)) <= rs[-1]["tick"] and re.match(r"^[A-Z]+\d+$", m.group(5)):
                 key = f"{m.group(5)}:{m.group(3)}"
@@ -84,15 +91,17 @@ def wave_stats(name, t0, L0, rs):
                 food_end=rs[-1]["food"] if rs else None)
 
 
-def run(label, binary=None, only=None, seed=7):
-    rng = random.Random(seed)
+def run(label, binary=None, only=None, seed=None):
+    rng = random.Random(int(os.environ.get("SURV_SEED", "7")) if seed is None else seed)
     build()
-    rc("gamerule spawn_mobs false", "gamerule advance_time false", "gamerule mob_griefing false",
-       "difficulty normal", f"kill @e[type=!player,x={CX},y={Y},z={CZ},distance=..40]")
+    if not SHARED:
+        rc("gamerule spawn_mobs false", "gamerule advance_time false",
+           "gamerule mob_griefing false", "difficulty normal")
+    rc(f"kill @e[type=!player,x={CX},y={Y},z={CZ},distance=..40]")
     bot_start(binary, only)
     out = []
     try:
-        rc(f"tp Ultron {CX} {Y} {CZ}")
+        rc(f"tp {NAME} {CX} {Y} {CZ}")
         kit()
         time.sleep(2)
         pick = {int(x) for x in os.environ.get("SURV_WAVES", "1,2,3,4").split(",")}
@@ -106,12 +115,14 @@ def run(label, binary=None, only=None, seed=7):
             watch(WAVE_S - TOPUP_S, L0, seen)
             rc(f"kill @e[type=!player,type=!item,x={CX},y={Y},z={CZ},distance=..40]")
             time.sleep(1)
-            st = wave_stats(name, t0, L0, rows(since_ms=t0))
+            st = wave_stats(name, t0, L0, rows(WHO, since_ms=t0))
             out.append(st)
             print(label, json.dumps(st), flush=True)
     finally:
-        rc("kill @e[type=item,x=1215,y=100,z=1115,distance=..40]", "gamerule spawn_mobs true",
-           "gamerule advance_time true", "gamerule mob_griefing true")
+        rc(f"kill @e[type=item,x={CX},y={Y},z={CZ},distance=..40]")
+        if not SHARED:
+            rc("gamerule spawn_mobs true", "gamerule advance_time true",
+               "gamerule mob_griefing true")
         bot_stop()
     tot = lambda k: sum(len(s[k]) if isinstance(s[k], list) else s[k] for s in out)
     print(f"SUMMARY {label}: damage={tot('damage'):.1f} deaths={tot('deaths')} kills={tot('kills')}")
