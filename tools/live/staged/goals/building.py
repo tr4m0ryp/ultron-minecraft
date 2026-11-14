@@ -11,7 +11,7 @@ Usage: python3 building.py <binary|-> <trials> [mine|roof ...]
 The site is restored to its plain floor (open air below) at the end. One JSON line per
 trial.
 """
-import json, sys
+import json, signal, sys
 from kit import *
 
 TOP = Y + 16
@@ -69,6 +69,8 @@ def roof():
 CASES = dict(mine=mine, roof=roof)
 
 if __name__ == "__main__":
+    # A batch started in the background ignores SIGINT; TERM still restores the site.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
     binary, trials = sys.argv[1], int(sys.argv[2])
     names = sys.argv[3:] or list(CASES)
     build_site()

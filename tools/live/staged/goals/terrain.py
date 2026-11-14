@@ -6,7 +6,7 @@ Each trial rebuilds its structure on the goal site (x 1400..1440, z 1000..1040, 
 gives the bot an iron pickaxe and 32 dirt, sets one goal and checks the result over RCON.
 The site is restored to its plain floor at the end. One JSON line per trial.
 """
-import json, sys
+import json, signal, sys
 from kit import *
 
 KIT = [("hotbar.0", "iron_pickaxe", 1), ("hotbar.1", "dirt", 32)]
@@ -133,6 +133,8 @@ CASES = dict(pocket=pocket, pocket_idle=pocket_idle, pit=pit, gap=gap, ledge=led
              wall=wall, come=come, give=give)
 
 if __name__ == "__main__":
+    # A batch started in the background ignores SIGINT; TERM still restores the site.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
     binary, trials = sys.argv[1], int(sys.argv[2])
     names = sys.argv[3:] or list(CASES)
     build_site()
