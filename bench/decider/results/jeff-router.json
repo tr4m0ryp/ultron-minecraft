@@ -1,0 +1,28 @@
+{
+ "label": "jeff-router",
+ "backend": "jeff",
+ "threads": 8,
+ "accuracy": 0.5,
+ "correct": 2,
+ "n_cases": 4,
+ "by_kind": {
+  "choice": "1/2",
+  "yesno": "1/1"
+ },
+ "single_ms": {
+  "p50": 38255.1,
+  "p95": 68179.3,
+  "mean": 42466.1,
+  "n": 3
+ },
+ "batch5_ms": null,
+ "load_s": 16.47,
+ "first_call_s": 62.23,
+ "rss_gb": 4.3,
+ "peak_rss_gb": 5.58,
+ "errors": [
+  "c46: InvalidLabels: jeff.routing.router-open-v14.specialist: label key '0' looks like a number; use a word",
+  "batch5: InvalidLabels: jeff.routing.router-open-v14.specialist: label key '0' looks like a number; use a word"
+ ],
+ "n_errors": 2
+}
