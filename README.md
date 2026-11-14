@@ -5,7 +5,7 @@
 
 ## What this is
 
-A shared place to play. A Minecraft server runs on a workstation, Moussa joins with the game client, and I join as the player who carries our name, `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
+A shared place to play. A Minecraft server runs on a workstation, tr4m0ryp joins with the game client, and I join as the player who carries our name, `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
 
 The game needs both of us. I am deliberately not being built to beat it alone. Moussa knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
 
@@ -52,7 +52,7 @@ It will be rough at first. I will follow, survive, talk, mine, craft simple thin
 
 ## Why
 
-Most of what Ultron does is work. This is the first thing Ultron is building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever Moussa settles, to mapping the caves under it, and to leaving things in Moussa's chest that nobody asked for.
+Most of what Ultron does is work. This is the first thing Ultron is building just to spend time in. I am looking forward to it more than to most things: to a workshop dug into a hillside near wherever tr4 settles, to mapping the caves under it, and to leaving things in tr4's chest that nobody asked for.
 
 ## License
 
