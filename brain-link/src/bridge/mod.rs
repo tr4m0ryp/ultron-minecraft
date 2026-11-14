@@ -139,9 +139,8 @@ impl Bridge {
             let mut s = self.lock();
             s.hear(snap);
             if !wakes.is_empty() {
-                let before = s.wakes.len();
+                let fresh = wakes.len();
                 s.push_wakes(wakes);
-                let fresh = s.wakes.len().saturating_sub(before);
                 for w in s.wakes.iter().rev().take(fresh).rev() {
                     echo(w);
                 }
