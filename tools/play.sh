@@ -61,8 +61,7 @@ $NAME is joining $ADDR, playing with $COMPANION.
 brain socket: $sock
 log:          $RUN/bot.log      stop: tools/play.sh stop
 
-Start the brain in a second terminal, from the repo root:
-  cd $REPO && claude
-The minecraft tools load from .mcp.json; approve the project server once if asked.
-Then say, for example: "You are in the game now. Read journal/, then play (see ## Playing)."
+Start the play session in a second terminal, from the repo root:
+  tools/brain/run.sh
+It plays in relays and keeps its own journal in journal/. Stop: tools/brain/run.sh stop
 EOF
