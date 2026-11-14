@@ -204,7 +204,7 @@ fn pool() -> reflex_core::Snapshot {
         BlockPos::new(3, 64, 3),
         BlockKind::Air,
     );
-    s.me.pos = Vec3::new(0.5, 63.3, 0.5);
+    s.me.pos = Vec3::new(2.5, 63.3, 0.5);
     s.me.on_ground = false;
     s.me.in_water = true;
     s
