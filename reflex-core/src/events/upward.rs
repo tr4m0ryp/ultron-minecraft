@@ -77,7 +77,7 @@ impl Upward {
         d
     }
 
-    pub fn log(&self) -> impl Iterator<Item = &Event> {
+    pub fn log(&self) -> impl DoubleEndedIterator<Item = &Event> {
         self.log.iter()
     }
 }
