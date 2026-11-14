@@ -18,7 +18,8 @@ def terrain():
 
 
 def go_to():
-    prep(at=(1405.5, Y + 1, 1005.5))
+    # The companion waits at the destination so the leash does not pull the bot off it.
+    prep(at=(1405.5, Y + 1, 1005.5), comp_at=(1436.5, Y + 4, 1038.5))
     goal = (1434.5, Y + 4, 1037.5)
     n = task(f"go_to {goal[0]} {goal[1]} {goal[2]}")
     kind, text, wakes = outcome(n, 90, "go_to")
