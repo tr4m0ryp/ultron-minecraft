@@ -1,6 +1,6 @@
 """Item 1c: does water placed just before landing cancel fall damage on this server?
 
-Usage: python3 mlg.py [reps]
+Usage: python3 mlg.py [reps] [leads, e.g. 0,1,2 or "d" for the built-in default] [heights]
 Drops the bot (water bucket in hotbar.8, Resistance IV so failures are survivable and still
 show as damage) from several heights onto stone, with R6's `mlg_lead` gain swept: R6 uses
 the bucket on the first tick whose predicted ticks-to-landing is <= lead. Lead 0 never
@@ -23,7 +23,8 @@ def drop(height, lead):
     rc(f"fill 1146 {FLOOR + 1} 1146 1160 {FLOOR + 3} 1160 air", f"tp Ultron {X + 0.5} {FLOOR + 1} {Z + 0.5}")
     prep_bot(night=False, items=(("hotbar.8", "water_bucket", 1),))
     rc("item replace entity Ultron hotbar.0 with diamond_sword", "effect give Ultron resistance 30 3")
-    send(f"gain mlg_lead {lead}")
+    if lead != "d":
+        send(f"gain mlg_lead {lead}")
     time.sleep(1.5)
     t0 = now_ms()
     rc(f"tp Ultron {X + 0.5} {FLOOR + 1 + height} {Z + 0.5} 0 0")
@@ -43,6 +44,10 @@ def drop(height, lead):
 
 if __name__ == "__main__":
     reps = int(sys.argv[1]) if len(sys.argv) > 1 else 2
+    if len(sys.argv) > 2:
+        LEADS = tuple(x if x == "d" else int(x) for x in sys.argv[2].split(","))
+    if len(sys.argv) > 3:
+        HEIGHTS = tuple(int(x) for x in sys.argv[3].split(","))
     build()
     bot_start()
     out = []
