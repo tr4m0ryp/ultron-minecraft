@@ -12,7 +12,7 @@ mod inbox;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use reflex_core::events::EventClass;
+use reflex_core::events::{Event, EventClass};
 use reflex_core::math::Vec3;
 use reflex_core::snapshot::{ChatEvent, Entity, EntityKind};
 
@@ -67,7 +67,8 @@ impl Stage {
                     sender_pos: at,
                 });
                 let text = format!("<{COMPANION}> {rest}");
-                world.push(EventClass::Wake, "chat", COMPANION, &text);
+                let e = Event::new(world.snap.tick, EventClass::Wake, "chat", COMPANION);
+                world.exec.upward.push(e.text(text).critical()); // as orient::speaker does
                 note(&format!("chat in: {rest}"));
             }
             "fail" => match FailRule::parse(rest) {

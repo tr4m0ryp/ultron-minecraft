@@ -63,14 +63,21 @@ def latency(events, sessions):
         if kind != "chat in":
             continue
         after = lambda k: next((t for t, kk, _ in events if kk == k and t0 < t <= t0 + REPLY_WINDOW_MS), None)
-        say, goal = after("chat out"), after("goal set")
+        say = after("chat out")
         woke = next((c["result"][0] for c in calls if c["name"] == "wait_event" and c["result"]
                      and c["ts"] < t0 <= c["result"][0]), None)
+        # When the brain saw the line: the first wait_event result at or after it.
+        seen = next((c["result"][0] for c in calls if c["name"] == "wait_event" and c["result"]
+                     and c["result"][0] >= t0), None)
+        # The reply's goal: set after the brain saw the line and within 3 s of the reply.
+        goal = next((t for t, kk, _ in events if kk == "goal set" and say and seen
+                     and seen <= t <= say + 3000), None)
         trace = [f"{c['name']}@{(c['ts'] - t0) / 1000:.1f}" for c in calls
                  if t0 <= c["ts"] <= (say or t0 + REPLY_WINDOW_MS)]
         rows.append({"chat": text, "trace": trace, "say_s": say and (say - t0) / 1000,
                      "goal_s": goal and (goal - t0) / 1000,
-                     "wake_s": woke and (woke - t0) / 1000})
+                     "wake_s": woke and (woke - t0) / 1000,
+                     "seen_s": seen and (seen - t0) / 1000})
     return rows
 
 
@@ -122,7 +129,7 @@ def main():
     print("reply latency, say:", report["say"])
     print("reply latency, set_goal:", report["goal"])
     for r in lat:
-        print(f"  {r['say_s']}s say, {r['goal_s']}s goal, wake {r['wake_s']}s | {r['chat']}")
+        print(f"  {r['say_s']}s say, {r['goal_s']}s goal, seen {r['seen_s']}s | {r['chat']}")
         print(f"     calls: {' '.join(r['trace'])}")
     print("unprompted chat lines:", len(report["unprompted_chat"]))
     for x in report["unprompted_chat"]:

@@ -4,8 +4,8 @@
 # journal and carries on. Crashed or empty sessions restart with exponential backoff.
 #   tools/brain/run.sh [--fake] [--minutes M] [--turns T] [--sessions S]
 #     --fake       play in the staged fake world instead of the bot (tools/play.sh)
-#     --minutes M  length of one stretch (default 20)
-#     --turns T    hard cap on model turns per session (default 200)
+#     --minutes M  length of one stretch (default 15)
+#     --turns T    hard cap on model turns per session (default 300)
 #     --sessions S stop after S sessions (default: run until stopped)
 #   tools/brain/run.sh stop     ask the running relay to hand over and stop
 # Env: BRAIN_EFFORT, BRAIN_MODEL, BRAIN_TOOL_TIMEOUT_MS (see session.sh).
@@ -23,7 +23,7 @@ if [[ "${1:-}" == stop ]]; then
   exit 0
 fi
 
-FAKE=0; MIN=20; TURNS=200; MAXS=0
+FAKE=0; MIN=15; TURNS=300; MAXS=0
 while (( $# )); do
   case "$1" in
     --fake) FAKE=1 ;;
