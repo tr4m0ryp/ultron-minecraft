@@ -25,6 +25,8 @@ pub struct HandState {
     /// Ticks the shield has been up; it blocks from the 5th.
     shield_ticks: u32,
     idle_ticks: u32,
+    /// Phase of the 1-in-5 movement duty cycle while an item is in use.
+    slow_phase: u8,
     dig: DigState,
 }
 
@@ -32,6 +34,20 @@ impl HandState {
     /// Efference copy of the off hand for the next snapshot.
     pub fn shield_ticks(&self) -> u32 {
         self.shield_ticks
+    }
+
+    /// Vanilla scales movement input by 0.2 and stops sprinting while an item is in use
+    /// (eating, shield up); Azalea leaves that out (its `using_item` is hard-coded false),
+    /// so the bot ran at full sprint while eating or blocking. The adapter emulates it:
+    /// no sprint, and the walk input on one tick in five. `Some(true)` means hold still this
+    /// tick, `Some(false)` walk without sprint, `None` not slowed.
+    pub fn slowed(&mut self) -> Option<bool> {
+        if !(self.shield_up || self.using_main) {
+            self.slow_phase = 0;
+            return None;
+        }
+        self.slow_phase = (self.slow_phase + 1) % 5;
+        Some(self.slow_phase != 1)
     }
 
     /// Reconcile with the server-reported using-item flag from the latest snapshot.
