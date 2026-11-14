@@ -1,7 +1,7 @@
 //! Per-tick debug trace, enabled by `MOTOR_TRACE=1`: the snapshot vitals, the owner of each
 //! body channel, and every event the executor emitted this tick (including Log class).
 
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use reflex_core::{Channel, Executor, Snapshot};
 
@@ -18,7 +18,7 @@ impl Default for Trace {
 }
 
 impl Trace {
-    pub fn tick(&self, snap: &Snapshot, exec: &Executor) {
+    pub fn tick(&self, snap: &Snapshot, exec: &Executor, sensed: Duration) {
         if !self.on {
             return;
         }
@@ -52,6 +52,9 @@ impl Trace {
             own(Channel::Main),
             own(Channel::Inv),
         );
+        if sensed.as_millis() >= 10 {
+            println!("P {} sense_ms={}", snap.tick, sensed.as_millis());
+        }
         for c in &snap.chat {
             println!(
                 "C {} sender={} pos={:?} text={}",

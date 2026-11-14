@@ -49,6 +49,7 @@ impl State {
     }
 
     fn tick(&self, bot: &Client) {
+        let started = std::time::Instant::now();
         let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let inner = &mut *guard;
         let Some(snap) = sense::snapshot(
@@ -59,6 +60,7 @@ impl State {
         ) else {
             return;
         };
+        let sensed = started.elapsed();
         let (out, say) = LOCAL.with_borrow_mut(|slot| {
             let l = slot.get_or_insert_with(|| Local {
                 exec: Executor::new(&bot.username()),
@@ -67,7 +69,7 @@ impl State {
             });
             let say = l.inbox.drain(&mut l.exec);
             let out = l.exec.tick(&snap);
-            l.trace.tick(&snap, &l.exec);
+            l.trace.tick(&snap, &l.exec, sensed);
             io::publish(&mut l.exec, snap.tick);
             (out, say)
         });
