@@ -92,8 +92,19 @@ fn planks(item: &str) -> Option<Shaped> {
     Some(Shaped::new(&["L"], &[('L', &log)], 4))
 }
 
+/// A wooden door (3 per craft) wants six planks of its own wood. Live, the player could not
+/// finish its hut: "no known recipe for oak_door".
+fn door(item: &str) -> Option<Shaped> {
+    let wood = item.strip_suffix("_door")?;
+    if matches!(wood, "iron" | "copper" | "exposed_copper" | "weathered_copper") || wood.contains('_') && !wood.starts_with("dark_") && !wood.starts_with("pale_") {
+        return None;
+    }
+    let planks = format!("{wood}_planks");
+    Some(Shaped::new(&["PP", "PP", "PP"], &[('P', &planks)], 3))
+}
+
 pub fn lookup(item: &str) -> Option<Shaped> {
-    if let Some(s) = planks(item).or_else(|| tool(item)) {
+    if let Some(s) = planks(item).or_else(|| tool(item)).or_else(|| door(item)) {
         return Some(s);
     }
     let p = ('P', "planks");
@@ -129,5 +140,11 @@ mod tests {
         );
         assert_eq!(lookup("crimson_planks").unwrap().key[0].1, "crimson_stem");
         assert!(lookup("beacon").is_none());
+        let door = lookup("oak_door").unwrap();
+        assert!(door.recipe().needs_table);
+        assert_eq!(door.recipe().ingredients, vec![("oak_planks".to_string(), 6)]);
+        assert_eq!(door.recipe().yields, 3);
+        assert_eq!(lookup("dark_oak_door").unwrap().key[0].1, "dark_oak_planks");
+        assert!(lookup("iron_door").is_none());
     }
 }
