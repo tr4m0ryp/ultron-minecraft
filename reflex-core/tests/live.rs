@@ -66,9 +66,17 @@ fn r1_r4_see_hazards_the_box_straddles() {
 fn r1_walks_clear_of_adjacent_lava() {
     let mut s = flat();
     s.blocks.set(BlockPos::new(2, 64, 0), BlockKind::Lava);
-    assert!(eval(&mut LavaWithdrawal, &s, &knobs()).0.is_none(), "one block clear");
+    assert!(
+        eval(&mut LavaWithdrawal, &s, &knobs()).0.is_none(),
+        "one block clear"
+    );
     s.me.pos = Vec3::new(1.5, 64.0, 0.5);
-    let bid = eval(&mut LavaWithdrawal, &s, &knobs()).0.expect("adjacent lava");
+    let bid = eval(&mut LavaWithdrawal, &s, &knobs())
+        .0
+        .expect("adjacent lava");
     assert_eq!(bid.priority, Priority::P1);
-    assert!(bid.commands.legs.unwrap().heading.x < 0.0, "walks away from the lava");
+    assert!(
+        bid.commands.legs.unwrap().heading.x < 0.0,
+        "walks away from the lava"
+    );
 }

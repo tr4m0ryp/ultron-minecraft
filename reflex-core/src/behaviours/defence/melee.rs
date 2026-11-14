@@ -1,5 +1,5 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::{heading_to, safe_retreat};
+use crate::behaviours::common::{heading_to, open_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::math::Vec3;
 use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
@@ -10,6 +10,8 @@ const REACH: f64 = 3.0;
 const STRAFE_INSIDE: f64 = 2.5;
 const SWARM: usize = 3;
 const SWARM_RADIUS: f64 = 6.0;
+/// Cornered, fight back once the foe is this close (zombie reach is about 2 blocks).
+const CORNERED_REACH: f64 = 3.5;
 
 /// K1 melee micro: draw the sword, close in, swing only when the cooldown is ready,
 /// strafe inside the reach boundary.
@@ -49,7 +51,9 @@ pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
 
 /// D2: zombie, husk, drowned, and spiders at night. Fight with K1 when aggression >= 0.5
 /// and hp above hp_floor; otherwise, or when three or more melee mobs are within 6, retreat
-/// toward the companion or away. Baby zombies trigger the retreat from 10 blocks.
+/// toward the companion or away. Baby zombies trigger the retreat from 10 blocks. Cornered
+/// (no safe retreat heading) with the foe within reach: fight back with K1 instead of
+/// pressing against the edge.
 #[derive(Default)]
 pub struct MeleeDefence;
 
@@ -90,7 +94,14 @@ impl Behaviour for MeleeDefence {
             .as_ref()
             .filter(|c| c.pos.dist(target.pos) > d)
             .map(|c| heading_to(me.pos, c.pos))
-            .unwrap_or_else(|| safe_retreat(snap, target.pos));
+            .or_else(|| open_retreat(snap, target.pos));
+        let Some(heading) = heading else {
+            if d <= CORNERED_REACH {
+                let cmds = melee_commands(snap, target);
+                return Some(Bid::new(Priority::P2, 1.0, "melee_cornered", cmds));
+            }
+            return None;
+        };
         let cmds = Commands::default().legs(LegsCmd::toward(heading, Speed::Sprint));
         Some(Bid::new(Priority::P2, urgency, "melee_retreat", cmds))
     }

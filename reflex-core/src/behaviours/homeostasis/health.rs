@@ -1,10 +1,11 @@
 use super::eat::{best_food, eat_commands, EATING_TICKS};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::{heading_to, safe_retreat};
+use crate::behaviours::common::{heading_to, open_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 
 /// H2: hp under hp_floor with a hostile within 16: retreat (toward the companion when it is
-/// farther from the threat than we are). hp 6 or less with a golden apple and no hostile
+/// farther from the threat than we are). Cornered (no safe retreat heading) it leaves the
+/// legs to D2, which fights back. hp 6 or less with a golden apple and no hostile
 /// within 5: eat it. hp < 20 and food < 18 and no hostile within 12: top off food (P3).
 #[derive(Default)]
 pub struct Health;
@@ -31,9 +32,10 @@ impl Behaviour for Health {
                 .as_ref()
                 .filter(|c| c.pos.dist(t.pos) > me.pos.dist(t.pos))
                 .map(|c| heading_to(me.pos, c.pos));
-            let heading = to_companion.unwrap_or_else(|| safe_retreat(snap, t.pos));
-            cmds = cmds.legs(LegsCmd::toward(heading, Speed::Sprint));
-            priority = Some(Priority::P1);
+            if let Some(heading) = to_companion.or_else(|| open_retreat(snap, t.pos)) {
+                cmds = cmds.legs(LegsCmd::toward(heading, Speed::Sprint));
+                priority = Some(Priority::P1);
+            }
         }
         if me.health <= GOLDEN_HP && threat.is_some() && snap.nearest_hostile(5.0).is_none() {
             if let Some(slot) = best_food(me, true) {
