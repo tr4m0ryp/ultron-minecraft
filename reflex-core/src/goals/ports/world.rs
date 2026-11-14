@@ -65,6 +65,8 @@ pub trait World {
     ) -> Option<BlockPos>;
     fn tool_for(&self, block: &str, snap: &Snapshot) -> ToolNeed;
     fn count_item(&self, item: &str) -> u32;
+    /// Items held in the main inventory and hotbar, all kinds together.
+    fn total_items(&self) -> u32;
     /// Slot of a stack whose name matches `item`, hotbar first.
     fn item_slot(&self, item: &str) -> Option<Slot>;
     /// Empty main-inventory and hotbar slots.

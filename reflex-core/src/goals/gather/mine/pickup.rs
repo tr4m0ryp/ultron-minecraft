@@ -24,16 +24,17 @@ const DIRECT: f64 = 3.0;
 #[derive(Default)]
 pub struct Pickup {
     ticks: u32,
-    /// The drop's item and how many the inventory held when it was first seen.
-    watching: Option<(String, u32)>,
+    /// Items held when the dig began; the difference after the pickup is what it yielded.
+    before: u32,
     picked: u32,
     walker: Walker,
 }
 
 impl Pickup {
-    pub fn start(&mut self) {
+    /// Call as the dig of a block begins, with the inventory's item total.
+    pub fn arm(&mut self, held: u32) {
         self.ticks = 0;
-        self.watching = None;
+        self.before = held;
         self.walker.reset();
     }
 
@@ -51,11 +52,6 @@ impl Pickup {
         let near = drops
             .iter()
             .min_by(|a, b| a.pos.dist(me).total_cmp(&b.pos.dist(me)));
-        if self.watching.is_none() {
-            if let Some(d) = near {
-                self.watching = Some((d.item.clone(), cx.world.count_item(&d.item)));
-            }
-        }
         let give_up = self.ticks > PICKUP_TICKS || (near.is_none() && self.ticks > SPAWN_WAIT);
         let Some(d) = near.filter(|_| !give_up) else {
             return self.finish(cx);
@@ -81,9 +77,7 @@ impl Pickup {
 
     fn finish(&mut self, cx: &mut GoalCx) -> Option<Plan> {
         self.walker.stop(cx);
-        if let Some((item, before)) = self.watching.take() {
-            self.picked += cx.world.count_item(&item).saturating_sub(before);
-        }
+        self.picked += cx.world.total_items().saturating_sub(self.before);
         None
     }
 

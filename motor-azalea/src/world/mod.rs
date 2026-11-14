@@ -59,6 +59,10 @@ impl World for AzaleaWorld {
         inventory::count(&self.bot, item)
     }
 
+    fn total_items(&self) -> u32 {
+        inventory::total(&self.bot)
+    }
+
     fn item_slot(&self, item: &str) -> Option<Slot> {
         inventory::slot_of(&self.bot, item)
     }

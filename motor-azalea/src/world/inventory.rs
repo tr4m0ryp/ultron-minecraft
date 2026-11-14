@@ -35,6 +35,16 @@ pub fn count(bot: &Client, kind: &str) -> u32 {
     .unwrap_or(0)
 }
 
+pub fn total(bot: &Client) -> u32 {
+    with_menu(bot, |m| {
+        PLAYER_SLOTS
+            .filter_map(|i| m.slot(i))
+            .map(|s| s.count().max(0) as u32)
+            .sum()
+    })
+    .unwrap_or(0)
+}
+
 pub fn slot_of(bot: &Client, kind: &str) -> Option<Slot> {
     with_menu(bot, |m| {
         (HOTBAR_START..=44)

@@ -156,6 +156,7 @@ impl GoalTask for Mine {
                 let t = NavTarget::Block { pos, radius: REACH };
                 match self.walker.walk(cx, t, "goal_mine_walk") {
                     Walk::Arrived => {
+                        self.pickup.arm(cx.world.total_items());
                         self.phase = Phase::Dig { pos, ticks: 0 };
                         self.dig(cx, pos, 0)
                     }
@@ -172,7 +173,6 @@ impl GoalTask for Mine {
                 self.mined += 1;
                 let (m, n) = (self.mined, self.count);
                 cx.progress(m, n, format!("mined {m}/{n} {}", self.block));
-                self.pickup.start();
                 self.phase = Phase::Pickup(pos);
                 Step::Bid(Plan::hold("goal_mine"))
             }

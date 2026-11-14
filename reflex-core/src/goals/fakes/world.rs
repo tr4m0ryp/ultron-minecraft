@@ -123,6 +123,10 @@ impl World for FakeWorld {
             .sum()
     }
 
+    fn total_items(&self) -> u32 {
+        self.0.borrow().inventory.iter().map(|(_, c)| c).sum()
+    }
+
     fn item_slot(&self, item: &str) -> Option<Slot> {
         let s = self.0.borrow();
         let held = |n: &String| s.inventory.iter().any(|(k, c)| k == n && *c > 0);
