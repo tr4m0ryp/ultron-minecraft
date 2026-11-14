@@ -45,14 +45,29 @@ pub fn line(a: BlockPos, b: BlockPos) -> Vec<BlockPos> {
     out
 }
 
+/// The standing cell next to `block`, on the side facing `me`, at `me`'s height.
+pub fn beside(me: BlockPos, block: BlockPos) -> BlockPos {
+    let (dx, dz) = (block.x - me.x, block.z - me.z);
+    if dx.abs() >= dz.abs() {
+        BlockPos::new(block.x - dx.signum(), me.y, block.z)
+    } else {
+        BlockPos::new(block.x, me.y, block.z - dz.signum())
+    }
+}
+
 impl Navigator for FakeNav {
     fn request(&mut self, target: NavTarget, snap: &Snapshot) {
         let mut s = self.0.borrow_mut();
         s.requests += 1;
         s.current = Some(target);
         s.planning_left = s.plan_ticks;
-        if let NavTarget::Block { pos, .. } = target {
-            s.follower = PathFollower::new(line(snap.me.pos.block(), pos));
+        let me = snap.me.pos.block();
+        match target {
+            NavTarget::Block { pos, .. } => s.follower = PathFollower::new(line(me, pos)),
+            NavTarget::Beside { block } => {
+                s.follower = PathFollower::new(line(me, beside(me, block)));
+            }
+            _ => {}
         }
     }
 
@@ -66,7 +81,8 @@ impl Navigator for FakeNav {
             return NavStatus::Planning;
         }
         match target {
-            NavTarget::Block { pos, .. } => {
+            NavTarget::Sky { .. } => NavStatus::Arrived,
+            NavTarget::Block { pos, .. } | NavTarget::Beside { block: pos } => {
                 if s.unreachable.contains(&pos) {
                     return NavStatus::Failed(NavFailure::Unreachable);
                 }
