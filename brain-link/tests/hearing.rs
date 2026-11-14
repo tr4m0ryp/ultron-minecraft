@@ -15,12 +15,19 @@ fn heard_after(sender: &str, text: &str, companion_at: f64) -> Vec<String> {
     let mut exec = Executor::new("Ultron");
     let mut snap = world.snap.clone();
     let me = snap.me.pos;
-    let c = snap.companion.as_mut().expect("the fake world has a companion");
+    let c = snap
+        .companion
+        .as_mut()
+        .expect("the fake world has a companion");
     c.pos = me + Vec3::new(companion_at, 0.0, 0.0);
     let name = c.name.clone();
     // Far players are not in the entity list, so the line carries no sender position.
     snap.chat.push(ChatEvent {
-        sender: if sender.is_empty() { name } else { sender.into() },
+        sender: if sender.is_empty() {
+            name
+        } else {
+            sender.into()
+        },
         text: text.into(),
         sender_pos: None,
     });
