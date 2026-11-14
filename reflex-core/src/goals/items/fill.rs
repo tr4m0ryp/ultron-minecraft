@@ -3,7 +3,7 @@
 //! one model call each, which roughly doubled the stretch's cost per minute. A wall, floor
 //! or roof is now one goal.
 
-use super::place::Place;
+use super::place::{Cleanup, Place};
 use super::surfaces::replaceable;
 use crate::goals::ports::{kind_matches, Navigator};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
@@ -24,6 +24,8 @@ pub struct Fill {
     placed: u32,
     occupied: u32,
     failures: Vec<String>,
+    cleanup: Cleanup,
+    outcome: Option<Step>,
 }
 
 /// Cells of the box, bottom layer first, each layer walked in rows that turn back.
@@ -59,6 +61,8 @@ impl Fill {
             placed: 0,
             occupied: 0,
             failures: Vec::new(),
+            cleanup: Cleanup::default(),
+            outcome: None,
         }
     }
 
@@ -77,23 +81,37 @@ impl Fill {
         if let Some(last) = self.failures.last() {
             s += &format!("; {} cells failed, last: {last}", self.failures.len());
         }
+        let c = &self.cleanup;
+        if c.removed + c.left_standing > 0 {
+            s += &format!("; took down {} scaffold blocks", c.removed);
+            if c.left_standing > 0 {
+                s += &format!(", {} left standing", c.left_standing);
+            }
+        }
         s
     }
 
-    fn finish(&self) -> Step {
-        if self.placed == 0 && !self.failures.is_empty() {
-            Step::Failed(self.summary())
-        } else {
+    /// Takes the scaffold down, then reports `ok` or failure.
+    fn finish(&mut self, cx: &mut GoalCx, ok: bool) -> Step {
+        if let Some(p) = self.cleanup.step(cx) {
+            return Step::Bid(p);
+        }
+        if ok && !(self.placed == 0 && !self.failures.is_empty()) {
             Step::Done(self.summary())
+        } else {
+            Step::Failed(self.summary())
         }
     }
 }
 
 impl GoalTask for Fill {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
+        if let Some(Step::Failed(_)) = self.outcome {
+            return self.finish(cx, false);
+        }
         while self.current.is_none() {
             let Some(&pos) = self.cells.get(self.next) else {
-                return self.finish();
+                return self.finish(cx, true);
             };
             match cx.world.block_at(pos) {
                 Some(k) if kind_matches(&self.block, &k) => self.next += 1,
@@ -102,13 +120,23 @@ impl GoalTask for Fill {
                     self.next += 1;
                 }
                 _ if cx.world.item_slot(&self.block).is_none() => {
-                    return Step::Failed(format!("ran out of {}; {}", self.block, self.summary()));
+                    self.failures.push(format!("ran out of {}", self.block));
+                    self.outcome = Some(Step::Failed(String::new()));
+                    return self.finish(cx, false);
                 }
-                _ => self.current = Some(Place::new(self.block.clone(), pos)),
+                _ => {
+                    let rest = self.cells[self.next + 1..].to_vec();
+                    let place = Place::in_fill(self.block.clone(), pos, rest);
+                    self.current = Some(place);
+                }
             }
         }
         let place = self.current.as_mut().expect("set above");
-        match place.step(cx) {
+        let step = place.step(cx);
+        if !matches!(step, Step::Bid(_) | Step::Idle) {
+            self.cleanup.add(place.take_scaffold());
+        }
+        match step {
             Step::Done(_) => {
                 self.placed += 1;
                 self.next += 1;
@@ -123,7 +151,8 @@ impl GoalTask for Fill {
                 self.next += 1;
                 self.current = None;
                 if self.failures.len() >= MAX_FAILURES {
-                    return Step::Failed(self.summary());
+                    self.outcome = Some(Step::Failed(String::new()));
+                    return self.finish(cx, false);
                 }
                 Step::Bid(Plan::hold("goal_place"))
             }
@@ -135,6 +164,7 @@ impl GoalTask for Fill {
         if let Some(p) = self.current.as_mut() {
             p.stop(nav);
         }
+        self.cleanup.reset_walk();
     }
 }
 
