@@ -151,7 +151,7 @@ impl Mine {
         let floor = cx.world.block_at(pos.below()).unwrap_or_default();
         let solid_floor = !floor.is_empty() && !super::super::items::replaceable(&floor);
         if pos.y != feet.y || !solid_floor || ticks > ADVANCE_TICKS + DIG_LIMIT_TICKS {
-            self.pickup.arm(0);
+            self.pickup.arm();
             self.phase = Phase::Pickup(pos);
             return Step::Bid(Plan::hold("goal_mine"));
         }
@@ -165,7 +165,7 @@ impl Mine {
         let head_name = cx.world.block_at(head).unwrap_or_default();
         if !super::super::items::replaceable(&head_name) && !head_name.is_empty() {
             if !natural(&head_name) || !target::safe(cx, head) {
-                self.pickup.arm(0);
+                self.pickup.arm();
                 self.phase = Phase::Pickup(pos);
                 return Step::Bid(Plan::hold("goal_mine"));
             }
@@ -180,7 +180,7 @@ impl Mine {
         let me = cx.me_pos();
         let c = pos.feet_centre();
         if (me - c).horizontal().len() < 0.3 || ticks > ADVANCE_TICKS + 20 {
-            self.pickup.arm(0);
+            self.pickup.arm();
             self.phase = Phase::Pickup(pos);
             return Step::Bid(Plan::hold("goal_mine"));
         }
@@ -201,7 +201,7 @@ impl GoalTask for Mine {
         if self.broken >= self.count + LOSS_SLACK {
             return Step::Failed(format!("drops were lost: {}", self.tally(cx)));
         }
-        if cx.world.free_slots() == 0 && cx.world.count_item(&self.drop) % 64 == 0 {
+        if cx.world.free_slots() == 0 {
             return Step::Failed(format!("inventory full; {}", self.tally(cx)));
         }
         if self.phase == Phase::Find {

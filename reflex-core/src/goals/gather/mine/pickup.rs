@@ -1,8 +1,6 @@
-//! Picking up what a dug block dropped. Live, the drop often landed out of the old straight
-//! walk's reach (a log falling off a trunk, cobblestone rolling into the pit), the goal still
-//! reported "mined 32 stone" and the player found no cobblestone. The drop is now found as
-//! an entity and walked to with the pathfinder, and the report counts what reached the
-//! inventory.
+//! Picking up what a dug block dropped when stepping into the gap did not: a log falling
+//! off a trunk, a drop that rolled away. The drop is found as an entity and walked to with
+//! the route planner, or straight at when no route exists.
 
 use crate::behaviours::common::heading_to;
 use crate::channels::{Commands, LegsCmd, Speed};
@@ -24,19 +22,15 @@ const DIRECT: f64 = 6.0;
 #[derive(Default)]
 pub struct Pickup {
     ticks: u32,
-    /// Items held when the dig began; the difference after the pickup is what it yielded.
-    before: u32,
-    picked: u32,
     walker: Walker,
     /// The pathfinder found no way to this block's drop; walk straight at it instead.
     no_path: bool,
 }
 
 impl Pickup {
-    /// Call as the dig of a block begins, with the inventory's item total.
-    pub fn arm(&mut self, held: u32) {
+    /// Call once the block is broken.
+    pub fn arm(&mut self) {
         self.ticks = 0;
-        self.before = held;
         self.no_path = false;
         self.walker.reset();
     }
@@ -86,19 +80,6 @@ impl Pickup {
 
     fn finish(&mut self, cx: &mut GoalCx) -> Option<Plan> {
         self.walker.stop(cx);
-        self.picked += cx.world.total_items().saturating_sub(self.before);
         None
-    }
-
-    /// "all drops picked up" or how many of the `mined` blocks' drops were left behind.
-    pub fn summary(&self, mined: u32) -> String {
-        if self.picked >= mined {
-            format!("picked up {} items", self.picked)
-        } else {
-            format!(
-                "picked up only {} items, the other drops were out of reach",
-                self.picked
-            )
-        }
     }
 }
