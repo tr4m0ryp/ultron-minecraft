@@ -19,7 +19,9 @@ impl Behaviour for LavaWithdrawal {
         let body = hitbox_cells(me.pos);
         let under = body_cells(me.pos)[2];
         let in_lava_cell = body.iter().find(|p| blocks.get(**p) == BlockKind::Lava);
-        let lava = in_lava_cell.copied().or_else(|| (blocks.get(under) == BlockKind::Lava).then_some(under))?;
+        let lava = in_lava_cell
+            .copied()
+            .or_else(|| (blocks.get(under) == BlockKind::Lava).then_some(under))?;
         let in_lava = in_lava_cell.is_some();
         let heading = match escape_step(blocks, me.pos, |_| true) {
             Some(p) => p.feet_centre() - me.pos,
