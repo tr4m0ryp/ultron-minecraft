@@ -182,3 +182,21 @@ fn d3_ranged_cover_or_close_in() {
     s.entities.clear();
     assert!(eval(&mut RangedCover, &s, &knobs()).0.is_none());
 }
+
+/// Live, with several zombies, O2 turned toward the next approaching one, kept the gaze by
+/// hysteresis, and D2's fight (which needed the gaze) lost every channel: 5 swings in 225 s.
+#[test]
+fn d2_keeps_swinging_while_o2_holds_the_gaze() {
+    let mut ex = reflex_core::Executor::new(BOT);
+    let mut s = flat();
+    give(&mut s, 0, ItemKind::Sword, 1);
+    let mut far = mob(2, EntityKind::Zombie, 0.5, 9.5);
+    far.vel = Vec3::new(0.0, 0.0, -1.0);
+    s.entities.push(far);
+    ex.tick(&s);
+    assert_eq!(ex.owner(reflex_core::Channel::Gaze), Some("O2"));
+    s.tick += 1;
+    s.entities.push(mob(3, EntityKind::Zombie, 2.5, 0.5));
+    let out = ex.tick(&s);
+    assert_eq!(out.main, Some(MainCmd::Attack(3)));
+}
