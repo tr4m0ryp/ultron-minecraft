@@ -1,13 +1,18 @@
 use reflex_core::events::Upward;
+use reflex_core::goals::GoalStatus;
 use reflex_core::knobs::Knobs;
 use reflex_core::{Channel, Executor};
 
 /// What the bridge needs from an executor: its knobs, its upward channel, and who holds
-/// the legs. `Executor` implements it; tests use `fake::FakeExecutor`.
+/// the legs, plus the goal layer's status. `Executor` implements it (without goal status); tests use `fake::FakeExecutor`.
 pub trait Host {
     fn knobs(&mut self) -> &mut Knobs;
     fn upward(&mut self) -> &mut Upward;
     fn legs_owner(&self) -> Option<String>;
+    /// The goal layer's latest status, when the host runs one.
+    fn goal_status(&self) -> Option<GoalStatus> {
+        None
+    }
 }
 
 impl Host for Executor {

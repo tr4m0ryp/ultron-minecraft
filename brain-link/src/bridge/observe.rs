@@ -1,4 +1,5 @@
 use reflex_core::behaviours::GOAL_ID;
+use reflex_core::goals::{GoalState, GoalStatus};
 use reflex_core::knobs::Knobs;
 use reflex_core::snapshot::{ItemKind, ItemStack};
 use reflex_core::Snapshot;
@@ -12,6 +13,7 @@ const NEAR_GROUPS_MAX: usize = 8;
 pub fn observe(
     knobs: &Knobs,
     legs_owner: Option<&str>,
+    status: Option<&GoalStatus>,
     snap: &Snapshot,
     digest: String,
     wakes_pending: usize,
@@ -32,19 +34,41 @@ pub fn observe(
             dist: r1(c.pos.dist(p)),
             hp: c.health,
         }),
-        goal: knobs.goal.as_ref().map(|g| GoalView {
-            id: g.id,
-            spec: g.spec.clone(),
-            priority: g.priority,
-            status: goal_status(g, legs_owner, snap),
-            queued: knobs.goal_queue.len(),
+        goal: knobs.goal.as_ref().map(|g| {
+            let live = status.filter(|s| s.goal_id == g.id && !s.state.is_final());
+            GoalView {
+                id: g.id,
+                spec: g.spec.clone(),
+                priority: g.priority,
+                status: goal_status(g, live, legs_owner, snap),
+                progress: live.and_then(|s| s.progress).map(|(d, t)| format!("{d}/{t}")),
+                note: live.and_then(|s| s.note.clone()),
+                queued: knobs.goal_queue.len(),
+            }
         }),
+        last_goal: status
+            .filter(|s| s.state.is_final())
+            .map(GoalStatus::line),
         digest,
         wakes_pending,
     }
 }
 
-fn goal_status(g: &reflex_core::knobs::Goal, owner: Option<&str>, snap: &Snapshot) -> String {
+fn goal_status(
+    g: &reflex_core::knobs::Goal,
+    live: Option<&GoalStatus>,
+    owner: Option<&str>,
+    snap: &Snapshot,
+) -> String {
+    match (live.map(|s| s.state), owner) {
+        (Some(GoalState::Blocked), _) => return "blocked".into(),
+        (Some(GoalState::Preempted), Some(other)) if other != GOAL_ID => {
+            return format!("paused_by:{other}")
+        }
+        (Some(GoalState::Preempted), _) => return "preempted".into(),
+        (Some(GoalState::Running), _) => return "running".into(),
+        _ => {}
+    }
     let following = g.target.is_none() && g.spec.starts_with("follow");
     match owner {
         Some(GOAL_ID) => "running".into(),

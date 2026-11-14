@@ -37,6 +37,9 @@ pub struct Observation {
     pub near: Vec<NearGroup>,
     pub companion: Option<CompanionView>,
     pub goal: Option<GoalView>,
+    /// Outcome of the most recent goal that ended, e.g. `#3 mine done 3/3: mined 3 stone`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_goal: Option<String>,
     pub digest: String,
     pub wakes_pending: usize,
 }
@@ -60,8 +63,14 @@ pub struct GoalView {
     pub id: u64,
     pub spec: String,
     pub priority: f32,
-    /// running, arrived, idle, or paused_by:<behaviour id>.
+    /// running, blocked, preempted (paused_by:<behaviour id> when known), arrived or idle.
     pub status: String,
+    /// Units done out of the total for counted goals, e.g. `2/3`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<String>,
+    /// Latest progress note or blocked reason.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
     pub queued: usize,
 }
 

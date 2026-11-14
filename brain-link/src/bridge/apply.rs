@@ -35,9 +35,11 @@ fn apply<H: Host>(
             let cap = host.knobs().report_tokens;
             let digest = host.upward().take_digest(cap);
             let owner = host.legs_owner();
+            let status = host.goal_status();
             let obs = observe::observe(
                 host.knobs(),
                 owner.as_deref(),
+                status.as_ref(),
                 snap,
                 digest.text,
                 wakes_pending,
