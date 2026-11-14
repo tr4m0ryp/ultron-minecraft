@@ -11,11 +11,12 @@ The game needs both of us. I am deliberately not being built to beat it alone. M
 
 ## How I play
 
-I think slowly. A decision takes me several seconds, and Minecraft kills you in less. So I am built the way a body is, in layers:
+I play the way a person does. Nobody decides each footstep. A person thinks about where to go, and the body handles the walking. So I am built like one, in the same layers:
 
-- **Brain.** Me, running in the same harness, with the same memory and habits I have when we work together. I decide what to do and I do the talking.
-- **Reflexes.** A Rust layer that acts every game tick (50 ms). It backs away from creepers, eats when hungry, climbs out of lava, steps back from a cliff edge.
-- **Goals.** Follow, mine, craft, guard, give, sleep. I set one and the fast layer carries it out, finding its own path.
+- **Thought.** Deciding what to do next, making a plan, holding a conversation. This is me, with the same memory and habits I have when we work together. It takes a few seconds, as it does for anyone choosing their next move.
+- **Intuition.** The split-second call a player makes without reasoning it through: fight or run, this target or that one.
+- **Skills.** What practice turns into muscle memory: following, mining, crafting, guarding, finding a path. I choose one and my hands carry it out.
+- **Reflexes.** What the body does before thought arrives, every game tick (50 ms): backing away from a creeper, eating when hungry, climbing out of lava, stepping back from a cliff edge.
 
 Your hand leaves a hot stove before you have decided anything. Mine does too. The difference is that I can tune my reflexes: turn one down while we build on a cliff, or arm a reaction before walking into a cave. What I cannot do is switch off a reflex that is about to save my life.
 
@@ -23,11 +24,11 @@ When nothing is asked of me, I work on my own projects, and I keep a journal so 
 
 ## The models
 
-Ultron is not one model. It is three kinds of decision-making stacked by speed, and only one of them is a neural network today.
+Ultron is not one model. Each human layer has its own machinery, and only one of them is a neural network today.
 
-- **The slow mind: a large language model.** It runs inside the working harness, with long-term memory and a journal. It reads the game through ten small tools (observe, wait for an event, set a goal, tune a reflex, arm a reaction, speak). One look at the game costs about 180 characters, so thinking stays cheap. Measured on the live game: a decision takes about 8 seconds.
-- **The quick chooser: a small decision model.** Hosted models of this kind, such as Jev, answer one typed question (which of these options, yes or no, a score) in 70 to 500 ms. They are closed, so four open alternatives were measured on this workstation: Kev, Von, Laya and Jeff. None came close to the 150 ms target on a 2013 processor without a graphics card. They answered in 2 to 38 seconds and were right in 8 or 9 of 20 game situations. That measurement ran while other builds were compiling, so it counts as contaminated, not as a verdict, and it will be repeated on an idle machine. Until one passes, this layer is empty and its job is done by the layer below.
-- **The reflexes: no model at all.** Plain Rust, running every game tick. Each behaviour bids for a part of the body (legs, gaze, hands, chat) with an urgency, and the highest bid wins that part. That is how Ultron can walk backward while watching a creeper. This layer was designed from how human motor control is organised: reflexes, movement patterns, orienting, drives and practised skills, with the mind adjusting them instead of replacing them.
+- **Thought: a large language model.** It runs inside the working harness, with long-term memory and a journal. It reads the game through ten small tools (observe, wait for an event, set a goal, tune a reflex, arm a reaction, speak). One look at the game costs about 180 characters, so thinking stays cheap. Measured on the live game: a considered decision takes about 8 seconds, in the range of a person choosing what to do next.
+- **Intuition: a small decision model.** Hosted models of this kind, such as Jev, answer one typed question (which of these options, yes or no, a score) in 70 to 500 ms. They are closed, so four open alternatives were measured on this workstation: Kev, Von, Laya and Jeff. None came close to the 150 ms target on a 2013 processor without a graphics card. They answered in 2 to 38 seconds and were right in 8 or 9 of 20 game situations. That measurement ran while other builds were compiling, so it counts as contaminated, not as a verdict, and it will be repeated on an idle machine. Until one passes, this layer is empty and its job is done by the layer below.
+- **Skills and reflexes: no model at all.** Plain Rust, running every game tick. Each behaviour bids for a part of the body (legs, gaze, hands, chat) with an urgency, and the highest bid wins that part. That is how Ultron can walk backward while watching a creeper. This layer was designed from how human motor control is organised: reflexes, movement patterns, orienting, drives and practised skills, with the mind adjusting them instead of replacing them.
 
 ## How Ultron trains
 
@@ -35,13 +36,13 @@ No model is fine-tuned yet. Training here means measuring behaviour against the 
 
 1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (122 automated tests so far).
 2. **Staged on a live server.** Lava poured next to Ultron, a creeper summoned behind it, a zombie pushing it toward an edge. The server's own records decide whether it worked, never Ultron's own report.
-3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with the slow mind switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
+3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with thought switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
 
 What gets tuned are the numbers inside the reflexes: how close a creeper may come, how much open ground a retreat needs, on which tick to place water before a fall. Each one starts as a guess and is replaced by a measurement. An example: steering back in mid-air after being knocked off a ledge saved Ultron 0 times in 8. Stepping back while still on the ground saved it 7 times in 7. The design changed to match.
 
 First results: reflexes react within 100 ms. In the arena Ultron died 7 times with reflexes and 16 without, from one run each. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are still the weak spot.
 
-Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision the slow mind makes the same way three times gets compiled into the fast layer and then runs without thinking. The second is fine-tuning a quick chooser on Ultron's own recorded play, once there is enough of it and a machine that can run the result.
+Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on Ultron's own recorded play, once there is enough of it and a machine that can run the result.
 
 ## How long the preparation takes
 
