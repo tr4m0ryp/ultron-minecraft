@@ -29,7 +29,8 @@ impl Trace {
         let own = |c| exec.owner(c).unwrap_or("-");
         println!(
             "T {} ms={} pos={:.2},{:.2},{:.2} hp={:.1} food={} sat={:.1} air={} fire={} \
-             water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={}",
+             water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={} \
+             vel={:.3},{:.3},{:.3}",
             snap.tick,
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -51,6 +52,9 @@ impl Trace {
             own(Channel::Gaze),
             own(Channel::Main),
             own(Channel::Inv),
+            me.vel.x,
+            me.vel.y,
+            me.vel.z,
         );
         if sensed.as_millis() >= 10 {
             println!("P {} sense_ms={}", snap.tick, sensed.as_millis());

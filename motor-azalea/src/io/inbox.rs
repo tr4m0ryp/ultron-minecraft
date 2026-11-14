@@ -1,13 +1,14 @@
 //! Line commands from stdin, read on a plain thread and drained once per tick.
 //!
-//! `goal <x> <y> <z> [priority] [spec...]`, `goal-end`, `mode <name>`, `say <text>`.
+//! `goal <x> <y> <z> [priority] [spec...]`, `goal-end`, `mode <name>`, `gain <name> <value>`,
+//! `say <text>`.
 
 use std::{
     io::BufRead,
     sync::mpsc::{self, Receiver},
 };
 
-use reflex_core::{math::Vec3, Executor, Mode};
+use reflex_core::{math::Vec3, Executor, GainName, Mode};
 
 #[derive(Debug, PartialEq)]
 pub enum BrainCmd {
@@ -18,6 +19,7 @@ pub enum BrainCmd {
     },
     GoalEnd,
     Mode(Mode),
+    Gain(GainName, f32),
     Say(String),
 }
 
@@ -61,6 +63,7 @@ impl Inbox {
                     exec.knobs.end_goal();
                 }
                 BrainCmd::Mode(m) => exec.knobs.set_mode(m),
+                BrainCmd::Gain(name, v) => exec.knobs.set_gain(name, v),
                 BrainCmd::Say(text) => say.push(text),
             }
         }
@@ -100,6 +103,21 @@ pub fn parse(line: &str) -> Option<BrainCmd> {
             "idle" => Mode::IdleSafe,
             _ => return None,
         })),
+        "gain" => {
+            let mut it = rest.split_whitespace();
+            let name = match it.next()? {
+                "aggression" => GainName::Aggression,
+                "caution" => GainName::Caution,
+                "hp_floor" => GainName::HpFloor,
+                "hunger_floor" => GainName::HungerFloor,
+                "leash" => GainName::Leash,
+                "vigilance" => GainName::Vigilance,
+                "air_floor" => GainName::AirFloor,
+                "mlg_lead" => GainName::MlgLead,
+                _ => return None,
+            };
+            Some(BrainCmd::Gain(name, it.next()?.parse().ok()?))
+        }
         "say" if !rest.trim().is_empty() => Some(BrainCmd::Say(rest.trim().to_string())),
         _ => None,
     }

@@ -4,7 +4,6 @@ use super::{
 };
 use azalea::{
     core::entity_id::MinecraftEntityId,
-    interact::StartUseItemEvent,
     protocol::packets::game::{s_interact::InteractionHand, s_use_item::ServerboundUseItem},
     Client,
 };
@@ -43,21 +42,14 @@ impl HandState {
     }
 }
 
-fn start_use(bot: &Client, hand: InteractionHand) {
-    bot.ecs.write().write_message(StartUseItemEvent {
-        entity: bot.entity,
-        hand,
-        force_block: None,
-    });
-}
 
 /// Right-click with the main-hand item as a use in the air (vanilla `useItem`). Azalea's
 /// start-use sends only `UseItemOn` when the crosshair is on a block, and unlike the vanilla
 /// client never follows up with `UseItem` when the block ignores it, so a bucket aimed at the
 /// ground did nothing. The server ray-casts buckets itself from this packet's rotation.
-fn use_in_air(bot: &Client, look: (f32, f32)) {
+fn use_in_air(bot: &Client, hand: InteractionHand, look: (f32, f32)) {
     bot.write_packet(ServerboundUseItem {
-        hand: InteractionHand::MainHand,
+        hand,
         seq: 0,
         y_rot: look.0,
         x_rot: look.1,
@@ -99,9 +91,9 @@ pub fn apply_main(
                 .is_some_and(|s| matches!(s.kind, ItemKind::WaterBucket | ItemKind::EmptyBucket));
             if bucket {
                 // A bucket use is instant; the reflex issuing it owns the one-shot timing.
-                use_in_air(bot, look);
+                use_in_air(bot, InteractionHand::MainHand, look);
             } else if !st.using_main && !st.shield_up {
-                use_in_air(bot, look);
+                use_in_air(bot, InteractionHand::MainHand, look);
                 st.using_main = true;
                 st.idle_ticks = 0;
             }
@@ -124,10 +116,10 @@ pub fn apply_main(
     }
 }
 
-pub fn apply_off(bot: &Client, cmd: Option<OffCmd>, st: &mut HandState) {
+pub fn apply_off(bot: &Client, cmd: Option<OffCmd>, st: &mut HandState, look: (f32, f32)) {
     match cmd {
         Some(OffCmd::RaiseShield) if !st.shield_up && !st.using_main => {
-            start_use(bot, InteractionHand::OffHand);
+            use_in_air(bot, InteractionHand::OffHand, look);
             st.shield_up = true;
             st.idle_ticks = 0;
         }

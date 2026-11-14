@@ -63,7 +63,7 @@ impl State {
         let sensed = started.elapsed();
         let (out, say) = LOCAL.with_borrow_mut(|slot| {
             let l = slot.get_or_insert_with(|| Local {
-                exec: Executor::new(&bot.username()),
+                exec: executor(&bot.username()),
                 inbox: Inbox::spawn_stdin(),
                 trace: Trace::default(),
             });
@@ -78,6 +78,20 @@ impl State {
             bot.chat(text.as_str());
         }
     }
+}
+
+/// The full catalog, or only the behaviours named in `MOTOR_ONLY` (comma-separated ids such
+/// as `D2,D11`), which live ablation runs use as a crude baseline.
+fn executor(name: &str) -> Executor {
+    let Ok(only) = std::env::var("MOTOR_ONLY") else {
+        return Executor::new(name);
+    };
+    let keep: Vec<&str> = only.split(',').map(str::trim).collect();
+    let catalog = reflex_core::behaviours::default_catalog()
+        .into_iter()
+        .filter(|b| keep.contains(&b.id()))
+        .collect();
+    Executor::with_behaviours(name, catalog)
 }
 
 pub async fn handle(bot: Client, event: Event, state: State) {
