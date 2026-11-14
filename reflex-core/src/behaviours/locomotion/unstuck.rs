@@ -14,12 +14,21 @@ pub const WAKE_AFTER_TICKS: u32 = 200;
 /// C6: intended motion (efference copy) but observed displacement under 0.05 blocks per
 /// tick for 20 ticks. Escalate: jump, strafe left, strafe right, back up, mine the block
 /// ahead at feet and head height; after about 200 ticks wake the brain.
+///
+/// Once escalation starts, only net progress along the intended heading since the first
+/// stuck tick ends it. A strafe that slides along the wall is motion but not progress; it
+/// used to reset the counter, hand the legs back to the goal, and loop jump/strafe forever
+/// without reaching the dig stage or waking the brain.
 #[derive(Default)]
 pub struct Unstuck {
     stuck: u32,
     intended: Option<Vec3>,
+    anchor: Option<Vec3>,
     woke: bool,
 }
+
+/// Net progress along the intended heading that counts as unstuck, in blocks.
+const ESCAPED: f64 = 1.0;
 
 impl Behaviour for Unstuck {
     fn id(&self) -> &'static str {
@@ -31,16 +40,21 @@ impl Behaviour for Unstuck {
         let me = &ctx.snap.me;
         let commanded = eff.legs.filter(|l| expected_step(l).len() > MIN_PROGRESS);
         let moved = (me.pos - eff.from).horizontal().len();
+        let escalating = self.stuck >= STUCK_TICKS;
+        let progress = match (self.anchor, self.intended) {
+            (Some(a), Some(h)) => (me.pos - a).horizontal().dot(h),
+            _ => 0.0,
+        };
         match commanded {
-            Some(l) if moved < MIN_PROGRESS => {
+            Some(_) if escalating && progress < ESCAPED => self.stuck += 1,
+            Some(l) if !escalating && moved < MIN_PROGRESS => {
                 self.stuck += 1;
                 self.intended
                     .get_or_insert(l.heading.horizontal().normalized());
+                self.anchor.get_or_insert(me.pos);
             }
             _ => {
-                self.stuck = 0;
-                self.intended = None;
-                self.woke = false;
+                *self = Self::default();
                 return None;
             }
         }
