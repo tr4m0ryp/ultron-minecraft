@@ -11,11 +11,14 @@ use crate::snapshot::{EntityClass, EntityKind};
 #[derive(Default)]
 pub struct Looming {
     ignore_until: HashMap<EntityKind, u64>,
+    attending: Option<(EntityKind, u64)>,
 }
 
 const RANGE: f64 = 16.0;
 const BASE_TAU: f64 = 40.0;
 const RETURN_INHIBIT: u64 = 200;
+/// Ticks of looking before a harmless stimulus counts as classified.
+const CLASSIFY_TICKS: u64 = 10;
 
 impl Behaviour for Looming {
     fn id(&self) -> &'static str {
@@ -41,7 +44,15 @@ impl Behaviour for Looming {
         let (e, t) = best;
         let hostile = e.kind.class() == EntityClass::Hostile;
         if !hostile {
-            self.ignore_until.insert(e.kind, now + RETURN_INHIBIT);
+            let start = match self.attending {
+                Some((k, s)) if k == e.kind => s,
+                _ => *self.attending.insert((e.kind, now)).1,
+            };
+            if now >= start + CLASSIFY_TICKS {
+                self.ignore_until.insert(e.kind, now + RETURN_INHIBIT);
+                self.attending = None;
+                return None;
+            }
         }
         let priority = if hostile { Priority::P2 } else { Priority::P4 };
         let urgency = (1.0 - t / threshold) as f32;
