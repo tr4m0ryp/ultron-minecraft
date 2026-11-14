@@ -1,0 +1,8 @@
+[workspace]
+resolver = "2"
+members = ["reflex-core", "motor-azalea"]
+
+[workspace.package]
+edition = "2021"
+license-file = "LICENSE"
+publish = false

@@ -1,0 +1,11 @@
+[package]
+name = "motor-azalea"
+version = "0.1.0"
+edition.workspace = true
+license-file.workspace = true
+publish.workspace = true
+
+[dependencies]
+reflex-core = { path = "../reflex-core" }
+azalea = { git = "https://github.com/azalea-rs/azalea", rev = "8041a14706fbdb2b8c481d2e8960d7411e850796" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
