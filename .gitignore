@@ -20,3 +20,4 @@ dist/
 .ruff_cache/
 .DS_Store
 .no-autocommit
+third_party/
