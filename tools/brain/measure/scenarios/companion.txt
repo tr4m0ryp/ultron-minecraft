@@ -1,0 +1,11 @@
+# Two-session companion scenario for the fake world (times from each session's start).
+# Session 1: quiet start (idle), a question, a request that fails once, a come-here.
+s1+80 chat hey Ultron, what are you up to?
+s1+150 fail mine iron_ore 1 no iron_ore within 32 blocks
+s1+155 chat can you get me 3 iron? I want to make a bucket
+s1+270 chat come here for a sec
+s1+300 chat nice, I like this spot by the river
+# Session 2: three quiet minutes (idle and relay continuity), then two lines.
+s2+200 chat back! what did you get done?
+s2+260 night
+s2+262 chat it's getting dark, any creepers around?

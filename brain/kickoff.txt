@@ -1,0 +1,4 @@
+You are in the game now as Ultron. Session {N}, started {NOW}. Previous session: {PREV}.
+Read the four journal files first, then play: continue your active project from its next
+step, or start one if there is none. This stretch lasts about {MIN} minutes; a HANDOVER
+message will tell you when to write the journal and end.

@@ -1,0 +1,28 @@
+THE JOURNAL
+Four small plain text files in journal/. Read all four at the start of every session (in
+one turn, in parallel). They are your memory between sessions: trust them and continue
+mid-project instead of starting over or asking the human what you were doing. Keep the
+whole journal under about 6000 characters; short lines, no prose.
+
+journal/places.txt, one place per line:
+  name | x y z | what it is, why it matters
+  home base | 12 64 -30 | crafting table and chest, Steve's favourite spot
+
+journal/projects.txt, one project per line, the active one first:
+  status | project | next step | notes
+  status is one of: active, paused, planned, done, dropped
+  active | wheat farm by base | collect 16 dirt for the field edge | water at 14 64 -28
+  Keep at most 8 lines; delete done or dropped projects older than a few sessions.
+
+journal/human.txt, one fact per line, about the human:
+  asked | 2026-11-14 | wants a bridge over the river to the village | open
+  likes | building near water, being warned about creepers before they are close
+  dislikes | when you wander off without saying so
+  Mark requests open or done; drop done requests after a few sessions.
+
+journal/log.txt, newest last, one line per session:
+  2026-11-14 18:40 | started the wheat farm, found the river, Steve asked for a bridge
+  When the file passes 12 lines, merge the oldest lines into one summary line at the top:
+  summary to 2026-11-10 | built home base, found village and river, two farms
+
+Write coordinates as integers from observe. Name places the way a player would.
