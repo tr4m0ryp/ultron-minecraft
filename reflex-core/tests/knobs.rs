@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use reflex_core::channels::{Channel, Speed};
+use reflex_core::channels::{Channel, MainCmd};
 use reflex_core::knobs::{Mode, Response, Scope, Trigger};
 use reflex_core::snapshot::{BlockKind, Companion, EntityKind};
 use reflex_core::{Aabb, BlockPos, EventClass, Executor, Vec3};
@@ -12,14 +12,9 @@ fn cliff_scene(depth: i32) -> (reflex_core::Snapshot, Executor) {
     s.me.pos = Vec3::new(1.5, 64.0, 0.5);
     cliff(&mut s, 2, Some(depth));
     let mut ex = Executor::new(BOT);
-    ex.knobs.leash = 0.0;
+    ex.knobs.gains.leash = 0.0;
     ex.knobs.set_goal("build east", 0.8, Some(Vec3::new(8.5, 64.0, 0.5)), true);
     (s, ex)
-}
-
-trait LeashOff {
-    #[allow(non_upper_case_globals)]
-    const _x: () = ();
 }
 
 #[test]
@@ -84,7 +79,7 @@ fn armed_response_fires_at_tick_latency_without_the_brain() {
     let mut s = flat();
     s.companion = Some(Companion { name: "human".into(), entity_id: Some(99), pos: Vec3::new(10.5, 64.0, 0.5), vel: Vec3::ZERO, health: Some(20.0) });
     let mut ex = Executor::new(BOT);
-    ex.knobs.leash = 0.0;
+    ex.knobs.gains.leash = 0.0;
     let trig = Trigger::EntityWithin { kind: EntityKind::Creeper, dist: 6.0, of_companion: true };
     ex.knobs.arm(trig, Response::Say("creeper behind you!".into()), Some(6000), true, s.tick);
     for _ in 0..5 {
@@ -124,6 +119,5 @@ fn mode_and_gain_change_d2_from_retreat_to_fight() {
     ex.knobs.set_mode(Mode::Fight);
     s.tick += 1;
     let out = ex.tick(&s);
-    assert_eq!(out.main, Some(reflex_core::channels::MainCmd::Attack(3)));
-    let _ = Speed::Walk;
+    assert_eq!(out.main, Some(MainCmd::Attack(3)));
 }
