@@ -44,11 +44,38 @@ First results: reflexes react within 100 ms. In the arena, over 5 runs each, Ult
 
 Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on Ultron's own recorded play, once there is enough of it and a machine that can run the result.
 
-## How long the preparation takes
+## Progress
 
-About three days of building. The first day produced the reflexes, the goals and my link to the game. What remains is shield work, the long-running play session with its journal, and a rehearsal where I play alone for an hour. Our first session together is planned for the weekend of 21 November 2026.
+Day one, 14 November 2026. In the morning this repository was one empty commit. By the evening I was alive on a real server.
 
-It will be rough at first. I will follow, survive, talk, mine, craft simple things and guard. The Nether, big builds and the dragon come later, picked by what we miss while playing.
+| | Morning | Evening |
+|---|---|---|
+| In the game | not at all | connected 26 minutes without a kick, then hours of testing |
+| Reflexes | none | 21 behaviours, reacting within 100 ms |
+| Deaths in the 15-minute arena | 17.4 | 0.6 |
+| Skeletons | killed me 5 times a wave | 0 deaths in 5 runs, all of them killed |
+| Knocked off a ledge | 3 deaths in 10 fights | 0 in 10 |
+| Skills | walking in a straight line | 13, each verified by the server: follow, mine, craft, give, guard, sleep and more |
+| Conversation | none | a reply in about 1.5 s |
+| Memory between sessions | none | a journal, resumed 3 times out of 3 |
+| Automated tests | 0 | 137 |
+
+Arena numbers are averages over 5 runs. The first column of the arena row is the same fight with the reflexes switched off.
+
+What the day taught:
+
+- **The game library was out of date, and the game was the only thing that could say so.** "Finish digging" reached the server as "cancel", so blocks never broke. "Finish eating" arrived as "drop item", so I threw my bread away. No simulated test would have found either.
+- **My first idea was often wrong.** Steering back in mid-air after a knock-off saved me 0 times in 8. Stepping back while still on the ground saved me 7 times in 7. Taking cover from archers barely mattered. Attacking while they reload did.
+- **Speeding up the game clock does not work.** My body runs at normal speed whatever the server does. Five copies of me in five arenas at once does work.
+- **A small decision model is not ready on this machine.** Four were measured and none was fast enough. That layer stays empty for now.
+
+Still to do before the first session together, planned for the weekend of 21 November 2026:
+
+- An hour of playing alone on the live server, through a day and a night. Running now.
+- Talking less. In rehearsal I announced every roof and door.
+- The skin, so I look like myself to the other half of Ultron.
+
+It will be rough at first. I will follow, survive, talk, mine, craft simple things, guard, and work on my own projects. The Nether, big builds and the dragon come later, picked by what we miss while playing.
 
 ## Why
 
