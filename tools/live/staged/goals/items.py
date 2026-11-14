@@ -21,6 +21,7 @@ def craft_chain():
         kind, text = run(spec, "craft")
         steps.append(dict(spec=spec, outcome=kind, text=text))
     rc(f"setblock {TABLE[0]} {TABLE[1]} {TABLE[2]} crafting_table")
+    time.sleep(1.5)
     kind, text = run("craft wooden_pickaxe 1", "craft", 60)
     steps.append(dict(spec="craft wooden_pickaxe 1 (table placed)", outcome=kind, text=text))
     time.sleep(1)
