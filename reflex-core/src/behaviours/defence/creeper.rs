@@ -22,21 +22,32 @@ impl Behaviour for CreeperStance {
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let snap = ctx.snap;
         let me = &snap.me;
-        let c = snap.nearby(WATCH, |e| e.kind == EntityKind::Creeper).into_iter().next()?;
+        let c = snap
+            .nearby(WATCH, |e| e.kind == EntityKind::Creeper)
+            .into_iter()
+            .next()?;
         let d = c.pos.dist(me.pos);
         let approaching = tau(me.pos, me.vel, c.pos, c.vel).is_some();
         let away = safe_retreat(snap, c.pos);
         let face = Commands::default().look_at(c.head());
 
         if c.state.fuse_lit && d < KEEP {
-            let priority = if d <= BLAST { Priority::P0 } else { Priority::P2 };
+            let priority = if d <= BLAST {
+                Priority::P0
+            } else {
+                Priority::P2
+            };
             let a = ctx.knobs.gains.aggression;
             if a > 0.7 && d <= BLAST && me.attack_ready >= 0.9 {
-                let cmds = face.main(MainCmd::Attack(c.id)).legs(LegsCmd::toward(away, Speed::Walk));
+                let cmds = face
+                    .main(MainCmd::Attack(c.id))
+                    .legs(LegsCmd::toward(away, Speed::Walk));
                 return Some(Bid::new(priority, 1.0, "creeper_knockback", cmds));
             }
             if me.offhand.is_some_and(|s| s.kind == ItemKind::Shield) {
-                let cmds = face.off(OffCmd::RaiseShield).legs(LegsCmd::toward(away, Speed::Walk));
+                let cmds = face
+                    .off(OffCmd::RaiseShield)
+                    .legs(LegsCmd::toward(away, Speed::Walk));
                 return Some(Bid::new(priority, 1.0, "creeper_shield", cmds).lock(5));
             }
             let cmds = Commands::default().legs(LegsCmd::toward(away, Speed::Sprint));

@@ -47,7 +47,11 @@ impl Event {
     }
 
     pub fn at(mut self, p: Vec3) -> Self {
-        self.place = Some(((p.x / 16.0).floor() as i32, (p.y / 16.0).floor() as i32, (p.z / 16.0).floor() as i32));
+        self.place = Some((
+            (p.x / 16.0).floor() as i32,
+            (p.y / 16.0).floor() as i32,
+            (p.z / 16.0).floor() as i32,
+        ));
         self
     }
     pub fn hp(mut self, hp: f32) -> Self {

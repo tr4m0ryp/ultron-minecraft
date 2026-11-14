@@ -19,6 +19,9 @@ pub struct Prediction {
 
 impl Prediction {
     pub fn compute(snap: &Snapshot, efference: Efference) -> Self {
-        Self { fall: predict_fall(snap), efference }
+        Self {
+            fall: predict_fall(snap),
+            efference,
+        }
     }
 }

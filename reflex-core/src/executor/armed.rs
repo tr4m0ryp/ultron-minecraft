@@ -4,8 +4,8 @@ use crate::behaviour::{Bid, Ctx, Priority};
 use crate::behaviours::common::{heading_to, safe_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::knobs::{Knobs, Response, Trigger};
-use crate::selector::Candidate;
 use crate::math::Vec3;
+use crate::selector::Candidate;
 use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
 
 fn nearest_of(snap: &Snapshot, kind: EntityKind, from: Vec3, d: f64) -> Option<&Entity> {
@@ -18,7 +18,11 @@ fn nearest_of(snap: &Snapshot, kind: EntityKind, from: Vec3, d: f64) -> Option<&
 fn triggered(ctx: &Ctx, t: &Trigger) -> bool {
     let snap = ctx.snap;
     match t {
-        Trigger::EntityWithin { kind, dist, of_companion } => {
+        Trigger::EntityWithin {
+            kind,
+            dist,
+            of_companion,
+        } => {
             let from = match (of_companion, &snap.companion) {
                 (true, Some(c)) => c.pos,
                 (true, None) => return false,
@@ -27,9 +31,11 @@ fn triggered(ctx: &Ctx, t: &Trigger) -> bool {
             nearest_of(snap, *kind, from, *dist).is_some()
         }
         Trigger::HpBelow(x) => snap.me.health < *x,
-        Trigger::CompanionHpBelow(x) => {
-            snap.companion.as_ref().and_then(|c| c.health).is_some_and(|h| h < *x)
-        }
+        Trigger::CompanionHpBelow(x) => snap
+            .companion
+            .as_ref()
+            .and_then(|c| c.health)
+            .is_some_and(|h| h < *x),
         Trigger::ChatMatches(p) => {
             let p = p.to_lowercase();
             snap.chat.iter().any(|c| c.text.to_lowercase().contains(&p))
@@ -42,7 +48,9 @@ fn respond(ctx: &Ctx, r: &Response) -> Option<Commands> {
     let me = snap.me.pos;
     Some(match r {
         Response::Say(text) => Commands::default().chat(text.clone()),
-        Response::RetreatTo(p) => Commands::default().legs(LegsCmd::toward(heading_to(me, *p), Speed::Sprint)),
+        Response::RetreatTo(p) => {
+            Commands::default().legs(LegsCmd::toward(heading_to(me, *p), Speed::Sprint))
+        }
         Response::FleeFrom(kind) => {
             let e = nearest_of(snap, *kind, me, 32.0)?;
             Commands::default()
@@ -65,7 +73,9 @@ fn respond(ctx: &Ctx, r: &Response) -> Option<Commands> {
             let target = mid.block().below();
             let cmds = Commands::default().look_at(target.feet_centre());
             match snap.me.held() {
-                Some(s) if s.kind == ItemKind::ThrowawayBlock => cmds.main(MainCmd::PlaceOn(target)),
+                Some(s) if s.kind == ItemKind::ThrowawayBlock => {
+                    cmds.main(MainCmd::PlaceOn(target))
+                }
                 _ => {
                     let slot = snap.me.hotbar_find(|k| k == ItemKind::ThrowawayBlock)?;
                     cmds.main(MainCmd::SelectSlot(slot))

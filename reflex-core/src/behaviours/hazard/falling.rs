@@ -31,13 +31,25 @@ impl Behaviour for FallingBlocks {
             return None;
         }
         let out = escape_step(&ctx.snap.blocks, me.pos, |p| p.x != feet.x || p.z != feet.z);
-        let priority = if suffocating { Priority::P0 } else { Priority::P1 };
+        let priority = if suffocating {
+            Priority::P0
+        } else {
+            Priority::P1
+        };
         let cmds = match out {
-            Some(p) => Commands::default().legs(LegsCmd::toward(p.feet_centre() - me.pos, Speed::Sprint)),
-            None if suffocating => Commands::default().look_at(head.feet_centre()).main(MainCmd::Dig(head)),
+            Some(p) => {
+                Commands::default().legs(LegsCmd::toward(p.feet_centre() - me.pos, Speed::Sprint))
+            }
+            None if suffocating => Commands::default()
+                .look_at(head.feet_centre())
+                .main(MainCmd::Dig(head)),
             None => return None,
         };
-        let note = if suffocating { "suffocation_escape" } else { "falling_block_dodge" };
+        let note = if suffocating {
+            "suffocation_escape"
+        } else {
+            "falling_block_dodge"
+        };
         Some(Bid::new(priority, 1.0, note, cmds))
     }
 }

@@ -44,7 +44,10 @@ impl Line {
 pub fn build(events: &[(Event, f32)], since: u64, cap: usize) -> Digest {
     let mut lines: Vec<Line> = Vec::new();
     for (e, w) in events {
-        match lines.iter_mut().find(|l| l.kind == e.kind && l.subject == e.subject) {
+        match lines
+            .iter_mut()
+            .find(|l| l.kind == e.kind && l.subject == e.subject)
+        {
             Some(l) => {
                 l.count += 1;
                 l.hp_last = e.hp.or(l.hp_last);
@@ -63,13 +66,21 @@ pub fn build(events: &[(Event, f32)], since: u64, cap: usize) -> Digest {
     }
     let mut dropped = 0;
     loop {
-        let mut text = lines.iter().map(|l| l.render(since)).collect::<Vec<_>>().join(" | ");
+        let mut text = lines
+            .iter()
+            .map(|l| l.render(since))
+            .collect::<Vec<_>>()
+            .join(" | ");
         if dropped > 0 {
             text.push_str(&format!(" | +{dropped} more"));
         }
         let tokens = estimate_tokens(&text);
         if tokens <= cap || lines.is_empty() {
-            return Digest { text, tokens, dropped };
+            return Digest {
+                text,
+                tokens,
+                dropped,
+            };
         }
         let weakest = lines
             .iter()

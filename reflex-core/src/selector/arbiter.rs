@@ -60,7 +60,8 @@ impl Selector {
     pub fn select(&mut self, cands: &[Candidate], now: u64) -> Allocation {
         self.locks.retain(|_, l| now < l.until);
         // A lock lapses as soon as its owner stops bidding (the atomic action finished).
-        self.locks.retain(|(_, id), _| cands.iter().any(|c| &c.id == id));
+        self.locks
+            .retain(|(_, id), _| cands.iter().any(|c| &c.id == id));
 
         let mut order: Vec<usize> = (0..cands.len()).collect();
         order.sort_by(|&a, &b| cands[b].salience.total_cmp(&cands[a].salience));
@@ -75,7 +76,9 @@ impl Selector {
                 let variants = [Some(&cands[i].commands), cands[i].degraded.as_ref()];
                 for cmds in variants.into_iter().flatten() {
                     let set = cmds.channels();
-                    if set.is_empty() || !self.free(cands, i, set, &taken, respect_reservations, now) {
+                    if set.is_empty()
+                        || !self.free(cands, i, set, &taken, respect_reservations, now)
+                    {
                         continue;
                     }
                     for c in set.iter() {
@@ -92,10 +95,18 @@ impl Selector {
             let cand = &cands[i];
             let starts = self.holders.get(&c) != Some(&cand.id);
             if cand.lock_ticks > 0 && starts {
-                self.locks.insert((c, cand.id.clone()), Lock { until: now + cand.lock_ticks as u64 });
+                self.locks.insert(
+                    (c, cand.id.clone()),
+                    Lock {
+                        until: now + cand.lock_ticks as u64,
+                    },
+                );
             }
         }
-        self.holders = taken.iter().map(|(&c, &i)| (c, cands[i].id.clone())).collect();
+        self.holders = taken
+            .iter()
+            .map(|(&c, &i)| (c, cands[i].id.clone()))
+            .collect();
         alloc.owners = taken;
         alloc
     }

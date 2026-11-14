@@ -10,7 +10,10 @@ const SHIELD_RAISE_TICKS: f64 = 5.0;
 const HORIZON: f64 = 15.0;
 
 fn shield_in_offhand(ctx: &Ctx) -> bool {
-    ctx.snap.me.offhand.is_some_and(|s| s.kind == ItemKind::Shield)
+    ctx.snap
+        .me
+        .offhand
+        .is_some_and(|s| s.kind == ItemKind::Shield)
 }
 
 /// R14 with K2: a projectile whose closest approach passes within 1 block (wider with
@@ -41,10 +44,23 @@ impl Behaviour for ProjectileEvade {
             .min_by(|a, b| a.1.total_cmp(&b.1))?;
         let face = Commands::default().look_at(p.pos);
         if p.kind == EntityKind::Fireball && p.pos.dist(me.eye()) <= 3.0 && t <= 4.0 {
-            return Some(Bid::new(Priority::P1, 1.0, "deflect_fireball", face.main(MainCmd::Attack(p.id))));
+            return Some(Bid::new(
+                Priority::P1,
+                1.0,
+                "deflect_fireball",
+                face.main(MainCmd::Attack(p.id)),
+            ));
         }
         if shield_in_offhand(ctx) && t >= SHIELD_RAISE_TICKS {
-            return Some(Bid::new(Priority::P1, 1.0, "shield_block", face.off(OffCmd::RaiseShield)).lock(5));
+            return Some(
+                Bid::new(
+                    Priority::P1,
+                    1.0,
+                    "shield_block",
+                    face.off(OffCmd::RaiseShield),
+                )
+                .lock(5),
+            );
         }
         let v = p.vel.horizontal().normalized();
         let side = Vec3::new(-v.z, 0.0, v.x);
@@ -70,7 +86,9 @@ impl Behaviour for RangedCover {
         let snap = ctx.snap;
         let me = &snap.me;
         let archer = snap
-            .nearby(RANGE, |e| e.kind.is_ranged() || (e.kind == EntityKind::Drowned && e.state.holding_trident))
+            .nearby(RANGE, |e| {
+                e.kind.is_ranged() || (e.kind == EntityKind::Drowned && e.state.holding_trident)
+            })
             .into_iter()
             .next()?;
         let d = archer.pos.dist(me.pos);
@@ -83,7 +101,10 @@ impl Behaviour for RangedCover {
             }
             return Some(Bid::new(Priority::P2, urgency, "ranged_close_in", cmds));
         }
-        let mut cmds = Commands::default().legs(LegsCmd::toward(safe_retreat(snap, archer.pos), Speed::Sprint));
+        let mut cmds = Commands::default().legs(LegsCmd::toward(
+            safe_retreat(snap, archer.pos),
+            Speed::Sprint,
+        ));
         if block {
             cmds = cmds.off(OffCmd::RaiseShield).look_at(archer.head());
             if let Some(l) = cmds.legs.as_mut() {

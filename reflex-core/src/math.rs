@@ -8,7 +8,11 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub const ZERO: Vec3 = Vec3 { x: 0.0, y: 0.0, z: 0.0 };
+    pub const ZERO: Vec3 = Vec3 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
 
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
@@ -34,7 +38,11 @@ impl Vec3 {
         }
     }
     pub fn block(self) -> BlockPos {
-        BlockPos::new(self.x.floor() as i32, self.y.floor() as i32, self.z.floor() as i32)
+        BlockPos::new(
+            self.x.floor() as i32,
+            self.y.floor() as i32,
+            self.z.floor() as i32,
+        )
     }
 }
 
@@ -87,8 +95,16 @@ impl BlockPos {
     pub fn feet_centre(self) -> Vec3 {
         Vec3::new(self.x as f64 + 0.5, self.y as f64, self.z as f64 + 0.5)
     }
-    pub const HORIZONTAL: [(i32, i32); 8] =
-        [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+    pub const HORIZONTAL: [(i32, i32); 8] = [
+        (1, 0),
+        (-1, 0),
+        (0, 1),
+        (0, -1),
+        (1, 1),
+        (1, -1),
+        (-1, 1),
+        (-1, -1),
+    ];
 }
 
 /// Axis-aligned box in world coordinates, used for inhibition scopes.

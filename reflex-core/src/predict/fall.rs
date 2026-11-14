@@ -34,12 +34,25 @@ pub fn predict_fall(snap: &Snapshot) -> Option<FallPrediction> {
             into_void: true,
         });
     };
-    let surface = if kind.supports() { floor_pos.y + 1 } else { floor_pos.y } as f64;
+    let surface = if kind.supports() {
+        floor_pos.y + 1
+    } else {
+        floor_pos.y
+    } as f64;
     let t_land = ticks_to_reach(me.pos.y, me.vel.y, surface);
     let peak = peak_height(me.pos, me.vel.y);
     let fall_dist = me.fall_distance as f64 + (peak - surface).max(0.0);
-    let damage = if kind.negates_fall() { 0.0 } else { fall_damage(fall_dist) };
-    Some(FallPrediction { t_land, damage, landing: kind, into_void: false })
+    let damage = if kind.negates_fall() {
+        0.0
+    } else {
+        fall_damage(fall_dist)
+    };
+    Some(FallPrediction {
+        t_land,
+        damage,
+        landing: kind,
+        into_void: false,
+    })
 }
 
 /// Vanilla fall damage: one HP per block beyond three.

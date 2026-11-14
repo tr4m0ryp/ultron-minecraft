@@ -12,7 +12,10 @@ pub enum ItemKind {
     WaterBucket,
     EmptyBucket,
     GoldenApple,
-    Food { nutrition: u8, saturation: f32 },
+    Food {
+        nutrition: u8,
+        saturation: f32,
+    },
     /// A full solid block the bot may spend freely (dirt, cobblestone, netherrack).
     ThrowawayBlock,
     Torch,
@@ -36,6 +39,10 @@ pub struct ItemStack {
 
 impl ItemStack {
     pub fn new(kind: ItemKind, count: u8) -> Self {
-        Self { kind, count, durability: 1.0 }
+        Self {
+            kind,
+            count,
+            durability: 1.0,
+        }
     }
 }

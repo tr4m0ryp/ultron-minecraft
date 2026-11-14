@@ -44,7 +44,14 @@ pub struct Bid {
 
 impl Bid {
     pub fn new(priority: Priority, urgency: f32, note: &'static str, commands: Commands) -> Self {
-        Self { priority, urgency: urgency.clamp(0.0, 1.0), commands, degraded: None, lock_ticks: 0, note }
+        Self {
+            priority,
+            urgency: urgency.clamp(0.0, 1.0),
+            commands,
+            degraded: None,
+            lock_ticks: 0,
+            note,
+        }
     }
     pub fn degraded(mut self, c: Commands) -> Self {
         self.degraded = Some(c);
@@ -73,8 +80,19 @@ pub struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    pub fn new(snap: &'a Snapshot, pred: &'a Prediction, knobs: &'a Knobs, bot_name: &'a str) -> Self {
-        Self { snap, pred, knobs, bot_name, events: RefCell::new(Vec::new()) }
+    pub fn new(
+        snap: &'a Snapshot,
+        pred: &'a Prediction,
+        knobs: &'a Knobs,
+        bot_name: &'a str,
+    ) -> Self {
+        Self {
+            snap,
+            pred,
+            knobs,
+            bot_name,
+            events: RefCell::new(Vec::new()),
+        }
     }
 
     pub fn emit(&self, ev: Event) {
@@ -83,7 +101,9 @@ impl<'a> Ctx<'a> {
 
     /// Convenience for an event stamped with this tick and our position and health.
     pub fn report(&self, class: EventClass, kind: &str, subject: &str) -> Event {
-        Event::new(self.snap.tick, class, kind, subject).at(self.snap.me.pos).hp(self.snap.me.health)
+        Event::new(self.snap.tick, class, kind, subject)
+            .at(self.snap.me.pos)
+            .hp(self.snap.me.health)
     }
 
     pub fn take_events(&self) -> Vec<Event> {

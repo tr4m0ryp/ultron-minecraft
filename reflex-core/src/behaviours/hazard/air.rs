@@ -35,10 +35,17 @@ impl Behaviour for SurfaceForAir {
         if !me.head_in_water || me.water_breathing || me.air >= floor {
             return None;
         }
-        let priority = if me.air <= CRITICAL_AIR { Priority::P0 } else { Priority::P1 };
+        let priority = if me.air <= CRITICAL_AIR {
+            Priority::P0
+        } else {
+            Priority::P1
+        };
         let urgency = 1.0 - me.air.max(0) as f32 / floor.max(1) as f32;
         let head = me.pos.block().above();
-        let up = GazeCmd::Angles { yaw: me.yaw, pitch: -90.0 };
+        let up = GazeCmd::Angles {
+            yaw: me.yaw,
+            pitch: -90.0,
+        };
         if open_column(&ctx.snap.blocks, head) {
             let cmds = Commands::default().legs(LegsCmd::stop().jumping()).gaze(up);
             return Some(Bid::new(priority, urgency, "surface", cmds));
@@ -50,9 +57,12 @@ impl Behaviour for SurfaceForAir {
                 .find(|p| open_column(&ctx.snap.blocks, *p))
         });
         let cmds = match side {
-            Some(p) => Commands::default()
-                .legs(LegsCmd::toward(heading_to(me.pos, p.feet_centre()), Speed::Sprint).jumping()),
-            None => Commands::default().gaze(up).main(MainCmd::Dig(head.above())),
+            Some(p) => Commands::default().legs(
+                LegsCmd::toward(heading_to(me.pos, p.feet_centre()), Speed::Sprint).jumping(),
+            ),
+            None => Commands::default()
+                .gaze(up)
+                .main(MainCmd::Dig(head.above())),
         };
         Some(Bid::new(priority, urgency, "surface", cmds))
     }

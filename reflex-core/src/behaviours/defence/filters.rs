@@ -10,11 +10,14 @@ const ENDERMAN_RANGE: f64 = 64.0;
 fn provokes(snap: &Snapshot, yaw: f32, pitch: f32) -> bool {
     let eye = snap.me.eye();
     let look = look_vector(yaw, pitch);
-    snap.entities.iter().filter(|e| e.kind == EntityKind::Enderman).any(|e| {
-        let to = e.head() - eye;
-        let d = to.len();
-        d <= ENDERMAN_RANGE && d > 1e-6 && look.dot(to.normalized()) > 1.0 - 0.025 / d
-    })
+    snap.entities
+        .iter()
+        .filter(|e| e.kind == EntityKind::Enderman)
+        .any(|e| {
+            let to = e.head() - eye;
+            let d = to.len();
+            d <= ENDERMAN_RANGE && d > 1e-6 && look.dot(to.normalized()) > 1.0 - 0.025 / d
+        })
 }
 
 /// D5 / O7: never look at an enderman's head unless wearing a carved pumpkin. Applied to
@@ -35,7 +38,9 @@ impl Behaviour for EndermanGazeFilter {
         if ctx.snap.me.wearing_pumpkin {
             return None;
         }
-        let Some(GazeCmd::Angles { yaw, pitch }) = plan.gaze else { return None };
+        let Some(GazeCmd::Angles { yaw, pitch }) = plan.gaze else {
+            return None;
+        };
         if !provokes(ctx.snap, yaw, pitch) {
             return None;
         }
@@ -45,7 +50,10 @@ impl Behaviour for EndermanGazeFilter {
             .find(|&p| !provokes(ctx.snap, yaw, p))
             .unwrap_or(90.0);
         plan.gaze = Some(GazeCmd::Angles { yaw, pitch: fixed });
-        Some(Veto { priority: Priority::P1, note: "enderman_gaze_filter" })
+        Some(Veto {
+            priority: Priority::P1,
+            note: "enderman_gaze_filter",
+        })
     }
 }
 
@@ -64,13 +72,21 @@ impl Behaviour for AttackMask {
     }
 
     fn veto(&mut self, ctx: &Ctx, plan: &mut Commands) -> Option<Veto> {
-        let Some(MainCmd::Attack(id)) = plan.main else { return None };
+        let Some(MainCmd::Attack(id)) = plan.main else {
+            return None;
+        };
         let companion = ctx.snap.companion.as_ref().and_then(|c| c.entity_id) == Some(id);
-        let protected = ctx.snap.entity(id).is_some_and(|e| e.kind.class() == EntityClass::Protected);
+        let protected = ctx
+            .snap
+            .entity(id)
+            .is_some_and(|e| e.kind.class() == EntityClass::Protected);
         if !(companion || protected) {
             return None;
         }
         plan.main = None;
-        Some(Veto { priority: Priority::P1, note: "attack_mask" })
+        Some(Veto {
+            priority: Priority::P1,
+            note: "attack_mask",
+        })
     }
 }

@@ -3,9 +3,7 @@
 
 mod commands;
 
-pub use commands::{
-    ChatCmd, Commands, GazeCmd, InvCmd, LegsCmd, MainCmd, OffCmd, Speed,
-};
+pub use commands::{ChatCmd, Commands, GazeCmd, InvCmd, LegsCmd, MainCmd, OffCmd, Speed};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Channel {
@@ -18,8 +16,14 @@ pub enum Channel {
 }
 
 impl Channel {
-    pub const ALL: [Channel; 6] =
-        [Channel::Legs, Channel::Gaze, Channel::Main, Channel::Off, Channel::Inv, Channel::Chat];
+    pub const ALL: [Channel; 6] = [
+        Channel::Legs,
+        Channel::Gaze,
+        Channel::Main,
+        Channel::Off,
+        Channel::Inv,
+        Channel::Chat,
+    ];
 
     fn bit(self) -> u8 {
         1 << (self as u8)

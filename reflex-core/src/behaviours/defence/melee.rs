@@ -27,8 +27,15 @@ pub fn melee_commands(snap: &Snapshot, target: &Entity) -> Commands {
         return face.legs(LegsCmd::toward(toward, Speed::Sprint));
     }
     let legs = if d < STRAFE_INSIDE {
-        let side = if (snap.tick / 20).is_multiple_of(2) { 1.0 } else { -1.0 };
-        LegsCmd::toward(Vec3::new(-toward.z * side, 0.0, toward.x * side), Speed::Walk)
+        let side = if (snap.tick / 20).is_multiple_of(2) {
+            1.0
+        } else {
+            -1.0
+        };
+        LegsCmd::toward(
+            Vec3::new(-toward.z * side, 0.0, toward.x * side),
+            Speed::Walk,
+        )
     } else {
         LegsCmd::stop()
     };
@@ -57,10 +64,13 @@ impl Behaviour for MeleeDefence {
         let relevant = |e: &Entity| {
             e.kind.is_melee()
                 && !(e.kind == EntityKind::Drowned && e.state.holding_trident)
-                && !(matches!(e.kind, EntityKind::Spider | EntityKind::CaveSpider) && !snap.is_night)
+                && !(matches!(e.kind, EntityKind::Spider | EntityKind::CaveSpider)
+                    && !snap.is_night)
         };
         let radius = |e: &Entity| if e.state.baby { BABY_RETREAT } else { ENGAGE };
-        let foes: Vec<&Entity> = snap.nearby(BABY_RETREAT, |e| relevant(e) && e.pos.dist(me.pos) <= radius(e));
+        let foes: Vec<&Entity> = snap.nearby(BABY_RETREAT, |e| {
+            relevant(e) && e.pos.dist(me.pos) <= radius(e)
+        });
         let target = *foes.first()?;
         let swarm = snap.nearby(SWARM_RADIUS, |e| relevant(e)).len() >= SWARM;
         let g = &ctx.knobs.gains;
@@ -68,7 +78,12 @@ impl Behaviour for MeleeDefence {
         let d = target.pos.dist(me.pos);
         let urgency = (1.0 - d / BABY_RETREAT).clamp(0.2, 1.0) as f32;
         if fight {
-            return Some(Bid::new(Priority::P2, urgency, "melee_fight", melee_commands(snap, target)));
+            return Some(Bid::new(
+                Priority::P2,
+                urgency,
+                "melee_fight",
+                melee_commands(snap, target),
+            ));
         }
         let heading = snap
             .companion

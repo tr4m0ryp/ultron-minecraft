@@ -24,13 +24,27 @@ impl Behaviour for Totem {
         }
         let slot = me.find_any(|k| k == ItemKind::Totem)?;
         let fuse = !snap
-            .nearby(FUSE_RANGE, |e| e.kind == EntityKind::Creeper && e.state.fuse_lit)
+            .nearby(FUSE_RANGE, |e| {
+                e.kind == EntityKind::Creeper && e.state.fuse_lit
+            })
             .is_empty();
-        let fall = ctx.pred.fall.is_some_and(|f| !f.into_void && f.damage >= me.hp_total());
+        let fall = ctx
+            .pred
+            .fall
+            .is_some_and(|f| !f.into_void && f.damage >= me.hp_total());
         if !(me.health <= LOW_HP || fuse || fall) {
             return None;
         }
-        let cmd = if slot == me.selected_slot { InvCmd::SwapHands } else { InvCmd::ToOffhand(slot) };
-        Some(Bid::new(Priority::P0, 1.0, "totem_equip", Commands::default().inv(cmd)))
+        let cmd = if slot == me.selected_slot {
+            InvCmd::SwapHands
+        } else {
+            InvCmd::ToOffhand(slot)
+        };
+        Some(Bid::new(
+            Priority::P0,
+            1.0,
+            "totem_equip",
+            Commands::default().inv(cmd),
+        ))
     }
 }

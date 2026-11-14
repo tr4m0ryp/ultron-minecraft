@@ -75,7 +75,10 @@ impl SelfState {
     }
 
     pub fn held(&self) -> Option<ItemStack> {
-        self.hotbar.get(self.selected_slot as usize).copied().flatten()
+        self.hotbar
+            .get(self.selected_slot as usize)
+            .copied()
+            .flatten()
     }
 
     pub fn hp_total(&self) -> f32 {
@@ -92,8 +95,12 @@ impl SelfState {
 
     /// Any slot (hotbar first, then main inventory) holding an item matching `pred`.
     pub fn find_any(&self, pred: impl Fn(ItemKind) -> bool + Copy) -> Option<Slot> {
-        self.hotbar_find(pred)
-            .or_else(|| self.inventory.iter().find(|(_, s)| pred(s.kind)).map(|(i, _)| *i))
+        self.hotbar_find(pred).or_else(|| {
+            self.inventory
+                .iter()
+                .find(|(_, s)| pred(s.kind))
+                .map(|(i, _)| *i)
+        })
     }
 
     pub fn has(&self, pred: impl Fn(ItemKind) -> bool + Copy) -> bool {

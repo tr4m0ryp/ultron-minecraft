@@ -23,7 +23,11 @@ pub struct LegsCmd {
 
 impl LegsCmd {
     pub fn toward(dir: Vec3, speed: Speed) -> Self {
-        Self { heading: dir.horizontal(), speed, jump: false }
+        Self {
+            heading: dir.horizontal(),
+            speed,
+            jump: false,
+        }
     }
     pub fn stop() -> Self {
         Self::default()

@@ -38,16 +38,28 @@ impl Behaviour for Health {
         if me.health <= GOLDEN_HP && threat.is_some() && snap.nearest_hostile(5.0).is_none() {
             if let Some(slot) = best_food(me, true) {
                 let eat = eat_commands(me, slot);
-                lock = if eat.main == Some(MainCmd::Use) { EATING_TICKS } else { 0 };
+                lock = if eat.main == Some(MainCmd::Use) {
+                    EATING_TICKS
+                } else {
+                    0
+                };
                 cmds.main = eat.main;
                 cmds.inv = eat.inv;
                 priority = Some(Priority::P1);
             }
         }
-        if priority.is_none() && me.health < 20.0 && me.food < 18 && snap.nearest_hostile(12.0).is_none() {
+        if priority.is_none()
+            && me.health < 20.0
+            && me.food < 18
+            && snap.nearest_hostile(12.0).is_none()
+        {
             let slot = best_food(me, false)?;
             let eat = eat_commands(me, slot);
-            lock = if eat.main == Some(MainCmd::Use) { EATING_TICKS } else { 0 };
+            lock = if eat.main == Some(MainCmd::Use) {
+                EATING_TICKS
+            } else {
+                0
+            };
             return Some(Bid::new(Priority::P3, 0.5, "top_off_food", eat).lock(lock));
         }
         let priority = priority?;

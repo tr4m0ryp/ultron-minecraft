@@ -34,7 +34,10 @@ pub struct Knobs {
 
 impl Knobs {
     pub fn new() -> Self {
-        Self { report_tokens: crate::events::DEFAULT_DIGEST_TOKENS, ..Default::default() }
+        Self {
+            report_tokens: crate::events::DEFAULT_DIGEST_TOKENS,
+            ..Default::default()
+        }
     }
 
     fn fresh_id(&mut self) -> u64 {
@@ -52,9 +55,21 @@ impl Knobs {
     }
 
     /// Sets the active goal, pushing any current goal onto the queue (capped at three).
-    pub fn set_goal(&mut self, spec: impl Into<String>, priority: f32, target: Option<Vec3>, solo: bool) -> u64 {
+    pub fn set_goal(
+        &mut self,
+        spec: impl Into<String>,
+        priority: f32,
+        target: Option<Vec3>,
+        solo: bool,
+    ) -> u64 {
         let id = self.fresh_id();
-        let goal = Goal { id, spec: spec.into(), priority: priority.clamp(0.0, 1.0), target, solo };
+        let goal = Goal {
+            id,
+            spec: spec.into(),
+            priority: priority.clamp(0.0, 1.0),
+            target,
+            solo,
+        };
         if let Some(old) = self.goal.replace(goal) {
             self.goal_queue.push_front(old);
             self.goal_queue.truncate(GOAL_QUEUE_MAX);
@@ -66,13 +81,21 @@ impl Knobs {
     pub fn end_goal(&mut self) -> Option<Goal> {
         let done = self.goal.take();
         if let Some(g) = &done {
-            self.inhibitions.retain(|i| i.scope != Scope::UntilGoalEnds(g.id));
+            self.inhibitions
+                .retain(|i| i.scope != Scope::UntilGoalEnds(g.id));
         }
         self.goal = self.goal_queue.pop_front();
         done
     }
 
-    pub fn inhibit(&mut self, behaviour: &str, scope: Scope, strength: f32, ttl: Option<u64>, now: u64) -> u64 {
+    pub fn inhibit(
+        &mut self,
+        behaviour: &str,
+        scope: Scope,
+        strength: f32,
+        ttl: Option<u64>,
+        now: u64,
+    ) -> u64 {
         let id = self.fresh_id();
         self.inhibitions.push(Inhibition {
             id,
@@ -84,9 +107,22 @@ impl Knobs {
         id
     }
 
-    pub fn arm(&mut self, trigger: Trigger, response: Response, ttl: Option<u64>, once: bool, now: u64) -> u64 {
+    pub fn arm(
+        &mut self,
+        trigger: Trigger,
+        response: Response,
+        ttl: Option<u64>,
+        once: bool,
+        now: u64,
+    ) -> u64 {
         let id = self.fresh_id();
-        self.armed.push(ArmedResponse { id, trigger, response, expires_at: ttl.map(|t| now + t), once });
+        self.armed.push(ArmedResponse {
+            id,
+            trigger,
+            response,
+            expires_at: ttl.map(|t| now + t),
+            once,
+        });
         id
     }
 

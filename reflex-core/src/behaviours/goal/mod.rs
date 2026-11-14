@@ -30,12 +30,24 @@ impl Behaviour for GoalExecutor {
         if d <= ARRIVED {
             if self.arrived_reported != Some(goal.id) {
                 self.arrived_reported = Some(goal.id);
-                ctx.emit(ctx.report(EventClass::Wake, "goal_reached", "").text(goal.spec.clone()));
+                ctx.emit(
+                    ctx.report(EventClass::Wake, "goal_reached", "")
+                        .text(goal.spec.clone()),
+                );
             }
             return None;
         }
-        let speed = if d > SPRINT_BEYOND && me.food > 6 { Speed::Sprint } else { Speed::Walk };
+        let speed = if d > SPRINT_BEYOND && me.food > 6 {
+            Speed::Sprint
+        } else {
+            Speed::Walk
+        };
         let legs = LegsCmd::toward(heading_to(me.pos, target), speed);
-        Some(Bid::new(Priority::P5, goal.priority.max(0.05), "goal", Commands::default().legs(legs)))
+        Some(Bid::new(
+            Priority::P5,
+            goal.priority.max(0.05),
+            "goal",
+            Commands::default().legs(legs),
+        ))
     }
 }

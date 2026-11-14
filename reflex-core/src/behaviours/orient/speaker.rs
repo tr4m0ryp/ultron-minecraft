@@ -27,7 +27,10 @@ impl Behaviour for LookAtSpeaker {
                 continue;
             }
             let pos = chat.sender_pos.or_else(|| {
-                snap.companion.as_ref().filter(|c| c.name == chat.sender).map(|c| c.pos)
+                snap.companion
+                    .as_ref()
+                    .filter(|c| c.name == chat.sender)
+                    .map(|c| c.pos)
             });
             let near = pos.is_some_and(|p| p.dist(snap.me.pos) <= RANGE);
             let named = !name.is_empty() && chat.text.to_lowercase().contains(&name);
@@ -47,6 +50,11 @@ impl Behaviour for LookAtSpeaker {
             self.target = None;
             return None;
         }
-        Some(Bid::new(Priority::P4, 0.8, "look_at_speaker", Commands::default().look_at(p)))
+        Some(Bid::new(
+            Priority::P4,
+            0.8,
+            "look_at_speaker",
+            Commands::default().look_at(p),
+        ))
     }
 }

@@ -35,7 +35,12 @@ impl Behaviour for Looming {
             .entities
             .iter()
             .filter(|e| Some(e.id) != companion)
-            .filter(|e| !matches!(e.kind.class(), EntityClass::Item | EntityClass::Projectile | EntityClass::FallingBlock))
+            .filter(|e| {
+                !matches!(
+                    e.kind.class(),
+                    EntityClass::Item | EntityClass::Projectile | EntityClass::FallingBlock
+                )
+            })
             .filter(|e| e.pos.dist(me.pos) <= RANGE)
             .filter(|e| self.ignore_until.get(&e.kind).is_none_or(|t| now >= *t))
             .filter_map(|e| Some((e, tau(me.pos, me.vel, e.pos, e.vel)?)))
@@ -56,6 +61,11 @@ impl Behaviour for Looming {
         }
         let priority = if hostile { Priority::P2 } else { Priority::P4 };
         let urgency = (1.0 - t / threshold) as f32;
-        Some(Bid::new(priority, urgency.max(0.1), "orient_looming", Commands::default().look_at(e.head())))
+        Some(Bid::new(
+            priority,
+            urgency.max(0.1),
+            "orient_looming",
+            Commands::default().look_at(e.head()),
+        ))
     }
 }

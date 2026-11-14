@@ -1,9 +1,11 @@
 mod common;
 
 use common::*;
-use reflex_core::events::{estimate_tokens, Event, EventClass, Upward, DEFAULT_DIGEST_TOKENS, RECOVERY_TICKS};
+use reflex_core::events::{
+    estimate_tokens, Event, EventClass, Upward, DEFAULT_DIGEST_TOKENS, RECOVERY_TICKS,
+};
 use reflex_core::snapshot::BlockKind;
-use reflex_core::{BlockPos, Executor, Vec3};
+use reflex_core::{BlockPos, Executor};
 
 fn digest_ev(t: u64, kind: &str, subject: &str) -> Event {
     Event::new(t, EventClass::Digest, kind, subject)
@@ -19,7 +21,10 @@ fn digest_stays_under_token_cap() {
     assert!(d.tokens <= DEFAULT_DIGEST_TOKENS, "{} tokens", d.tokens);
     assert_eq!(d.tokens, estimate_tokens(&d.text));
     assert!(d.dropped > 0 && d.text.contains("more"));
-    assert!(up.take_digest(DEFAULT_DIGEST_TOKENS).text.is_empty(), "drained");
+    assert!(
+        up.take_digest(DEFAULT_DIGEST_TOKENS).text.is_empty(),
+        "drained"
+    );
 }
 
 #[test]
@@ -38,14 +43,24 @@ fn repeated_events_fade_and_recover() {
         up.push(digest_ev(1000 + t, "creeper_back_away", "").magnitude(1.0));
     }
     let d = up.take_digest(150);
-    assert!(d.text.ends_with("x3"), "1, 0.5 and 0.25 pass; 0.125 is habituated: {}", d.text);
+    assert!(
+        d.text.ends_with("x3"),
+        "1, 0.5 and 0.25 pass; 0.125 is habituated: {}",
+        d.text
+    );
 
     up.push(digest_ev(1010, "creeper_back_away", "").magnitude(6.0));
-    assert!(up.take_digest(150).text.contains("x1"), "a large change dishabituates");
+    assert!(
+        up.take_digest(150).text.contains("x1"),
+        "a large change dishabituates"
+    );
 
     let later = 1010 + (RECOVERY_TICKS * 4.0) as u64;
     up.push(digest_ev(later, "creeper_back_away", "").magnitude(6.0));
-    assert!(up.take_digest(150).text.contains("x1"), "recovered after time");
+    assert!(
+        up.take_digest(150).text.contains("x1"),
+        "recovered after time"
+    );
 }
 
 #[test]
@@ -67,7 +82,11 @@ fn wake_rate_limit_and_critical_bypass() {
     up.push(Event::new(1010, EventClass::Wake, "chat", "human").text("b"));
     assert!(up.take_wake(1010).is_empty(), "within 5 s");
     assert_eq!(up.take_wake(1100).len(), 1, "after 100 ticks");
-    up.push(Event::new(1101, EventClass::Wake, "override", "R5").text("x").critical());
+    up.push(
+        Event::new(1101, EventClass::Wake, "override", "R5")
+            .text("x")
+            .critical(),
+    );
     assert_eq!(up.take_wake(1101).len(), 1, "critical bypasses the limit");
 }
 
@@ -75,10 +94,17 @@ fn wake_rate_limit_and_critical_bypass() {
 fn surprise_filter_drops_self_caused_and_already_told() {
     let mut up = Upward::default();
     up.push(digest_ev(1000, "block_changed", "").self_caused());
-    assert!(up.take_digest(150).text.is_empty(), "efference copy: self-caused");
+    assert!(
+        up.take_digest(150).text.is_empty(),
+        "efference copy: self-caused"
+    );
     up.push(Event::new(1000, EventClass::Wake, "companion_far", "human").text("40 blocks"));
     up.push(Event::new(1200, EventClass::Wake, "companion_far", "human").text("40 blocks"));
-    assert_eq!(up.take_wake(1300).len(), 1, "second report repeats what the brain was told");
+    assert_eq!(
+        up.take_wake(1300).len(),
+        1,
+        "second report repeats what the brain was told"
+    );
     assert_eq!(up.log().count(), 3, "everything is logged");
 }
 
@@ -94,5 +120,4 @@ fn executor_reports_reflex_onset_once_into_the_digest() {
     let d = ex.take_digest();
     assert_eq!(d.text.matches("lava_withdraw").count(), 1, "{}", d.text);
     assert!(d.text.contains("x1"));
-    let _ = Vec3::ZERO;
 }

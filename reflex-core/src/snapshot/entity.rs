@@ -63,14 +63,19 @@ impl EntityKind {
     }
 
     pub fn is_ranged(self) -> bool {
-        matches!(self, EntityKind::Skeleton | EntityKind::Stray | EntityKind::Bogged)
+        matches!(
+            self,
+            EntityKind::Skeleton | EntityKind::Stray | EntityKind::Bogged
+        )
     }
 
     pub fn eye_height(self) -> f64 {
         match self {
             EntityKind::Enderman => 2.55,
             EntityKind::Spider | EntityKind::CaveSpider => 0.65,
-            EntityKind::Arrow | EntityKind::Trident | EntityKind::Fireball | EntityKind::Item => 0.1,
+            EntityKind::Arrow | EntityKind::Trident | EntityKind::Fireball | EntityKind::Item => {
+                0.1
+            }
             _ => 1.62,
         }
     }
@@ -129,7 +134,14 @@ pub struct Entity {
 
 impl Entity {
     pub fn new(id: u32, kind: EntityKind, pos: Vec3) -> Self {
-        Self { id, kind, pos, vel: Vec3::ZERO, state: EntityState::default(), name: None }
+        Self {
+            id,
+            kind,
+            pos,
+            vel: Vec3::ZERO,
+            state: EntityState::default(),
+            name: None,
+        }
     }
 
     pub fn head(&self) -> Vec3 {

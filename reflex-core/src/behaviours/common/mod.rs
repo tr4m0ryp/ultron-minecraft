@@ -11,7 +11,11 @@ pub fn body_cells(pos: Vec3) -> [BlockPos; 3] {
 
 /// Nearest standable neighbour (8 directions, same level, one up, one down) for which
 /// `ok` holds, closest to `pos`.
-pub fn escape_step(blocks: &LocalBlocks, pos: Vec3, ok: impl Fn(BlockPos) -> bool) -> Option<BlockPos> {
+pub fn escape_step(
+    blocks: &LocalBlocks,
+    pos: Vec3,
+    ok: impl Fn(BlockPos) -> bool,
+) -> Option<BlockPos> {
     let feet = pos.block();
     let mut best: Option<(f64, BlockPos)> = None;
     for dy in [0, 1, -1] {

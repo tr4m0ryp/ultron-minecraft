@@ -39,18 +39,29 @@ impl Behaviour for CompanionLeash {
 
         let danger = hostile_near || hp_drop;
         if danger && !self.danger_reported {
-            ctx.emit(ctx.report(EventClass::Wake, "companion_danger", &c.name).text("hostile near companion or companion hurt"));
+            ctx.emit(
+                ctx.report(EventClass::Wake, "companion_danger", &c.name)
+                    .text("hostile near companion or companion hurt"),
+            );
         }
         self.danger_reported = danger;
         let far = dist > FAR;
         if far && !self.far_reported {
-            ctx.emit(ctx.report(EventClass::Wake, "companion_far", &c.name).magnitude(dist as f32));
+            ctx.emit(
+                ctx.report(EventClass::Wake, "companion_far", &c.name)
+                    .magnitude(dist as f32),
+            );
         }
         self.far_reported = far;
 
         if danger && dist > 2.0 {
             let legs = LegsCmd::toward(heading_to(me.pos, c.pos), Speed::Sprint);
-            return Some(Bid::new(Priority::P2, 1.0, "protect_companion", Commands::default().legs(legs)));
+            return Some(Bid::new(
+                Priority::P2,
+                1.0,
+                "protect_companion",
+                Commands::default().legs(legs),
+            ));
         }
 
         let solo = ctx.knobs.goal.as_ref().is_some_and(|g| g.solo);
@@ -65,17 +76,31 @@ impl Behaviour for CompanionLeash {
             self.following = false;
         }
         if self.following {
-            let speed = if dist > 2.0 * leash && me.food > 6 { Speed::Sprint } else { Speed::Walk };
+            let speed = if dist > 2.0 * leash && me.food > 6 {
+                Speed::Sprint
+            } else {
+                Speed::Walk
+            };
             let urgency = ((dist - RETURN_TO) / leash).clamp(0.2, 1.0) as f32;
             let legs = LegsCmd::toward(heading_to(me.pos, c.pos), speed);
-            return Some(Bid::new(Priority::P4, urgency, "follow_companion", Commands::default().legs(legs)));
+            return Some(Bid::new(
+                Priority::P4,
+                urgency,
+                "follow_companion",
+                Commands::default().legs(legs),
+            ));
         }
         let toward_us = c.vel.horizontal().dot(me.pos - c.pos) > 0.01;
         if dist < 1.0 && toward_us {
             let v = c.vel.horizontal().normalized();
             let aside = Vec3::new(-v.z, 0.0, v.x);
             let legs = LegsCmd::toward(aside, Speed::Walk);
-            return Some(Bid::new(Priority::P4, 0.5, "step_aside", Commands::default().legs(legs)));
+            return Some(Bid::new(
+                Priority::P4,
+                0.5,
+                "step_aside",
+                Commands::default().legs(legs),
+            ));
         }
         None
     }

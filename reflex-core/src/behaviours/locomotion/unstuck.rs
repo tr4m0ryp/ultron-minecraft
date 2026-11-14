@@ -34,7 +34,8 @@ impl Behaviour for Unstuck {
         match commanded {
             Some(l) if moved < MIN_PROGRESS => {
                 self.stuck += 1;
-                self.intended.get_or_insert(l.heading.horizontal().normalized());
+                self.intended
+                    .get_or_insert(l.heading.horizontal().normalized());
             }
             _ => {
                 self.stuck = 0;
@@ -48,7 +49,10 @@ impl Behaviour for Unstuck {
         }
         if self.stuck >= WAKE_AFTER_TICKS && !self.woke {
             self.woke = true;
-            ctx.emit(ctx.report(EventClass::Wake, "unstuck_failed", "C6").text("no progress after 3 escalation rounds"));
+            ctx.emit(
+                ctx.report(EventClass::Wake, "unstuck_failed", "C6")
+                    .text("no progress after 3 escalation rounds"),
+            );
         }
         let h = self.intended.unwrap_or(Vec3::new(0.0, 0.0, 1.0));
         let left = Vec3::new(h.z, 0.0, -h.x);
@@ -60,7 +64,11 @@ impl Behaviour for Unstuck {
             3 => Commands::default().legs(LegsCmd::toward(-h, Speed::Walk)),
             _ => {
                 let ahead = (me.pos + h).block();
-                let target = if ctx.snap.blocks.get(ahead.above()).passable() { ahead } else { ahead.above() };
+                let target = if ctx.snap.blocks.get(ahead.above()).passable() {
+                    ahead
+                } else {
+                    ahead.above()
+                };
                 Commands::default()
                     .legs(LegsCmd::toward(h, Speed::Walk))
                     .look_at(target.feet_centre() + Vec3::new(0.0, 0.5, 0.0))

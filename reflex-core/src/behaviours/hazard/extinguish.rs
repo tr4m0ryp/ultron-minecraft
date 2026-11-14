@@ -47,7 +47,10 @@ impl Behaviour for Extinguish {
 
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let me = &ctx.snap.me;
-        let down = GazeCmd::Angles { yaw: me.yaw, pitch: 90.0 };
+        let down = GazeCmd::Angles {
+            yaw: me.yaw,
+            pitch: 90.0,
+        };
         if let Some(t) = self.placed_at {
             let held_empty = me.held().is_some_and(|s| s.kind == ItemKind::EmptyBucket);
             if ctx.snap.tick >= t + RETRIEVE_AFTER && held_empty {
@@ -65,14 +68,21 @@ impl Behaviour for Extinguish {
         }
         if let Some(w) = nearest_water(ctx) {
             let legs = LegsCmd::toward(heading_to(me.pos, w.feet_centre()), Speed::Sprint);
-            return Some(Bid::new(Priority::P1, 0.9, "extinguish_water", Commands::default().legs(legs)));
+            return Some(Bid::new(
+                Priority::P1,
+                0.9,
+                "extinguish_water",
+                Commands::default().legs(legs),
+            ));
         }
         let slot = me.hotbar_find(|k| k == ItemKind::WaterBucket)?;
         let cmds = if me.selected_slot == slot {
             self.placed_at = Some(ctx.snap.tick);
             Commands::default().gaze(down).main(MainCmd::Use)
         } else {
-            Commands::default().gaze(down).main(MainCmd::SelectSlot(slot))
+            Commands::default()
+                .gaze(down)
+                .main(MainCmd::SelectSlot(slot))
         };
         Some(Bid::new(Priority::P1, 0.9, "extinguish_bucket", cmds).lock(2))
     }
@@ -83,6 +93,9 @@ impl Behaviour for Extinguish {
         }
         let legs = plan.legs.as_mut().filter(|l| l.speed == Speed::Sprint)?;
         legs.speed = Speed::Walk;
-        Some(Veto { priority: Priority::P1, note: "burning_no_sprint" })
+        Some(Veto {
+            priority: Priority::P1,
+            note: "burning_no_sprint",
+        })
     }
 }

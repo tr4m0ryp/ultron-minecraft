@@ -52,6 +52,8 @@ impl Snapshot {
     }
 
     pub fn nearest_hostile(&self, radius: f64) -> Option<&Entity> {
-        self.nearby(radius, |e| e.kind.class() == EntityClass::Hostile).into_iter().next()
+        self.nearby(radius, |e| e.kind.class() == EntityClass::Hostile)
+            .into_iter()
+            .next()
     }
 }

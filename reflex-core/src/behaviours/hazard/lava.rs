@@ -18,13 +18,19 @@ impl Behaviour for LavaWithdrawal {
         let blocks = &ctx.snap.blocks;
         let cells = body_cells(me.pos);
         let lava = cells.iter().find(|p| blocks.get(**p) == BlockKind::Lava)?;
-        let in_lava = blocks.get(cells[0]) == BlockKind::Lava || blocks.get(cells[1]) == BlockKind::Lava;
+        let in_lava =
+            blocks.get(cells[0]) == BlockKind::Lava || blocks.get(cells[1]) == BlockKind::Lava;
         let heading = match escape_step(blocks, me.pos, |_| true) {
             Some(p) => p.feet_centre() - me.pos,
             None => away_from(me.pos, lava.feet_centre()),
         };
         let mut legs = LegsCmd::toward(heading, Speed::Sprint);
         legs.jump = in_lava;
-        Some(Bid::new(Priority::P0, 1.0, "lava_withdraw", Commands::default().legs(legs)))
+        Some(Bid::new(
+            Priority::P0,
+            1.0,
+            "lava_withdraw",
+            Commands::default().legs(legs),
+        ))
     }
 }

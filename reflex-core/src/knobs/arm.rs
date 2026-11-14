@@ -5,7 +5,11 @@ use crate::snapshot::EntityKind;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Trigger {
     /// An entity of `kind` within `dist` of us, or of the companion when `of_companion`.
-    EntityWithin { kind: EntityKind, dist: f64, of_companion: bool },
+    EntityWithin {
+        kind: EntityKind,
+        dist: f64,
+        of_companion: bool,
+    },
     HpBelow(f32),
     CompanionHpBelow(f32),
     /// Case-insensitive substring match on any chat line.

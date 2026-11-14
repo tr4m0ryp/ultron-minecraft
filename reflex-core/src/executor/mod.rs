@@ -80,10 +80,17 @@ impl Executor {
         let mut notes: Vec<&'static str> = Vec::new();
         let mut owners_idx: Vec<Option<usize>> = Vec::new();
         for (k, b) in self.behaviours.iter_mut().enumerate() {
-            let Some(bid) = b.evaluate(&ctx) else { continue };
+            let Some(bid) = b.evaluate(&ctx) else {
+                continue;
+            };
             let id = b.id();
             let inh = self.knobs.inhibition_for(id, pos, now);
-            let s = salience(bid.priority, self.knobs.gains.behaviour_gain(id), bid.urgency, inh);
+            let s = salience(
+                bid.priority,
+                self.knobs.gains.behaviour_gain(id),
+                bid.urgency,
+                inh,
+            );
             if s.overridden {
                 ctx.emit(report::override_event(&ctx, id, bid.note));
             }
@@ -133,7 +140,9 @@ impl Executor {
         let mut now_active: HashMap<String, Priority> = HashMap::new();
         for b in self.behaviours.iter_mut() {
             let mut trial = plan.clone();
-            let Some(v) = b.veto(&ctx, &mut trial) else { continue };
+            let Some(v) = b.veto(&ctx, &mut trial) else {
+                continue;
+            };
             let id = b.id();
             let inh = self.knobs.inhibition_for(id, pos, now);
             let drive = self.knobs.gains.behaviour_gain(id) * (1.0 - inh);
@@ -158,7 +167,13 @@ impl Executor {
                 if let Some(arm_id) = c.id.strip_prefix("ARM:") {
                     ctx.emit(report::armed_fired(&ctx, arm_id, notes[w]));
                 } else {
-                    ctx.emit(report::fired(&ctx, &c.id, notes[w], c.priority, &self.knobs));
+                    ctx.emit(report::fired(
+                        &ctx,
+                        &c.id,
+                        notes[w],
+                        c.priority,
+                        &self.knobs,
+                    ));
                 }
             }
             now_active.insert(c.id.clone(), c.priority);
@@ -172,7 +187,10 @@ impl Executor {
             self.upward.push(e);
         }
         self.active = now_active;
-        self.efference = Efference { legs: plan.legs, from: pos };
+        self.efference = Efference {
+            legs: plan.legs,
+            from: pos,
+        };
         out
     }
 }
@@ -191,7 +209,10 @@ impl GoalWatch {
         let since = *self.lost_since.get_or_insert(ctx.snap.tick);
         if !self.sent && ctx.snap.tick >= since + GOAL_INTERRUPT_TICKS {
             self.sent = true;
-            let holder = owners.get(&Channel::Legs).map(|&i| cands[i].id.as_str()).unwrap_or("none");
+            let holder = owners
+                .get(&Channel::Legs)
+                .map(|&i| cands[i].id.as_str())
+                .unwrap_or("none");
             ctx.emit(report::goal_interrupted(ctx, holder));
         }
     }

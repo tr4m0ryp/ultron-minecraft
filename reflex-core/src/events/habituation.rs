@@ -26,7 +26,10 @@ impl Habituation {
     /// Registers an occurrence and returns the weight it is reported with.
     pub fn observe(&mut self, key: &str, magnitude: f32, now: u64) -> f32 {
         if self.ignored.get(key).is_some_and(|until| now < *until)
-            || self.ignored.iter().any(|(k, until)| now < *until && key.starts_with(k.as_str()))
+            || self
+                .ignored
+                .iter()
+                .any(|(k, until)| now < *until && key.starts_with(k.as_str()))
         {
             return 0.0;
         }

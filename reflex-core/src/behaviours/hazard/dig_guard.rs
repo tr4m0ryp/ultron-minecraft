@@ -21,7 +21,9 @@ impl Behaviour for DigGuard {
     }
 
     fn veto(&mut self, ctx: &Ctx, plan: &mut Commands) -> Option<Veto> {
-        let Some(MainCmd::Dig(target)) = plan.main else { return None };
+        let Some(MainCmd::Dig(target)) = plan.main else {
+            return None;
+        };
         let feet = ctx.snap.me.pos.block();
         let blocks = &ctx.snap.blocks;
         let mut lethal = false;
@@ -50,6 +52,9 @@ impl Behaviour for DigGuard {
             ctx.emit(ctx.report(EventClass::Digest, "dig_vetoed", "R10"));
         }
         let priority = if lethal { Priority::P0 } else { Priority::P1 };
-        Some(Veto { priority, note: "dig_guard" })
+        Some(Veto {
+            priority,
+            note: "dig_guard",
+        })
     }
 }

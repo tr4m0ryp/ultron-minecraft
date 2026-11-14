@@ -23,7 +23,10 @@ impl Behaviour for Hunger {
         let me = &ctx.snap.me;
         let stock = food_servings(me);
         if stock < LOW_STOCK && !self.low_stock_reported {
-            ctx.emit(ctx.report(EventClass::Digest, "food_stock_low", "").magnitude(stock as f32));
+            ctx.emit(
+                ctx.report(EventClass::Digest, "food_stock_low", "")
+                    .magnitude(stock as f32),
+            );
         }
         self.low_stock_reported = stock < LOW_STOCK;
 
@@ -39,7 +42,11 @@ impl Behaviour for Hunger {
         let slot = best_food(me, false)?;
         let cmds = eat_commands(me, slot);
         let eating = cmds.main == Some(MainCmd::Use);
-        let priority = if emergency { Priority::P1 } else { Priority::P3 };
+        let priority = if emergency {
+            Priority::P1
+        } else {
+            Priority::P3
+        };
         let urgency = 1.0 - me.food as f32 / (floor.max(1) as f32 + 1.0);
         let bid = Bid::new(priority, urgency, "eat", cmds);
         Some(if eating { bid.lock(EATING_TICKS) } else { bid })

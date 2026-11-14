@@ -13,7 +13,15 @@ pub struct Salience {
 /// The gain term is capped below one so a bid never climbs out of its priority class.
 pub fn salience(priority: Priority, gain: f32, urgency: f32, inhibition: f32) -> Salience {
     let overridden = priority == Priority::P0 && inhibition > 0.0;
-    let i = if priority == Priority::P0 { 0.0 } else { inhibition.clamp(0.0, 1.0) };
+    let i = if priority == Priority::P0 {
+        0.0
+    } else {
+        inhibition.clamp(0.0, 1.0)
+    };
     let drive = (gain.max(0.0) * urgency.clamp(0.0, 1.0) * (1.0 - i)).min(0.999);
-    Salience { value: priority.base() + drive, drive, overridden }
+    Salience {
+        value: priority.base() + drive,
+        drive,
+        overridden,
+    }
 }

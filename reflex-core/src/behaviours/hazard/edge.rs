@@ -39,12 +39,22 @@ pub fn probe_drop(ctx: &Ctx, legs: &LegsCmd) -> Option<Drop> {
         Some((p, k)) => {
             // An unknown cell bounds the depth from below: the drop is at least this deep.
             let top = if k.supports() { p.y + 1 } else { p.y };
-            Some(Drop { depth: (feet_y - top) as f64, landing: k, void: false })
+            Some(Drop {
+                depth: (feet_y - top) as f64,
+                landing: k,
+                void: false,
+            })
         }
-        None if depth_to_void <= SCAN_DEPTH => {
-            Some(Drop { depth: f64::INFINITY, landing: BlockKind::Air, void: true })
-        }
-        None => Some(Drop { depth: f64::INFINITY, landing: BlockKind::Unknown, void: false }),
+        None if depth_to_void <= SCAN_DEPTH => Some(Drop {
+            depth: f64::INFINITY,
+            landing: BlockKind::Air,
+            void: true,
+        }),
+        None => Some(Drop {
+            depth: f64::INFINITY,
+            landing: BlockKind::Unknown,
+            void: false,
+        }),
     }
 }
 
@@ -89,12 +99,23 @@ impl Behaviour for EdgeGuard {
         let me = &ctx.snap.me;
         let lethal = lava || fall_damage(drop.depth) >= me.hp_total();
         halt(plan);
-        if let Some(g) = ctx.knobs.goal.as_ref().filter(|g| self.reported_goal != Some(g.id)) {
+        if let Some(g) = ctx
+            .knobs
+            .goal
+            .as_ref()
+            .filter(|g| self.reported_goal != Some(g.id))
+        {
             self.reported_goal = Some(g.id);
-            ctx.emit(ctx.report(EventClass::Digest, "goal_blocked_by_edge", "R5").text(g.spec.clone()));
+            ctx.emit(
+                ctx.report(EventClass::Digest, "goal_blocked_by_edge", "R5")
+                    .text(g.spec.clone()),
+            );
         }
         let priority = if lethal { Priority::P0 } else { Priority::P1 };
-        Some(Veto { priority, note: "edge_guard" })
+        Some(Veto {
+            priority,
+            note: "edge_guard",
+        })
     }
 }
 
@@ -113,7 +134,11 @@ impl Behaviour for VoidGuard {
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let low = ctx.snap.me.pos.y < (ctx.snap.world_min_y + 4) as f64;
         if low && !self.warned {
-            ctx.emit(ctx.report(EventClass::Wake, "near_void", "R7").critical().text("below world floor + 4"));
+            ctx.emit(
+                ctx.report(EventClass::Wake, "near_void", "R7")
+                    .critical()
+                    .text("below world floor + 4"),
+            );
         }
         self.warned = low;
         None
@@ -125,6 +150,9 @@ impl Behaviour for VoidGuard {
             return None;
         }
         halt(plan);
-        Some(Veto { priority: Priority::P0, note: "void_guard" })
+        Some(Veto {
+            priority: Priority::P0,
+            note: "void_guard",
+        })
     }
 }

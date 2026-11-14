@@ -32,7 +32,10 @@ pub fn resolve_gaze(snap: &Snapshot, plan: &mut Commands) {
             _ => (me.yaw, me.pitch),
         },
     };
-    plan.gaze = Some(GazeCmd::Angles { yaw, pitch: pitch.clamp(-90.0, 90.0) });
+    plan.gaze = Some(GazeCmd::Angles {
+        yaw,
+        pitch: pitch.clamp(-90.0, 90.0),
+    });
 }
 
 /// Motor composition: the legs' world-frame heading becomes WASD relative to the final yaw.
