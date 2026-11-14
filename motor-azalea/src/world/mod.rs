@@ -98,6 +98,11 @@ impl World for AzaleaWorld {
         entities::sleeping(&self.bot)
     }
 
+    fn open_sky(&self, feet: BlockPos) -> bool {
+        let t = crate::nav::LiveTerrain::new(&self.bot);
+        reflex_core::goals::travel::route::open_sky(&t, feet)
+    }
+
     fn start_craft(&mut self, item: &str, crafts: u32, table: Option<BlockPos>) {
         self.crafter.start(&self.bot, item, crafts, table);
     }
