@@ -51,12 +51,13 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--n-lat", type=int, default=240)
     ap.add_argument("--n-batch", type=int, default=100)
+    ap.add_argument("--stride", type=int, default=1, help="use every Nth case (bounds runtime on slow CPUs)")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--pid", type=int, default=None, help="server pid for RSS (http backend)")
     ap.add_argument("--load-kw", default="{}", help="json kwargs for backend.load")
     a = ap.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", str(a.threads))
-    cases = load_cases()
+    cases = load_cases()[::a.stride]
     be = BACKENDS[a.backend]()
     if a.backend != "http":
         import torch
@@ -67,7 +68,7 @@ def main():
     t0 = time.perf_counter()
     be.predict(cases[0]["state"], {"q": cases[0]["question"]})
     t_first = time.perf_counter() - t0
-    for i in range(10):  # warm-up
+    for i in range(min(3, len(cases))):  # warm-up
         be.predict(cases[i]["state"], {"q": cases[i]["question"]})
     # accuracy + latency in the same pass structure: cycle all 60 cases, repeat until n-lat calls
     correct, per_kind, lat, errs = 0, {}, [], []
