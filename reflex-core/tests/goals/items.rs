@@ -243,6 +243,6 @@ fn place_climbs_to_see_a_roof_support_above_the_eyes() {
             break;
         }
     }
-    let spot = raised.expect("walks to a spot");
+    let spot = raised.unwrap_or_else(|| panic!("walks to a spot: {:?}", s.events("goal_failed")));
     assert!(spot.y >= 65, "eye above the wall top: {spot:?}");
 }
