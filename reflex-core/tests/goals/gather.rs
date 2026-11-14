@@ -124,6 +124,32 @@ fn collect_walks_over_drops_until_count() {
 }
 
 #[test]
+fn collect_plans_around_a_block_in_the_straight_line() {
+    // Live bug: a pillar between the bot and a drop 6 blocks off; the direct walk pushed
+    // into it and only the unstuck reflex moved the body.
+    let mut s = Sim::new();
+    s.snap.blocks.fill(
+        reflex_core::BlockPos::new(2, 64, -1),
+        reflex_core::BlockPos::new(2, 66, 1),
+        reflex_core::snapshot::BlockKind::Solid,
+    );
+    s.world.state().drops.push(ItemDrop {
+        entity_id: 50,
+        item: "raw_iron".into(),
+        count: 1,
+        pos: Vec3::new(5.5, 64.0, 0.5),
+    });
+    s.goal("collect raw_iron 1", true);
+    for _ in 0..5 {
+        s.step();
+    }
+    assert!(
+        s.nav.state().requests >= 1,
+        "the planner routes around the pillar"
+    );
+}
+
+#[test]
 fn collect_fails_when_drops_run_out_or_inventory_full() {
     let mut s = Sim::new();
     s.world.state().drops.push(ItemDrop {

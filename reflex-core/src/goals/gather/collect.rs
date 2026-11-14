@@ -3,9 +3,10 @@ use crate::channels::{Commands, LegsCmd, Speed};
 use crate::goals::ports::{NavTarget, Navigator};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::{Walk, Walker};
+use crate::math::Vec3;
 
 pub const DROP_RADIUS: f64 = 16.0;
-/// Closer than this the drop is walked to directly, without the planner.
+/// Closer than this, and with a clear straight line, the drop is walked to directly.
 const DIRECT: f64 = 6.0;
 /// Ticks with no matching drop in range before the goal stops.
 const EMPTY_LIMIT: u32 = 40;
@@ -61,7 +62,7 @@ impl GoalTask for Collect {
             return Step::Bid(Plan::hold("goal_collect"));
         };
         self.empty = 0;
-        if d.pos.dist(me) <= DIRECT {
+        if d.pos.dist(me) <= DIRECT && straight_clear(cx.snap(), me, d.pos) {
             self.walker.stop(cx);
             let legs = LegsCmd::toward(heading_to(me, d.pos), Speed::Walk);
             return Step::Bid(Plan::new("goal_collect", Commands::default().legs(legs)));
@@ -82,4 +83,18 @@ impl GoalTask for Collect {
     fn stop(&mut self, _nav: &mut dyn Navigator) {
         self.walker.reset();
     }
+}
+
+/// The body fits along the straight line from `from` to `to` at the current feet level:
+/// no step up, no block in the way. Live bug: the direct walk ran into a pillar between the
+/// bot and the drop, and only the unstuck reflex's jumps ever moved it.
+fn straight_clear(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool {
+    let flat = Vec3::new(to.x - from.x, 0.0, to.z - from.z);
+    let steps = (flat.len() / 0.25).ceil().max(1.0) as u32;
+    let feet = from.y.floor();
+    (0..=steps).all(|i| {
+        let p = from + flat * (i as f64 / steps as f64);
+        let cell = Vec3::new(p.x, feet + 0.5, p.z).block();
+        snap.blocks.get(cell).passable() && snap.blocks.get(cell.up()).passable()
+    })
 }
