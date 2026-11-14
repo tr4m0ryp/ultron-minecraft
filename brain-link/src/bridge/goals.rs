@@ -86,7 +86,9 @@ pub fn layer_spec(
         GoalName::Give => (format!("give {who} {} {count}", kind()), None, false),
         GoalName::Place => {
             let v = pos.ok_or("goal place needs param 'pos'")?;
-            (format!("place {} {}", kind(), xyz(v)), Some(v), true)
+            let to = p.to.map(|[x, y, z]| format!(" {}", xyz(Vec3::new(x, y, z))));
+            let spec = format!("place {} {}{}", kind(), xyz(v), to.unwrap_or_default());
+            (spec, Some(v), true)
         }
         GoalName::SleepInBed => ("sleep_in_bed".into(), None, true),
         GoalName::EatNow => ("eat_now".into(), None, false),

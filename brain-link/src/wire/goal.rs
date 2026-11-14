@@ -84,6 +84,9 @@ pub struct GoalParams {
     pub distance: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pos: Option<[f64; 3]>,
+    /// place: the box's second corner; every open cell from `pos` to `to` is filled.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<[f64; 3]>,
     /// Block, item or entity kind, e.g. "iron_ore", "oak_log", "zombie".
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
