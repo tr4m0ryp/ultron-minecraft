@@ -62,6 +62,7 @@ impl State {
         ) else {
             return;
         };
+        snap.me.shield_ticks = inner.hands.shield_ticks();
         let sensed = started.elapsed();
         let (out, say) = LOCAL.with_borrow_mut(|slot| {
             let l = slot.get_or_insert_with(|| {
