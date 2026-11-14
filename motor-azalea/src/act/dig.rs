@@ -10,7 +10,7 @@ use azalea::{
         Physics, Position,
     },
     local_player::WorldHolder,
-    protocol::packets::game::{s_interact::InteractionHand, s_swing::ServerboundSwing},
+    protocol::packets::game::s_punch::ServerboundPunch,
     Client,
 };
 
@@ -57,9 +57,7 @@ impl DigState {
             }
             return;
         }
-        bot.write_packet(ServerboundSwing {
-            hand: InteractionHand::MainHand,
-        });
+        bot.write_packet(ServerboundPunch);
         self.progress += rate(bot, p);
         if self.progress >= 1.0 {
             send(bot, PlayerAction::StopDestroy, p, face_toward(bot, p));
