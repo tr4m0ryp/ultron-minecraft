@@ -601,11 +601,30 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   8; adding the on-ground step back once the centre is past the edge saved 7 of 7 valid
   trials over about 19 hits each; the block clutch (R6, cobblestone) saved 8 of 8.
 - Staged survival (tools/live/staged/survival.py: 30x30 walled arena, frozen midnight, iron
-  sword and 8 bread, brain absent, 4 waves of 225 s): melee-only baseline (D2 alone) 16
-  deaths, 562 HP taken, 3 kills; full catalog 10 deaths, 351 HP, 0 kills; after fixing D2's
-  gaze starvation and D3's futile retreat, 7 deaths, 324 HP, 3 kills. One seed per arm, so
-  per-wave differences of one or two deaths are within run-to-run noise. Skeleton arrows
-  remain the main killer (no shield, no cover in the arena), then creepers.
+  sword and 8 bread, brain absent, 4 waves of 225 s; run in parallel arenas by batch.py, seeds
+  1 to 5, mean +- sample sd). The earlier one-run figures (melee-only 16 deaths, full 7) are
+  replaced by a 5-run noise floor of the same build: melee-only (D2 alone) 17.4 +- 1.5 deaths
+  and 593 +- 47 HP lost; full catalog 7.2 +- 1.5 deaths and 271 +- 55 HP, of which skeletons
+  4.6 +- 0.5 deaths (173 +- 32 HP), mix 1.8 +- 1.3, creepers 0.8 +- 0.4, zombies 0. After the
+  archer and creeper work (D3 reload-timed shield and zigzag, line of sight and cover, meal
+  gating, H2 leaving archers to D3, hold-to-block shield, item-use slowdown, D1 duel), the
+  full four-wave run gives 0.6 +- 0.9 deaths and 75 +- 21 HP (5 runs). Single waves from a
+  fresh kit, 5 runs each, before (old build) vs after:
+
+  | Wave | Arm | Deaths before | Deaths after | HP lost before | HP lost after | Hits before | Hits after |
+  |---|---|---|---|---|---|---|---|
+  | skeletons | no shield | 4.6 +- 1.1 | 0.0 +- 0.0 | 193 +- 38 | 29 +- 10 | 56 +- 9 | 8.2 +- 2.5 |
+  | skeletons | shield | 4.6 +- 0.9 | 0.0 +- 0.0 | 176 +- 27 | 10 +- 6 | 51 +- 8 | 2.4 +- 1.5 |
+  | mix | no shield | 2.0 +- 0.7 | 0.0 +- 0.0 | 86 +- 28 | 29 +- 6 | 22 +- 9 | 9.0 +- 0.7 |
+  | mix | shield | 1.6 +- 1.5 | 0.0 +- 0.0 | 70 +- 64 | 15 +- 8 | 20 +- 18 | 4.6 +- 2.2 |
+  | creepers | no shield | 0.6 +- 0.5 | 0.0 +- 0.0 | 23 +- 16 | 0 +- 0 | 1.2 +- 0.8 | 0 +- 0 |
+  | skeletons, 4 pillars | no shield | 2.4 +- 1.7 | 0.4 +- 0.5 | 108 +- 52 | 27 +- 16 | 31 +- 13 | 7.0 +- 4.6 |
+
+  Kills per wave after: all 4 skeletons, all 5 creepers (0 before), 6.8 to 7 of 7 in the mix.
+  The old build with a shield never lowered it once raised and, with Azalea's missing
+  item-use slowdown, walked at full speed behind it, which is why its shielded mix arm
+  sometimes took no damage at all; the shield was otherwise of no use to it (skeletons
+  4.6 deaths either way).
 - Fast ticking is not valid for this bot. Azalea's client loop runs `GameTick` on a fixed
   50 ms timer and leaves the ticking-state packet unhandled, so with `/tick rate` at 40, 80
   and 100 the bot still ticked 20.0 times a second (tick gaps p50 55 ms, p99 61 to 69 ms)
