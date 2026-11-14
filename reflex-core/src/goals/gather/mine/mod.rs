@@ -10,14 +10,11 @@ mod target;
 
 pub use target::SEARCH_RADIUS;
 
-use crate::behaviours::common::heading_to;
-use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
-use crate::goals::items::{equip, replaceable};
 use crate::goals::ports::{kind_matches, NavTarget, Navigator, ToolNeed};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
-use crate::goals::travel::route::{drop_of, natural};
+use crate::goals::travel::route::drop_of;
 use crate::goals::travel::{Walk, Walker};
-use crate::math::{BlockPos, Vec3};
+use crate::math::BlockPos;
 use pickup::Pickup;
 
 /// Digging one block for longer than this means something (a veto, a wrong tool) stops it.
@@ -135,7 +132,6 @@ impl Mine {
             Err(e) => Step::Failed(e),
         }
     }
-
 }
 
 impl GoalTask for Mine {

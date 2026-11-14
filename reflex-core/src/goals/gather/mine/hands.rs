@@ -1,8 +1,8 @@
 //! The mining hand work: breaking a block with the right tool, and stepping into the gap
 //! it left (clearing the block above too) so the body walks over the drop.
 
-use super::{Mine, Phase, ADVANCE_TICKS, DIG_LIMIT_TICKS};
 use super::target;
+use super::{Mine, Phase, ADVANCE_TICKS, DIG_LIMIT_TICKS};
 use crate::behaviours::common::heading_to;
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::goals::items::{equip, replaceable};
