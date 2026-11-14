@@ -3,8 +3,11 @@
 mod common;
 
 use common::*;
+use reflex_core::behaviours::defence::MeleeDefence;
 use reflex_core::behaviours::hazard::{ContactHazard, FallingBlocks, LavaWithdrawal};
-use reflex_core::snapshot::BlockKind;
+use reflex_core::behaviours::homeostasis::Health;
+use reflex_core::channels::MainCmd;
+use reflex_core::snapshot::{BlockKind, EntityKind};
 use reflex_core::{BlockPos, Priority, Vec3};
 
 /// Head inside leaves (or glass, or a slab) does no damage in vanilla; R9 used to treat any
@@ -79,4 +82,40 @@ fn r1_walks_clear_of_adjacent_lava() {
         bid.commands.legs.unwrap().heading.x < 0.0,
         "walks away from the lava"
     );
+}
+
+/// Live: at hp 7 a zombie chased the bot into a platform corner; H2 and D2 kept bidding a
+/// retreat that R5 held at the edge, the bot never swung, and the zombie knocked it off.
+/// Cornered with the foe in reach, H2 releases the legs and D2 fights back.
+#[test]
+fn cornered_low_hp_fights_back() {
+    let mut s = flat();
+    s.blocks.fill(
+        BlockPos::new(1, -64, -12),
+        BlockPos::new(12, FLOOR_Y, 12),
+        BlockKind::Air,
+    );
+    s.blocks.fill(
+        BlockPos::new(-12, -64, 1),
+        BlockPos::new(12, FLOOR_Y, 12),
+        BlockKind::Air,
+    );
+    s.me.health = 6.0;
+    s.entities.push(mob(7, EntityKind::Zombie, -1.0, -1.0));
+
+    let bid = eval(&mut MeleeDefence, &s, &knobs()).0.expect("D2 bids");
+    assert_eq!(bid.note, "melee_cornered");
+    assert_eq!(bid.commands.main, Some(MainCmd::Attack(7)));
+    let h2 = eval(&mut Health, &s, &knobs()).0;
+    assert!(
+        h2.is_none_or(|b| b.commands.legs.is_none()),
+        "H2 leaves the legs"
+    );
+
+    // With open ground behind, the same situation is a retreat.
+    let mut s = flat();
+    s.me.health = 6.0;
+    s.entities.push(mob(7, EntityKind::Zombie, -1.0, -1.0));
+    let bid = eval(&mut MeleeDefence, &s, &knobs()).0.expect("D2 bids");
+    assert_eq!(bid.note, "melee_retreat");
 }
