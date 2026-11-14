@@ -24,18 +24,20 @@ fn clutch_target(snap: &Snapshot) -> Option<(BlockPos, Vec3)> {
         if !k.passable() || k.is_liquid() {
             return None;
         }
-        [(1, 0), (-1, 0), (0, 1), (0, -1)].iter().find_map(|&(dx, dz)| {
-            let ledge = cell.offset(dx, 0, dz);
-            if !snap.blocks.get(ledge).supports() {
-                return None;
-            }
-            let face = Vec3::new(
-                ledge.x as f64 + 0.5 - dx as f64 * 0.5,
-                ledge.y as f64 + 0.5,
-                ledge.z as f64 + 0.5 - dz as f64 * 0.5,
-            );
-            (me.eye().dist(face) <= REACH).then_some((ledge, face))
-        })
+        [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            .iter()
+            .find_map(|&(dx, dz)| {
+                let ledge = cell.offset(dx, 0, dz);
+                if !snap.blocks.get(ledge).supports() {
+                    return None;
+                }
+                let face = Vec3::new(
+                    ledge.x as f64 + 0.5 - dx as f64 * 0.5,
+                    ledge.y as f64 + 0.5,
+                    ledge.z as f64 + 0.5 - dz as f64 * 0.5,
+                );
+                (me.eye().dist(face) <= REACH).then_some((ledge, face))
+            })
     })
 }
 
@@ -140,13 +142,14 @@ impl Behaviour for FallArrest {
         let top = Vec3::new(me.pos.x, floor.y as f64 + 1.0, me.pos.z);
         self.pending = Some((snap.tick, floor.above()));
         ctx.emit(
-            ctx.report(EventClass::Log, "water_place", "R6").text(format!(
-                "t_land={} eye_dist={:.2} vy={:.3} y={:.2}",
-                fall.t_land,
-                me.eye().dist(top),
-                me.vel.y,
-                me.pos.y
-            )),
+            ctx.report(EventClass::Log, "water_place", "R6")
+                .text(format!(
+                    "t_land={} eye_dist={:.2} vy={:.3} y={:.2}",
+                    fall.t_land,
+                    me.eye().dist(top),
+                    me.vel.y,
+                    me.pos.y
+                )),
         );
         Some(Bid::new(
             Priority::P0,

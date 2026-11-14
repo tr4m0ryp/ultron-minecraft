@@ -23,14 +23,32 @@ fn platform_edge() -> reflex_core::Snapshot {
 #[test]
 fn clearance_sees_drop_and_wall() {
     let mut s = platform_edge();
-    let (d, b) = clearance(&s.blocks, Vec3::new(1.5, 64.0, 0.5), Vec3::new(1.0, 0.0, 0.0), 3.0);
+    let (d, b) = clearance(
+        &s.blocks,
+        Vec3::new(1.5, 64.0, 0.5),
+        Vec3::new(1.0, 0.0, 0.0),
+        3.0,
+    );
     assert_eq!(b, Bound::Drop);
-    assert!((1.4..1.7).contains(&d), "edge 1.5 ahead plus overhang, got {d}");
+    assert!(
+        (1.4..1.7).contains(&d),
+        "edge 1.5 ahead plus overhang, got {d}"
+    );
     s.blocks.set(BlockPos::new(-2, 64, 0), BlockKind::Solid);
-    let (_, b) = clearance(&s.blocks, Vec3::new(0.5, 64.0, 0.5), Vec3::new(-1.0, 0.0, 0.0), 3.0);
+    let (_, b) = clearance(
+        &s.blocks,
+        Vec3::new(0.5, 64.0, 0.5),
+        Vec3::new(-1.0, 0.0, 0.0),
+        3.0,
+    );
     assert_eq!(b, Bound::Wall);
     assert_eq!(
-        knockback_room(&s.blocks, Vec3::new(0.5, 64.0, 0.5), Vec3::new(3.5, 64.0, 0.5), 3.0),
+        knockback_room(
+            &s.blocks,
+            Vec3::new(0.5, 64.0, 0.5),
+            Vec3::new(3.5, 64.0, 0.5),
+            3.0
+        ),
         3.0,
         "a wall behind stops knockback"
     );
@@ -61,7 +79,10 @@ fn footing_steps_past_the_foe_when_back_is_to_the_edge() {
     assert_eq!(cmds.main, Some(MainCmd::Attack(7)));
 
     s.me.pos = Vec3::new(-2.5, 64.0, 0.5);
-    assert!(footing(&s, Vec3::new(-4.5, 64.0, 0.5)).is_none(), "room behind");
+    assert!(
+        footing(&s, Vec3::new(-4.5, 64.0, 0.5)).is_none(),
+        "room behind"
+    );
 }
 
 #[test]
@@ -92,7 +113,9 @@ fn r15_is_p1_for_a_survivable_drop() {
     s.me.pos = Vec3::new(3.5, 64.1, 0.5);
     s.me.vel = Vec3::new(0.2, 0.0, 0.0);
     s.me.on_ground = false;
-    let bid = eval(&mut KnockbackRecovery, &s, &knobs()).0.expect("harmful");
+    let bid = eval(&mut KnockbackRecovery, &s, &knobs())
+        .0
+        .expect("harmful");
     assert_eq!(bid.priority, Priority::P1);
 }
 
@@ -156,7 +179,10 @@ fn r6_water_preselects_aims_down_and_places_once_at_the_lead() {
     r6.granted(true);
     s.me.pos.y = 65.5;
     let bid = eval(&mut r6, &s, &knobs()).0.expect("still falling");
-    assert_eq!(bid.commands.main, None, "one shot: a second use would scoop it");
+    assert_eq!(
+        bid.commands.main, None,
+        "one shot: a second use would scoop it"
+    );
 }
 
 #[test]

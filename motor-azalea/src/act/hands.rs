@@ -42,7 +42,6 @@ impl HandState {
     }
 }
 
-
 /// Right-click with the main-hand item as a use in the air (vanilla `useItem`). Azalea's
 /// start-use sends only `UseItemOn` when the crosshair is on a block, and unlike the vanilla
 /// client never follows up with `UseItem` when the block ignores it, so a bucket aimed at the
