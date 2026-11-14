@@ -81,6 +81,7 @@ def main():
             except Exception as e:
                 errs.append(f"{c['id']}: {type(e).__name__}: {e}"[:200]); continue
             lat.append(time.perf_counter() - t)
+            if len(lat) % 10 == 0: print(f'[{a.label}] {len(lat)} calls, last {lat[-1]*1e3:.0f} ms', file=sys.stderr, flush=True)
             if p == 0:
                 ok = decide(c, ans) == c["answer"]
                 correct += ok
