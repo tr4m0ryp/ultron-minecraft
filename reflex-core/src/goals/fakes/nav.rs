@@ -15,6 +15,8 @@ pub struct FakeNavState {
     pub unreachable: Vec<BlockPos>,
     /// Entity targets with these ids fail as unreachable.
     pub unreachable_entities: Vec<u32>,
+    /// Walking-only sky targets fail (the body is shut in).
+    pub shut_in: bool,
     /// Ticks spent in `Planning` after each request.
     pub plan_ticks: u32,
     pub requests: u32,
@@ -84,6 +86,9 @@ impl Navigator for FakeNav {
             return NavStatus::Planning;
         }
         match target {
+            NavTarget::Sky { dig: false, .. } if s.shut_in => {
+                NavStatus::Failed(NavFailure::Unreachable)
+            }
             NavTarget::Sky { .. } => NavStatus::Arrived,
             NavTarget::Block { pos, .. } | NavTarget::Beside { block: pos } => {
                 if s.unreachable.contains(&pos) {

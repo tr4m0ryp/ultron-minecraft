@@ -20,6 +20,8 @@ pub struct FakeWorldState {
     pub recipes: HashMap<String, Recipe>,
     pub drops: Vec<ItemDrop>,
     pub sleeping: bool,
+    /// Read every cell as roofed over (no open sky).
+    pub no_sky: bool,
     /// `craft_status` calls that report Busy before the craft lands.
     pub craft_ticks: u32,
     /// Make the next craft fail with this reason.
@@ -158,6 +160,10 @@ impl World for FakeWorld {
 
     fn sleeping(&self) -> bool {
         self.0.borrow().sleeping
+    }
+
+    fn open_sky(&self, _feet: BlockPos) -> bool {
+        !self.0.borrow().no_sky
     }
 
     fn start_craft(&mut self, item: &str, crafts: u32, _table: Option<BlockPos>) {
