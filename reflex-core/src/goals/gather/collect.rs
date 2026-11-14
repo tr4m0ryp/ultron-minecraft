@@ -95,6 +95,6 @@ fn straight_clear(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> boo
     (0..=steps).all(|i| {
         let p = from + flat * (i as f64 / steps as f64);
         let cell = Vec3::new(p.x, feet + 0.5, p.z).block();
-        snap.blocks.get(cell).passable() && snap.blocks.get(cell.up()).passable()
+        snap.blocks.get(cell).passable() && snap.blocks.get(cell.above()).passable()
     })
 }
