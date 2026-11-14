@@ -6,6 +6,10 @@ use crate::snapshot::{BlockKind, ItemKind, Snapshot};
 
 /// Survival block interaction range from the eye.
 const REACH: f64 = 4.5;
+/// Water is placed early only with the landing block this close to the eye: the server
+/// ray-casts the bucket from its own copy of our position, so a margin under `REACH` is kept.
+/// Measured live (26.3): 2 ticks out at 4.30 blocks saved, at 4.76 the use missed.
+const WATER_REACH: f64 = 4.4;
 /// A placed water source is scooped back up within this many ticks of placing it.
 const RETRIEVE_TICKS: u64 = 40;
 /// The crosshair must be this close (degrees) to the clutch face before placing, because
@@ -44,8 +48,11 @@ fn clutch_target(snap: &Snapshot) -> Option<(BlockPos, Vec3)> {
 /// R6 fall arrest: airborne with a predicted landing that would take us below hp_floor.
 /// With a throwaway block and a ledge beside the cell below: place a block under the feet
 /// (block clutch). Else with a water bucket: pre-select it and look straight down as soon as
-/// triggered, place water on the landing block once the predicted ticks to landing reach
-/// the `mlg_lead` gain (measured on the 26.3 server), then scoop it back up after landing.
+/// triggered, place water on the landing block on the first tick with the predicted ticks
+/// to landing at or under the `mlg_lead` gain (2) and the block within `WATER_REACH`, or on
+/// the last tick before impact regardless, then scoop it back up after landing. Measured on
+/// the 26.3 server: water placed one tick before impact cancels all fall damage (4 of 4 from
+/// 20 and 45 blocks); earlier placements save only while the block is in reach.
 #[derive(Default)]
 pub struct FallArrest {
     /// Tick and cell of the last water placement, for the one-shot rule and the retrieve.
@@ -136,10 +143,11 @@ impl Behaviour for FallArrest {
         let fresh = self
             .placed
             .is_none_or(|(t, _)| snap.tick > t + RETRIEVE_TICKS);
-        if !fresh || fall.t_land > ctx.knobs.gains.mlg_lead {
+        let top = Vec3::new(me.pos.x, floor.y as f64 + 1.0, me.pos.z);
+        let in_reach = me.eye().dist(top) <= WATER_REACH;
+        if !fresh || fall.t_land > ctx.knobs.gains.mlg_lead || !(in_reach || fall.t_land <= 1) {
             return Some(Bid::new(Priority::P0, 1.0, "fall_arrest", down));
         }
-        let top = Vec3::new(me.pos.x, floor.y as f64 + 1.0, me.pos.z);
         self.pending = Some((snap.tick, floor.above()));
         ctx.emit(
             ctx.report(EventClass::Log, "water_place", "R6")

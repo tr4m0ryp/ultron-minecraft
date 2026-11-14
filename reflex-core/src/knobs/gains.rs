@@ -12,7 +12,8 @@ pub enum GainName {
     MlgLead,
 }
 
-/// Default R6 water lead in ticks before the predicted landing (measured live on 26.3).
+/// R6 places water at most this many ticks before the predicted landing. Measured live on
+/// 26.3: one tick before impact always saved; earlier only while the block is in reach.
 pub const MLG_LEAD: u32 = 2;
 
 /// Brain-set gains. Defaults follow the design note, section 4.3.
