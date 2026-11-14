@@ -80,7 +80,7 @@ fn duel_bid(snap: &Snapshot, c: &Entity, d: f64) -> Option<Bid> {
             .legs(LegsCmd::toward(toward, Speed::Sprint));
         return Some(Bid::new(urgent, 1.0, "creeper_strike", cmds));
     }
-    if c.state.fuse_lit || d < KEEP - 2.0 || !ready {
+    if c.state.fuse_lit || !ready {
         // Recharge out of fuse range: past 7 a lit fuse burns back down.
         if d > KEEP + 1.0 && !c.state.fuse_lit {
             return Some(Bid::new(Priority::P2, 0.3, "creeper_wait", face));
