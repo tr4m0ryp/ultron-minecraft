@@ -79,8 +79,8 @@ pub fn read(ecs: &World, me: Entity) -> Option<SelfState> {
 fn read_inventory(inv: &Inventory, s: &mut SelfState) {
     let menu = &inv.inventory_menu;
     s.selected_slot = inv.selected_hotbar_slot;
-    for i in 0..9usize {
-        s.hotbar[i] = menu.slot(MENU_HOTBAR + i).and_then(map_stack);
+    for (i, slot) in s.hotbar.iter_mut().enumerate() {
+        *slot = menu.slot(MENU_HOTBAR + i).and_then(map_stack);
     }
     s.offhand = menu.slot(MENU_OFFHAND).and_then(map_stack);
     for idx in MENU_MAIN {
