@@ -84,7 +84,14 @@ mod tests {
 
     #[test]
     fn menus_and_toggles_are_not_supports() {
-        for b in ["crafting_table", "chest", "trapped_chest", "oak_door", "red_bed", "chipped_anvil"] {
+        for b in [
+            "crafting_table",
+            "chest",
+            "trapped_chest",
+            "oak_door",
+            "red_bed",
+            "chipped_anvil",
+        ] {
             assert!(opens_on_click(b), "{b}");
         }
         for b in ["stone", "oak_planks", "dirt", "oak_log", "cobblestone"] {

@@ -163,3 +163,27 @@ fn place_overwrites_ground_cover_like_leaf_litter() {
         );
     }
 }
+
+#[test]
+fn place_never_clicks_a_block_that_opens() {
+    let at = BlockPos::new(6, 65, 2);
+    let mut s = Sim::new();
+    s.block(at.below(), "crafting_table");
+    s.item("chest", 1, Some(13));
+    s.place_at = Some(at);
+    s.goal("place chest 6 65 2", true);
+    assert!(s.run_until(200, |s| s.has_event("goal_failed")));
+    assert!(
+        s.goal_text("goal_failed").contains("would open it"),
+        "{}",
+        s.goal_text("goal_failed")
+    );
+
+    let mut s = Sim::new();
+    s.block(at.below(), "crafting_table");
+    s.block(at.offset(1, 0, 0), "stone");
+    s.item("chest", 1, Some(13));
+    s.place_at = Some(at);
+    s.goal("place chest 6 65 2", true);
+    assert!(s.run_until(200, |s| s.has_event("goal_done")));
+}
