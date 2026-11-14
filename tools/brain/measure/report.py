@@ -1,7 +1,8 @@
 """Measures a brain relay run: reply latency, idle chat, tool use, tokens per minute.
 
 usage: python3 report.py <run-dir> [--json]
-Reads fake.log (stage lines `@<ms> <what>`), session-N.jsonl and session-N.ts.
+Reads fake.log (stage lines `@<ms> <what>`), session-N.jsonl and session-N.ts. Idle time by
+game night and day: python3 tools/brain/measure/idle <run-dir>.
 """
 import glob
 import json
@@ -16,7 +17,10 @@ REPLY_WINDOW_MS = 90_000
 
 def stage_events(run):
     out = []
-    for line in open(os.path.join(run, "fake.log"), errors="replace"):
+    path = os.path.join(run, "fake.log")
+    if not os.path.exists(path):  # a real run: no staged events
+        return out
+    for line in open(path, errors="replace"):
         m = STAGE.search(line)
         if m:
             out.append((int(m.group(1)), m.group(2), m.group(3)))
