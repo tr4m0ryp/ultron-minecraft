@@ -25,6 +25,8 @@ pub struct Unstuck {
     intended: Option<Vec3>,
     anchor: Option<Vec3>,
     woke: bool,
+    /// C6 owned the legs last tick, so the efference copy is its own command.
+    driving: bool,
 }
 
 /// Net progress along the intended heading that counts as unstuck, in blocks.
@@ -35,18 +37,25 @@ impl Behaviour for Unstuck {
         "C6"
     }
 
+    fn granted(&mut self, won: bool) {
+        self.driving = won;
+    }
+
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let eff = ctx.pred.efference;
         let me = &ctx.snap.me;
         let commanded = eff.legs.filter(|l| expected_step(l).len() > MIN_PROGRESS);
         let moved = (me.pos - eff.from).horizontal().len();
         let escalating = self.stuck >= STUCK_TICKS;
+        // While C6 drives, its own strafes keep `commanded` set; the episode ends when the
+        // goal that wanted to move is gone.
+        let abandoned = self.driving && ctx.knobs.goal.as_ref().and_then(|g| g.target).is_none();
         let progress = match (self.anchor, self.intended) {
             (Some(a), Some(h)) => (me.pos - a).horizontal().dot(h),
             _ => 0.0,
         };
         match commanded {
-            Some(_) if escalating && progress < ESCAPED => self.stuck += 1,
+            Some(_) if escalating && progress < ESCAPED && !abandoned => self.stuck += 1,
             Some(l) if !escalating && moved < MIN_PROGRESS => {
                 self.stuck += 1;
                 self.intended
