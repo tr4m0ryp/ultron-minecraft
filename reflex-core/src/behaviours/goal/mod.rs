@@ -42,7 +42,9 @@ impl Behaviour for GoalExecutor {
         } else {
             Speed::Walk
         };
-        let legs = LegsCmd::toward(heading_to(me.pos, target), speed);
+        let mut legs = LegsCmd::toward(heading_to(me.pos, target), speed);
+        // C3 swim stroke: hold jump in water so the head stays up while crossing.
+        legs.jump = me.in_water;
         Some(Bid::new(
             Priority::P5,
             goal.priority.max(0.05),

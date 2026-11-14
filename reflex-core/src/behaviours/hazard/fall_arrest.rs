@@ -48,6 +48,8 @@ fn clutch_target(snap: &Snapshot) -> Option<(BlockPos, Vec3)> {
 pub struct FallArrest {
     /// Tick and cell of the last water placement, for the one-shot rule and the retrieve.
     placed: Option<(u64, BlockPos)>,
+    /// Placement bid this tick, committed to `placed` only if the bid wins its channels.
+    pending: Option<(u64, BlockPos)>,
 }
 
 impl FallArrest {
@@ -80,7 +82,14 @@ impl Behaviour for FallArrest {
         "R6"
     }
 
+    fn granted(&mut self, won: bool) {
+        if let Some(p) = self.pending.take().filter(|_| won) {
+            self.placed = Some(p);
+        }
+    }
+
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
+        self.pending = None;
         if let Some(bid) = self.retrieve(ctx) {
             return Some(bid);
         }
@@ -128,7 +137,7 @@ impl Behaviour for FallArrest {
             return Some(Bid::new(Priority::P0, 1.0, "fall_arrest", down));
         }
         let top = Vec3::new(me.pos.x, floor.y as f64 + 1.0, me.pos.z);
-        self.placed = Some((snap.tick, floor.above()));
+        self.pending = Some((snap.tick, floor.above()));
         ctx.emit(
             ctx.report(EventClass::Log, "water_place", "R6").text(format!(
                 "t_land={} eye_dist={:.2} vy={:.3} y={:.2}",
