@@ -100,7 +100,9 @@ impl Behaviour for CompanionLeash {
                 Speed::Walk
             };
             let urgency = ((dist - RETURN_TO) / leash).clamp(0.2, 1.0) as f32;
-            let legs = LegsCmd::toward(heading_to(me.pos, c.pos), speed);
+            let mut legs = LegsCmd::toward(heading_to(me.pos, c.pos), speed);
+            // Step up a one-block rise on the way, as a player would.
+            legs.jump = me.on_ground && step_ahead(snap, me.pos, c.pos);
             return Some(Bid::new(
                 Priority::P4,
                 urgency,
@@ -133,4 +135,14 @@ fn head_blocked(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool 
         let k = snap.blocks.get(Vec3::new(p.x, head, p.z).block());
         k != crate::snapshot::BlockKind::Unknown && !k.passable()
     })
+}
+
+/// A block at feet height right ahead toward `to` with room above it: a step to jump.
+fn step_ahead(snap: &crate::snapshot::Snapshot, from: Vec3, to: Vec3) -> bool {
+    let dir = Vec3::new(to.x - from.x, 0.0, to.z - from.z).normalized();
+    let p = from + dir * 0.7;
+    let feet = Vec3::new(p.x, from.y.floor() + 0.5, p.z).block();
+    !snap.blocks.get(feet).passable()
+        && snap.blocks.get(feet.above()).passable()
+        && snap.blocks.get(feet.above().above()).passable()
 }

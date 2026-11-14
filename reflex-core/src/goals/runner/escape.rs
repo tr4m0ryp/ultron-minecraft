@@ -132,7 +132,9 @@ impl Escape {
             .walker
             .walk(&mut cx, NavTarget::Sky { hint, dig: true }, "escape");
         match walk {
-            Walk::Moving(plan) => Some(Bid::new(Priority::P5, 0.3, plan.note, plan.commands)),
+            // Homeostatic upkeep (P3): a straight-line follow of a companion beyond the
+            // walls must not keep taking the legs from the way out.
+            Walk::Moving(plan) => Some(Bid::new(Priority::P3, 0.8, plan.note, plan.commands)),
             Walk::Arrived => {
                 Self::say(ctx, "out under open sky again");
                 self.last_sky = Some(ctx.snap.me.pos.block());
