@@ -43,7 +43,10 @@ impl RouteGoal {
             RouteGoal::Near { centre, radius } => {
                 ((n.feet_centre() + Vec3::new(0.0, 0.5, 0.0)).dist(centre) - radius).max(0.0)
             }
-            RouteGoal::Sky { hint } => n.feet_centre().dist(hint.feet_centre()) * 0.3,
+            RouteGoal::Sky { hint } => {
+                let up = f64::from((hint.y - n.y).max(0));
+                up + (n.feet_centre() - hint.feet_centre()).horizontal().len() * 0.3
+            }
             RouteGoal::Beside { block } => (n.feet_centre().dist(block.feet_centre()) - 1.0).max(0.0),
         };
         d as f32 * WALK
@@ -94,8 +97,27 @@ impl PartialOrd for Open {
     }
 }
 
-/// Plans from the standing cell `start` toward `goal`.
+/// Plans from the standing cell `start` toward `goal`: walking only first, and only when
+/// no walkable route exists, with every move `o` allows.
 pub fn plan(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts) -> Route {
+    let walk = RouteOpts {
+        max_nodes: o.max_nodes.min(WALK_NODES),
+        ..RouteOpts::walk_only(o.max_drop)
+    };
+    let walked = search(t, start, goal, &walk);
+    if !walked.partial || (!o.dig && o.scaffold == 0) {
+        return walked;
+    }
+    let mut full = search(t, start, goal, o);
+    full.expanded += walked.expanded;
+    full
+}
+
+/// Nodes the walking-only pass may expand before the full moves are tried.
+const WALK_NODES: usize = 12_000;
+
+/// One A* pass with the moves `o` allows.
+pub fn search(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts) -> Route {
     let moves = Moves { t, o };
     let mut recs: HashMap<BlockPos, Rec> = HashMap::new();
     let mut heap = BinaryHeap::new();
@@ -109,7 +131,8 @@ pub fn plan(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts) -
             closed: false,
         },
     );
-    heap.push(Open(goal.estimate(start), 0.0, start));
+    let w = o.weight.max(1.0);
+    heap.push(Open(w * goal.estimate(start), 0.0, start));
     let (mut best, mut best_h) = (start, goal.estimate(start));
     let mut expanded = 0;
     let mut edges: Vec<Edge> = Vec::new();
@@ -143,7 +166,7 @@ pub fn plan(t: &dyn Terrain, start: BlockPos, goal: &RouteGoal, o: &RouteOpts) -
             let spends = e.hop.place.is_some();
             let better = recs.get(&to).is_none_or(|r| !r.closed && g2 < r.g);
             if better {
-                heap.push(Open(g2 + goal.estimate(to), g2, to));
+                heap.push(Open(g2 + w * goal.estimate(to), g2, to));
                 recs.insert(
                     to,
                     Rec {

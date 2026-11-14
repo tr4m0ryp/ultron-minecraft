@@ -34,6 +34,9 @@ pub struct RouteOpts {
     pub protected: Vec<Region>,
     /// Nodes expanded before the search returns its best partial route.
     pub max_nodes: usize,
+    /// Heuristic weight: above 1 the search heads for the goal greedily, which keeps it
+    /// from flooding solid ground when every route needs digging.
+    pub weight: f32,
 }
 
 impl Default for RouteOpts {
@@ -44,6 +47,7 @@ impl Default for RouteOpts {
             dig: true,
             protected: Vec::new(),
             max_nodes: 30_000,
+            weight: 2.5,
         }
     }
 }
@@ -55,6 +59,7 @@ impl RouteOpts {
             max_drop,
             dig: false,
             scaffold: 0,
+            weight: 1.0,
             ..Self::default()
         }
     }
