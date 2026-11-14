@@ -8,7 +8,7 @@ mod inhibit;
 mod mode;
 
 pub use arm::{ArmedResponse, Response, Trigger};
-pub use gains::{GainName, Gains};
+pub use gains::{GainName, Gains, MLG_LEAD};
 pub use goal::Goal;
 pub use inhibit::{Inhibition, Scope};
 pub use mode::Mode;

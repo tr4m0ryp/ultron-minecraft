@@ -37,7 +37,8 @@ impl Behaviour for GoalExecutor {
             }
             return None;
         }
-        let speed = if d > SPRINT_BEYOND && me.food > 6 {
+        // Sprinting in water dives (the swimming pose); a plain stroke keeps the head up.
+        let speed = if d > SPRINT_BEYOND && me.food > 6 && !me.in_water {
             Speed::Sprint
         } else {
             Speed::Walk
