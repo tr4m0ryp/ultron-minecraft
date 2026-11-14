@@ -7,7 +7,7 @@ mod fall;
 
 pub use contact::{cpa, tau};
 pub use efference::{expected_step, speed_per_tick, Efference};
-pub use fall::{predict_fall, FallPrediction};
+pub use fall::{fall_damage, predict_fall, FallPrediction, DRAG, GRAVITY};
 
 use crate::snapshot::Snapshot;
 
