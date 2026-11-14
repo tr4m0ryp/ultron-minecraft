@@ -52,6 +52,15 @@ impl Trace {
             own(Channel::Main),
             own(Channel::Inv),
         );
+        for c in &snap.chat {
+            println!("C {} sender={} pos={:?} text={}", snap.tick, c.sender, c.sender_pos, c.text);
+        }
+        for d in &snap.damage {
+            println!(
+                "D {} amount={:.2} attacker={:?} src={:?}",
+                snap.tick, d.amount, d.attacker, d.source_pos
+            );
+        }
         for e in exec.upward.log().rev().take_while(|e| e.tick == snap.tick) {
             println!("E {} {:?} {} {} {}", e.tick, e.class, e.kind, e.subject, e.text);
         }
