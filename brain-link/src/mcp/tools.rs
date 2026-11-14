@@ -13,9 +13,9 @@ pub const TOOL_NAMES: [&str; 11] = [
     "set_mode",
     "set_gain",
     "inhibit",
+    "protect",
     "arm",
     "say",
-    "protect",
     "recent_chat",
     "log",
 ];
