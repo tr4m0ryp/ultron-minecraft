@@ -1,0 +1,32 @@
+{
+ "label": "von-395M",
+ "backend": "von",
+ "threads": 8,
+ "accuracy": 0.45,
+ "correct": 9,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "5/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 13920.1,
+  "p95": 21020.3,
+  "mean": 13385.2,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 25545.8,
+  "p95": 32915.5,
+  "mean": 27784.7,
+  "n": 3
+ },
+ "load_s": 3.86,
+ "first_call_s": 30.82,
+ "rss_gb": 2.0,
+ "peak_rss_gb": 3.47,
+ "errors": [],
+ "n_errors": 0
+}
