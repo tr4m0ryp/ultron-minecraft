@@ -18,7 +18,7 @@ impl Behaviour for ContactHazard {
         let me = &ctx.snap.me;
         let blocks = &ctx.snap.blocks;
         let feet = me.pos.block();
-        let touching = [feet, feet.above()]
+        let touching = hitbox_cells(me.pos)
             .into_iter()
             .map(|p| blocks.get(p))
             .any(|k| k.contact_hazard() && k != BlockKind::Lava);

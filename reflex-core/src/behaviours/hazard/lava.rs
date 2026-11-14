@@ -1,5 +1,5 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::{away_from, body_cells, escape_step};
+use crate::behaviours::common::{away_from, body_cells, escape_step, hitbox_cells};
 use crate::channels::{Commands, LegsCmd, Speed};
 use crate::snapshot::BlockKind;
 
@@ -16,10 +16,11 @@ impl Behaviour for LavaWithdrawal {
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let me = &ctx.snap.me;
         let blocks = &ctx.snap.blocks;
-        let cells = body_cells(me.pos);
-        let lava = cells.iter().find(|p| blocks.get(**p) == BlockKind::Lava)?;
-        let in_lava =
-            blocks.get(cells[0]) == BlockKind::Lava || blocks.get(cells[1]) == BlockKind::Lava;
+        let body = hitbox_cells(me.pos);
+        let under = body_cells(me.pos)[2];
+        let in_lava_cell = body.iter().find(|p| blocks.get(**p) == BlockKind::Lava);
+        let lava = in_lava_cell.copied().or_else(|| (blocks.get(under) == BlockKind::Lava).then_some(under))?;
+        let in_lava = in_lava_cell.is_some();
         let heading = match escape_step(blocks, me.pos, |_| true) {
             Some(p) => p.feet_centre() - me.pos,
             None => away_from(me.pos, lava.feet_centre()),

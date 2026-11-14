@@ -9,6 +9,25 @@ pub fn body_cells(pos: Vec3) -> [BlockPos; 3] {
     [feet, feet.above(), feet.below()]
 }
 
+/// Player hitbox half-width and height (vanilla 0.6 x 1.8).
+const HALF_WIDTH: f64 = 0.3;
+const HEIGHT: f64 = 1.8;
+
+/// Every block the player's 0.6 x 1.8 box overlaps. Near a block edge the box straddles up
+/// to four columns, so the centre cell alone misses hazards the body is touching.
+pub fn hitbox_cells(pos: Vec3) -> Vec<BlockPos> {
+    let span = |lo: f64, hi: f64| (lo.floor() as i32)..=((hi - 1e-6).floor() as i32);
+    let mut out = Vec::with_capacity(12);
+    for x in span(pos.x - HALF_WIDTH, pos.x + HALF_WIDTH) {
+        for z in span(pos.z - HALF_WIDTH, pos.z + HALF_WIDTH) {
+            for y in span(pos.y, pos.y + HEIGHT) {
+                out.push(BlockPos::new(x, y, z));
+            }
+        }
+    }
+    out
+}
+
 /// Nearest standable neighbour (8 directions, same level, one up, one down) for which
 /// `ok` holds, closest to `pos`.
 pub fn escape_step(
