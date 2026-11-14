@@ -6,6 +6,8 @@ Per phase (night, day, unknown when the clock cannot tell):
   wait_spm     seconds per minute blocked in wait_event
   idlewait_spm seconds per minute blocked in wait_event with no running goal
   idle_timeouts wait_event timeouts that reported an idle body
+  lag_spm      seconds per minute between a goal ending and the waiting thought layer
+               hearing of it (the body stands idle meanwhile)
 """
 STEP_MS = 250
 PHASES = ("night", "day", "unknown")
@@ -20,9 +22,11 @@ def phase_of(clock, ms):
     return "unknown" if n is None else ("night" if n else "day")
 
 
-def tally(session, spans, waits, idle_marks, clock):
-    acc = {p: {"ms": 0, "nogoal": 0, "wait": 0, "idlewait": 0, "idle_timeouts": 0}
-           for p in PHASES}
+KEYS = ("ms", "nogoal", "wait", "idlewait", "idle_timeouts", "lag")
+
+
+def tally(session, spans, waits, idle_marks, lags, clock):
+    acc = {p: dict.fromkeys(KEYS, 0) for p in PHASES}
     ms = session["start"]
     while ms < session["end"]:
         a = acc[phase_of(clock, ms)]
@@ -35,6 +39,8 @@ def tally(session, spans, waits, idle_marks, clock):
         ms += STEP_MS
     for t in idle_marks:
         acc[phase_of(clock, t)]["idle_timeouts"] += 1
+    for t, sec in lags:
+        acc[phase_of(clock, t)]["lag"] += sec * 1000
     return acc
 
 
@@ -48,13 +54,13 @@ def rates(acc):
                   "nogoal_spm": round(a["nogoal"] / 1000 / minutes, 1),
                   "wait_spm": round(a["wait"] / 1000 / minutes, 1),
                   "idlewait_spm": round(a["idlewait"] / 1000 / minutes, 1),
-                  "idle_timeouts": a["idle_timeouts"]}
+                  "idle_timeouts": a["idle_timeouts"],
+                  "lag_spm": round(a["lag"] / 1000 / minutes, 1)}
     return out
 
 
 def merge(accs):
-    total = {p: {"ms": 0, "nogoal": 0, "wait": 0, "idlewait": 0, "idle_timeouts": 0}
-             for p in PHASES}
+    total = {p: dict.fromkeys(KEYS, 0) for p in PHASES}
     for acc in accs:
         for p in PHASES:
             for k in total[p]:

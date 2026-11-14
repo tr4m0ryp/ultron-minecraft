@@ -33,8 +33,8 @@ def main(argv):
     accs, report = [], {"run": os.path.basename(run.rstrip("/")), "clock": clock.source,
                         "sessions": []}
     for s in sessions:
-        spans, waits, idle = timeline(s)
-        acc = tally(s, spans, waits, idle, clock)
+        spans, waits, idle, lags = timeline(s)
+        acc = tally(s, spans, waits, idle, lags, clock)
         accs.append(acc)
         report["sessions"].append({"n": s["n"], "start": hhmm(s["start"]), "phases": rates(acc),
                                    "gaps": [(hhmm(a), round(sec), ph, before(s, a))
@@ -52,7 +52,8 @@ def main(argv):
     for p, r in report["total"].items():
         print(f"TOTAL {p:7s} {r['minutes']:5.1f} min: no goal {r['nogoal_spm']:4.1f} s/min, "
               f"in wait_event {r['wait_spm']:4.1f} s/min, waiting with no goal "
-              f"{r['idlewait_spm']:4.1f} s/min, idle timeouts {r['idle_timeouts']}")
+              f"{r['idlewait_spm']:4.1f} s/min, goal-end wake lag {r['lag_spm']:3.1f} s/min, "
+              f"idle timeouts {r['idle_timeouts']}")
 
 
 if __name__ == "__main__":

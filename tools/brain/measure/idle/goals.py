@@ -41,12 +41,14 @@ def _event_wall(tick, arrived, offsets, floor):
 
 
 def timeline(session):
-    """Returns (goal_spans, wait_spans, idle_marks): spans are (start ms, end ms, label)
-    clipped to the session; idle_marks are arrival times of idle wait_event timeouts."""
+    """Returns (goal_spans, wait_spans, idle_marks, lags): spans are (start ms, end ms,
+    label) clipped to the session; idle_marks are arrival times of idle wait_event
+    timeouts; lags are (event ms, seconds) from a goal ending to wait_event returning it,
+    for goals that ended while the thought layer was already waiting."""
     steps, start, end = session["steps"], session["start"], session["end"]
     offsets = _tick_offsets(steps)
     running, since, queue, spans = None, None, [], []
-    waits, calls, idle_marks, specs = [], {}, [], {}
+    waits, calls, idle_marks, specs, lags = [], {}, [], {}, []
 
     def switch(at, new):
         nonlocal running, since
@@ -68,6 +70,8 @@ def timeline(session):
             for m in EVENT.finditer(text):
                 k = int(m.group(3))
                 when = max(_event_wall(int(m.group(1)), st["ts"], offsets, start), since or start)
+                if calls[st["id"]]["ts"] <= when < st["ts"]:
+                    lags.append((when, (st["ts"] - when) / 1000))
                 if k == running:
                     switch(when, queue.pop() if queue else None)
                 elif k in queue:
@@ -106,4 +110,4 @@ def timeline(session):
     switch(end, None)
     clip = lambda xs: [(max(a, start), min(b, end), lab) for a, b, lab in xs
                        if min(b, end) > max(a, start)]
-    return clip(spans), clip(waits), idle_marks
+    return clip(spans), clip(waits), idle_marks, lags
