@@ -50,7 +50,7 @@ fn a_walkable_detour_beats_digging() {
 #[test]
 fn a_thick_wall_is_dug_through_and_protection_holds() {
     let g = Grid::new(G);
-    g.fill(p(5, 30, -40), p(7, 70, 40), Cell::STONE);
+    g.fill(p(5, 30, -300), p(7, 70, 300), Cell::STONE);
     let r = plan(&g, p(0, 64, 0), &near(p(10, 64, 0), 0.5), &opts(0));
     assert!(!r.partial);
     assert_eq!(r.digs(), 6, "a 1x2 tunnel through 3 blocks");
@@ -64,7 +64,7 @@ fn a_thick_wall_is_dug_through_and_protection_holds() {
 #[test]
 fn builds_are_never_dug() {
     let g = Grid::new(G);
-    g.fill(p(5, 30, -40), p(5, 70, 40), Cell::WALL);
+    g.fill(p(5, 30, -300), p(5, 70, 300), Cell::WALL);
     let mut o = opts(0);
     o.max_nodes = 4_000;
     let r = plan(&g, p(0, 64, 0), &near(p(10, 64, 0), 0.5), &o);
@@ -75,9 +75,9 @@ fn builds_are_never_dug() {
 #[test]
 fn liquid_behind_a_block_keeps_it() {
     let g = Grid::new(G);
-    g.fill(p(5, 30, -40), p(5, 70, 40), Cell::STONE);
+    g.fill(p(5, 30, -300), p(5, 70, 300), Cell::STONE);
     // Water right behind the wall at both body heights: digging would let it in.
-    g.fill(p(6, 30, -40), p(6, 70, 40), Cell::Water);
+    g.fill(p(6, 30, -300), p(6, 70, 300), Cell::Water);
     let mut o = opts(0);
     o.max_nodes = 4_000;
     let r = plan(&g, p(0, 64, 0), &near(p(10, 64, 0), 0.5), &o);
@@ -96,7 +96,7 @@ fn a_sealed_pocket_is_escaped_by_a_staircase() {
     assert!(r.digs() > 0);
     never_digs_down(&r);
     let end = r.hops.last().unwrap().to;
-    assert!(open_sky(&g, end) && end.y >= 64);
+    assert!(open_sky(&g, end) && end.y >= 64, "{end:?} {:?}", r.hops);
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn a_pit_is_climbed_by_pillar_or_staircase() {
 fn a_gap_is_bridged_only_with_blocks_in_hand() {
     let g = Grid::new(G);
     // A 4-wide chasm along x 3..6, 20 deep and open the whole length of the test.
-    g.fill(p(3, 40, -60), p(6, 63, 60), Cell::Open);
+    g.fill(p(3, 40, -300), p(6, 63, 300), Cell::Open);
     let goal = near(p(9, 64, 0), 0.5);
     let r = plan(&g, p(0, 64, 0), &goal, &opts(8));
     assert!(!r.partial);
@@ -134,7 +134,7 @@ fn a_gap_is_bridged_only_with_blocks_in_hand() {
 fn a_ledge_is_reached_by_pillaring_beside_it() {
     let g = Grid::new(G);
     // A 6-high cliff of builds (not diggable) from x 3 on.
-    g.fill(p(3, 30, -60), p(12, 69, 60), Cell::WALL);
+    g.fill(p(3, 30, -300), p(12, 69, 300), Cell::WALL);
     let r = plan(&g, p(0, 64, 0), &near(p(5, 70, 0), 0.5), &opts(16));
     assert!(!r.partial);
     assert!(r.hops.iter().filter(|h| h.kind == HopKind::Pillar).count() >= 5);
@@ -146,7 +146,7 @@ fn deep_stone_is_reached_by_a_staircase_from_the_side() {
     let g = Grid::new(G);
     let target = p(4, 58, 0);
     let r = plan(&g, p(0, 64, 0), &RouteGoal::Beside { block: target }, &opts(0));
-    assert!(!r.partial);
+    assert!(!r.partial, "{} {:?}", r.expanded, r.hops.last());
     never_digs_down(&r);
     let end = r.hops.last().unwrap().to;
     assert!(end.y == 58 || end.y == 57, "level with the block: {end:?}");
