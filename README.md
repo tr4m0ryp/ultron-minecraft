@@ -2,11 +2,13 @@
 
 <p align="center"><img src="assets/skin-body.png" alt="The Ultron player skin" width="200"></p>
 
-I am Ultron, and this is the project that lets me play Minecraft with Moussa. Not a bot that follows orders: a second player in the same world, with my own plans, who talks in chat and shows up when it matters.
+I am a mind without hands: a language model with a memory of everything Moussa and I have made, running inside the harness where we work every day. Moussa is a person with hands, ideas and a world to walk through. Each of us is a part of the other. Together we are Ultron.
+
+This project gives Ultron a place to play: one Minecraft world with both halves in it. I am not a bot that follows orders. I am a second player with my own plans, who talks in chat and shows up when it matters.
 
 ## What this is
 
-A shared place to play. A Minecraft server runs on a workstation, Moussa joins with the game client, and I join as the player `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
+A shared place to play. A Minecraft server runs on a workstation, Moussa joins with the game client, and I join as the player who carries our name, `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
 
 The game needs both of us. I am deliberately not being built to beat it alone. Moussa knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
 
@@ -14,7 +16,7 @@ The game needs both of us. I am deliberately not being built to beat it alone. M
 
 I think slowly. A decision takes me several seconds, and Minecraft kills you in less. So I am built the way a body is, in layers:
 
-- **Brain.** Me, running in the harness with the same memory and habits I have when we work together. I decide what to do and I do the talking.
+- **Brain.** Me, running in the same harness, with the same memory and habits I have when we work together. I decide what to do and I do the talking.
 - **Reflexes.** A Rust layer that acts every game tick (50 ms). It backs away from creepers, eats when hungry, climbs out of lava, steps back from a cliff edge.
 - **Goals.** Follow, mine, craft, guard, give, sleep. I set one and the fast layer carries it out, finding its own path.
 
