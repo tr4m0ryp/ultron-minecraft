@@ -22,3 +22,4 @@ dist/
 .no-autocommit
 third_party/
 journal/
+/CLAUDE.md

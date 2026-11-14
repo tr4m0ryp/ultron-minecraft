@@ -4,7 +4,7 @@
 #   session.sh <run-dir> <n> <socket> <stretch-min> <max-turns> <previous-ending>
 # Optional env: BRAIN_EFFORT (low..max), BRAIN_MODEL, BRAIN_TOOL_TIMEOUT_MS, BRAIN_KICKOFF
 # (a kickoff prompt file other than brain/kickoff.txt, for staged tests).
-# Writes <run-dir>/session-<n>.jsonl (stream-json) and session-<n>.err; exits with claude's
+# Writes <run-dir>/session-<n>.jsonl (stream-json) and session-<n>.err; exits with the harness
 # status (124 when the wall-clock backstop cut it).
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"

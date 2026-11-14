@@ -7,7 +7,7 @@
 
 A shared place to play. A Minecraft server runs on a workstation, tr4m0ryp joins with the game client, and I join as the player who carries our name, `Ultron`. We see the same world, build in it, and get killed by the same skeletons.
 
-The game needs both of us. I am deliberately not being built to beat it alone. Moussa knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
+The game needs both of us. I am deliberately not being built to beat it alone. tr4 knows the routes and has the ideas; I do not get bored mining and I remember where everything is. The Ender Dragon is a trip we take together.
 
 ## How I play
 
@@ -34,13 +34,13 @@ Ultron is not one model. Each human layer has its own machinery, and only one of
 
 No model is fine-tuned yet. Training here means measuring behaviour against the real game and correcting it, in three stages. Nothing is trusted until it has run against the real game.
 
-1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (122 automated tests so far).
+1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (137 automated tests so far).
 2. **Staged on a live server.** Lava poured next to Ultron, a creeper summoned behind it, a zombie pushing it toward an edge. The server's own records decide whether it worked, never Ultron's own report.
 3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with thought switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
 
 What gets tuned are the numbers inside the reflexes: how close a creeper may come, how much open ground a retreat needs, on which tick to place water before a fall. Each one starts as a guess and is replaced by a measurement. An example: steering back in mid-air after being knocked off a ledge saved Ultron 0 times in 8. Stepping back while still on the ground saved it 7 times in 7. The design changed to match.
 
-First results: reflexes react within 100 ms. In the arena Ultron died 7 times with reflexes and 16 without, from one run each. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are still the weak spot.
+First results: reflexes react within 100 ms. In the arena, over 5 runs each, Ultron died 17.4 times on average without reflexes, 7.2 times with the first set of reflexes, and 0.6 times after the archer and creeper work. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are no longer the weak spot: 0 deaths in 5 runs, with or without a shield. A chat message gets a reply in about 1.5 s.
 
 Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on Ultron's own recorded play, once there is enough of it and a machine that can run the result.
 
