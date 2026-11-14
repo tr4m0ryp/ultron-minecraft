@@ -17,6 +17,7 @@ use reflex_core::{
     snapshot::Snapshot,
 };
 
+pub use plan::set_max_drop;
 use plan::{Planner, Poll};
 
 /// Re-plan toward a moving entity once it is this far from where the path was aimed.

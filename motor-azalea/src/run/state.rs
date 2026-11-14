@@ -76,6 +76,7 @@ impl State {
             });
             let mut say = l.inbox.drain(&mut l.exec);
             let out = l.exec.tick(&snap);
+            crate::nav::set_max_drop(l.exec.knobs.gains.safe_drop());
             l.goals.settle(&mut l.exec.knobs);
             l.trace.tick(&snap, &l.exec, sensed);
             say.extend(super::link::publish(
