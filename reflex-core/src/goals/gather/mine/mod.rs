@@ -121,12 +121,23 @@ impl Mine {
         Ok(Plan::new("goal_mine", c))
     }
 
+    /// Counts the block being dug once it is gone.
+    fn settle(&mut self, cx: &mut GoalCx) {
+        let Phase::Dig { pos, .. } = self.phase else {
+            return;
+        };
+        if self.is_target(cx, pos) {
+            return;
+        }
+        self.broken += 1;
+        let (g, n) = (self.gained(cx), self.count);
+        cx.progress(g, n, format!("{}, {g} of {n} wanted", self.tally(cx)));
+        self.phase = Phase::Advance { pos, ticks: 0 };
+    }
+
     fn dig(&mut self, cx: &mut GoalCx, pos: BlockPos, ticks: u32) -> Step {
         if !self.is_target(cx, pos) {
-            self.broken += 1;
-            let (g, n) = (self.gained(cx), self.count);
-            cx.progress(g, n, format!("{}, {} of {n} wanted", self.tally(cx), g));
-            self.phase = Phase::Advance { pos, ticks: 0 };
+            self.settle(cx);
             return Step::Bid(Plan::hold("goal_mine"));
         }
         if ticks > DIG_LIMIT_TICKS {
@@ -194,6 +205,7 @@ impl GoalTask for Mine {
         if self.held_at_start.is_none() {
             self.held_at_start = Some(cx.world.count_item(&self.drop));
         }
+        self.settle(cx);
         let gained = self.gained(cx);
         if gained >= self.count {
             return Step::Done(self.tally(cx));
