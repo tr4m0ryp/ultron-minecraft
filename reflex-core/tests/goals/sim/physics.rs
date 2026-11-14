@@ -1,6 +1,7 @@
 //! Applying one tick of motor output to the arena snapshot and the fake world.
 
 use reflex_core::channels::{InvCmd, MainCmd};
+use reflex_core::goals::items::replaceable;
 use reflex_core::math::look_vector;
 use reflex_core::snapshot::{BlockKind, ItemKind};
 use reflex_core::{BlockPos, MotorOutput, Vec3};
