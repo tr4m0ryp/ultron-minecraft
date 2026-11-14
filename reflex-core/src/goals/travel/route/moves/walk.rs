@@ -9,7 +9,7 @@ use crate::math::BlockPos;
 impl Moves<'_> {
     /// Into column `c` at the same level, then whatever its floor allows: stand, dig a step
     /// down (never under the body), drop, or bridge the gap.
-    fn forward(
+    pub(super) fn forward(
         &self,
         n: BlockPos,
         c: BlockPos,
@@ -82,7 +82,7 @@ impl Moves<'_> {
         }
     }
 
-    fn diagonal(&self, n: BlockPos, dx: i32, dz: i32, out: &mut Vec<Edge>) {
+    pub(super) fn diagonal(&self, n: BlockPos, dx: i32, dz: i32, out: &mut Vec<Edge>) {
         let t = n.offset(dx, 0, dz);
         let open = |p: BlockPos| self.t.cell(p).is_open() && self.t.cell(p.above()).is_open();
         if open(t)

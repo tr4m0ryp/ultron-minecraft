@@ -9,7 +9,7 @@ use crate::math::BlockPos;
 impl Moves<'_> {
     /// One block up into column `c`, digging head room and the step as needed (a staircase
     /// out of a pit when the step is dug into the pit wall).
-    fn ascend(&self, n: BlockPos, c: BlockPos, out: &mut Vec<Edge>) {
+    pub(super) fn ascend(&self, n: BlockPos, c: BlockPos, out: &mut Vec<Edge>) {
         if !self.t.cell(c).is_floor() {
             return;
         }
@@ -28,7 +28,7 @@ impl Moves<'_> {
     }
 
     /// Jump and place a block under the feet.
-    fn pillar(&self, n: BlockPos, out: &mut Vec<Edge>) {
+    pub(super) fn pillar(&self, n: BlockPos, out: &mut Vec<Edge>) {
         let mut dig = Vec::new();
         let Some(head) = self.clear(n.offset(0, 2, 0), true, &mut dig) else {
             return;

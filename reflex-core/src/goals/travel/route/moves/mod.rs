@@ -98,7 +98,12 @@ impl Moves<'_> {
 
     /// Ticks to make `p` passable for the body, with the block to dig if any. `overhead`:
     /// the cell is straight above the body, where a falling block would land on its head.
-    pub(super) fn clear(&self, p: BlockPos, overhead: bool, dig: &mut Vec<BlockPos>) -> Option<f32> {
+    pub(super) fn clear(
+        &self,
+        p: BlockPos,
+        overhead: bool,
+        dig: &mut Vec<BlockPos>,
+    ) -> Option<f32> {
         match self.t.cell(p) {
             Cell::Open => Some(0.0),
             Cell::Water => Some(SWIM),
@@ -127,7 +132,13 @@ impl Moves<'_> {
         placed || self.t.cell(n.below()).is_floor()
     }
 
-    pub(super) fn push(out: &mut Vec<Edge>, from: BlockPos, to: BlockPos, kind: HopKind, cost: f32) {
+    pub(super) fn push(
+        out: &mut Vec<Edge>,
+        from: BlockPos,
+        to: BlockPos,
+        kind: HopKind,
+        cost: f32,
+    ) {
         out.push(Edge {
             hop: Hop {
                 from,
@@ -166,5 +177,4 @@ impl Moves<'_> {
             self.pillar(n, out);
         }
     }
-
 }
