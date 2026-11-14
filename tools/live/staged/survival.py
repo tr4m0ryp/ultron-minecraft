@@ -3,7 +3,8 @@
 Usage: python3 survival.py <label> [binary|-] [only-ids]   (SURV_WAVES=1,3 runs a subset)
 Env: SURV_SEED (summon seed, default 7), SURV_SHIELD=1 (shield in the offhand), SURV_SLOT=k
 (site k sits 100*k blocks south, mob names carry an s<k> prefix), SURV_SHARED=1 (leave the
-global gamerules to the caller, as batch.py does when it runs several slots at once).
+global gamerules to the caller, as batch.py does when it runs several slots at once),
+SURV_PILLARS=1 (four 2x2 stone pillars, 3 high, as line-of-sight cover).
 Survival mode, frozen midnight, iron sword + 8 bread, a 30x30 arena with 5-high walls at
 y=100 (x 1200..1229, z 1100..1129). Four waves of 225 s (15 min): zombies, skeletons,
 creepers, then a mix; each wave summons named mobs 9 to 13 blocks from the bot, tops up at
@@ -36,6 +37,9 @@ def build():
        f"fill {X0 - 1} {Y - 4} {Z0 - 1} {x1 + 1} {Y - 1} {z1 + 1} stone",
        f"fill {X0 - 1} {Y} {Z0 - 1} {x1 + 1} {Y + 4} {z1 + 1} stone",
        f"fill {X0} {Y} {Z0} {x1} {Y + 12} {z1} air")
+    if os.environ.get("SURV_PILLARS") == "1":
+        for px, pz in ((7, 7), (21, 7), (7, 21), (21, 21)):
+            rc(f"fill {X0 + px} {Y} {Z0 + pz} {X0 + px + 1} {Y + 2} {Z0 + pz + 1} stone")
 
 
 def kit():

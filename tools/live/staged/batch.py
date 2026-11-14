@@ -1,7 +1,7 @@
 """Run staged survival jobs in parallel, one bot and one walled arena per slot.
 
 Usage: python3 batch.py <outdir> <slots> <job> [<job> ...]
-  job = label|binary|only|seed|shield|waves   (empty fields take the survival.py defaults)
+  job = label|binary|only|seed|shield|waves|pillars   (empty fields: survival.py defaults)
   e.g. "full_s1|/path/motor-azalea||1|0|2,4"  "melee_s1||D2|1||"
 
 Slot k runs bot Ultron (k = 0) or Ultron<k> in the arena 100*k blocks south of the first, so
@@ -21,10 +21,11 @@ from arena import rc  # noqa: E402
 HERE = Path(__file__).resolve().parent
 
 
-def job_env(slot, seed, shield, waves):
+def job_env(slot, seed, shield, waves, pillars):
     env = dict(os.environ, SURV_SLOT=str(slot), SURV_SHARED="1", ULTRON_BRIDGE="0",
                BOT_NAME="Ultron" if slot == 0 else f"Ultron{slot}", BOT_WHO=f"bot{slot}")
-    for key, val in (("SURV_SEED", seed), ("SURV_SHIELD", shield), ("SURV_WAVES", waves)):
+    for key, val in (("SURV_SEED", seed), ("SURV_SHIELD", shield), ("SURV_WAVES", waves),
+                     ("SURV_PILLARS", pillars)):
         if val:
             env[key] = val
         else:
@@ -33,12 +34,12 @@ def job_env(slot, seed, shield, waves):
 
 
 def launch(job, slot, outdir):
-    label, binary, only, seed, shield, waves = (job.split("|") + [""] * 6)[:6]
+    label, binary, only, seed, shield, waves, pillars = (job.split("|") + [""] * 7)[:7]
     args = [sys.executable, str(HERE / "survival.py"), label, binary or "-"]
     if only:
         args.append(only)
     out = open(Path(outdir) / f"{label}.txt", "w")
-    return subprocess.Popen(args, env=job_env(slot, seed, shield, waves), stdout=out,
+    return subprocess.Popen(args, env=job_env(slot, seed, shield, waves, pillars), stdout=out,
                             stderr=subprocess.STDOUT, cwd=str(HERE))
 
 
