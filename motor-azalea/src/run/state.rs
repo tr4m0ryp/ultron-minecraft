@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use azalea::{Client, Event, ecs::component::Component};
+use azalea::prelude::*;
 use reflex_core::Executor;
 
 use crate::{
