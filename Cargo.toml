@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["reflex-core", "motor-azalea"]
+members = ["reflex-core", "motor-azalea", "brain-link"]
 
 [workspace.package]
 edition = "2021"
