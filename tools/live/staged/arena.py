@@ -4,6 +4,9 @@ Sites (all force-loaded, away from the 81x81 harness platform at x,z 960..1040):
   edge  21x21 floating stone platform at y=149, x 1100..1120, z 990..1010 (about 80 block drop)
   pit   30x30 walled survival arena at y=100, x 1200..1229, z 1100..1129
   pool  water pool with a stone shore at y=120, x 1300..1320, z 1000..1020
+
+BOT_NAME (default Ultron) and BOT_WHO (trace file stem, default bot) let several bots run in
+parallel, each in its own site, as tools/live/staged/batch.py does.
 """
 import os, re, subprocess, sys, time
 from pathlib import Path
@@ -13,28 +16,32 @@ from harness import R, rc, send, rows, events, first, log_len, now_ms, S  # noqa
 
 REPO = Path(__file__).resolve().parents[3]
 SERVER_OUT = os.path.expanduser("~/minecraft/vanilla-26.3/server.out")
-DEATH_RE = re.compile(r"(?:\]: |System chat: )(Ultron (?:was|died|drowned|burned|fell|blew|hit|tried|walked|suffocated|starved|experienced|froze|went|withered).*)$")
-NAMED_RE = re.compile(r"Named entity .*?(w\d+[a-z]\d+).*? died: (.*)$")
+NAME = os.environ.get("BOT_NAME", "Ultron")
+WHO = os.environ.get("BOT_WHO", "bot")
+DEATH_RE = re.compile(r"(?:\]: |System chat: )(" + NAME + r" (?:was|died|drowned|burned|fell|blew|hit|tried|walked|suffocated|starved|experienced|froze|went|withered).*)$")
+NAMED_RE = re.compile(r"Named entity .*?((?:s\d)?w\d+[a-z]\d+).*? died: (.*)$")
+LIST_RE = re.compile(r"[:,] *" + NAME + r"(?:,|$)")
 
 
-def bot_start(binary=None, only=None, who="bot"):
+def bot_start(binary=None, only=None, who=WHO):
     env = dict(os.environ)
+    env.setdefault("ULTRON_BRIDGE", "0")
     if binary:
         env["MOTOR_BIN"] = str(binary)
     if only is not None:
         env["MOTOR_ONLY"] = only
     else:
         env.pop("MOTOR_ONLY", None)
-    subprocess.run(["bash", str(REPO / "tools/live/bot.sh"), "start", who, "Ultron"], env=env, check=True)
+    subprocess.run(["bash", str(REPO / "tools/live/bot.sh"), "start", who, NAME], env=env, check=True)
     for _ in range(60):
         time.sleep(0.5)
-        if "Ultron" in rc("list"):
+        if LIST_RE.search(rc("list").strip()):
             time.sleep(2.0)
             return
     raise SystemExit("bot did not join")
 
 
-def bot_stop(who="bot"):
+def bot_stop(who=WHO):
     subprocess.run(["bash", str(REPO / "tools/live/bot.sh"), "stop", who], check=False)
     time.sleep(2.0)
 
@@ -47,18 +54,20 @@ def deaths(since):
     return [m.group(1) for l in server_lines(since) if (m := DEATH_RE.search(l))]
 
 
-def named_deaths(since):
-    return [(m.group(1), m.group(2)) for l in server_lines(since) if (m := NAMED_RE.search(l))]
+def named_deaths(since, tag=""):
+    """Named mobs that died, restricted to names carrying this site's `tag` prefix."""
+    out = [(m.group(1), m.group(2)) for l in server_lines(since) if (m := NAMED_RE.search(l))]
+    return [(n, why) for n, why in out if re.match(tag + r"w\d", n)]
 
 
 def prep_bot(night=True, items=(("hotbar.0", "diamond_sword", 1),), heal=True):
-    cmds = ["effect clear Ultron", "gamemode survival Ultron", "clear Ultron",
+    cmds = [f"effect clear {NAME}", f"gamemode survival {NAME}", f"clear {NAME}",
             f"time set {'midnight' if night else 'noon'}"]
     if heal:
-        cmds += ["effect give Ultron instant_health 1 5", "effect give Ultron saturation 1 20"]
-    cmds += [f"item replace entity Ultron {slot} with {item} {n}" for slot, item, n in items]
+        cmds += [f"effect give {NAME} instant_health 1 5", f"effect give {NAME} saturation 1 20"]
+    cmds += [f"item replace entity {NAME} {slot} with {item} {n}" for slot, item, n in items]
     rc(*cmds)
-    send("goal-end")
+    send("goal-end", WHO)
 
 
 def build_edge():
