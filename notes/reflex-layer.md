@@ -396,7 +396,7 @@ gains are default.
    filters (O7) are applied last.
 6. The brain's goal is one behaviour at P5 whose salience is the goal priority the brain set.
    When it loses LEGS for more than 200 ticks, or its preconditions break, the upward
-   channel gets an INTERRUPTED event (section 4.4).
+   channel gets an INTERRUPTED event (section 4.5).
 7. Emit events to the upward channel.
 
 Cost: about 60 behaviours each evaluating a cheap predicate per tick is negligible next to
@@ -604,7 +604,7 @@ Neuroscience and psychology
 - [CS00] Collewijn, Smeets 2000, Early components of the human vestibulo-ocular response. https://doi.org/10.1152/jn.2000.84.1.376
 - [D98] Dimitrijevic, Gerasimenko, Pinter 1998, Evidence for a spinal central pattern generator in humans. https://doi.org/10.1111/j.1749-6632.1998.tb09062.x
 - [DND05] Daw, Niv, Dayan 2005, Uncertainty-based competition between prefrontal and dorsolateral striatal systems. https://doi.org/10.1038/nn1560
-- [FB83] Fischer, Boch 1983, Saccadic eye movements after extremely short reaction times in the monkey. https://doi.org/10.1007/BF00237273 (human express-saccade ranges from Fischer and Ramsperger 1984, via review)
+- [FB83] Fischer, Boch 1983, Saccadic eye movements after extremely short reaction times in the monkey. https://doi.org/10.1016/0006-8993(83)90760-6 (human express-saccade ranges from Fischer and Ramsperger 1984, via review)
 - [FL88] Fanselow, Lester 1988, A functional behavioristic approach to aversively motivated behavior: predatory imminence. https://doi.org/10.4324/9780203781647-14
 - [G85] Grillner 1985, Neurobiological bases of rhythmic motor acts in vertebrates. https://doi.org/10.1126/science.3975635
 - [Gm75] Graham 1975, The more or less startling effects of weak prestimulation. https://doi.org/10.1111/j.1469-8986.1975.tb01284.x
