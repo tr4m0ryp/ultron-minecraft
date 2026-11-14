@@ -1,5 +1,5 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::escape_step;
+use crate::behaviours::common::{escape_step, hitbox_cells};
 use crate::channels::{Commands, LegsCmd, Speed};
 use crate::snapshot::BlockKind;
 
