@@ -58,6 +58,24 @@ pub enum GoalSpec {
 }
 
 impl GoalSpec {
+    /// Goals that bring the body to the companion themselves, with the path planner. The
+    /// straight-line leash (H8) stands down for them: it would drag the body into walls.
+    pub fn tracks_companion(&self) -> bool {
+        use GoalSpec::*;
+        matches!(
+            self,
+            Follow {
+                who: Person::Companion,
+                ..
+            } | ComeHere
+                | Guard(Person::Companion)
+                | Give {
+                    who: Person::Companion,
+                    ..
+                }
+        )
+    }
+
     /// Short label used as the subject of every status event.
     pub fn label(&self) -> &'static str {
         match self {

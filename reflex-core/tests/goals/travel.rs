@@ -90,6 +90,26 @@ fn follow_keeps_distance_and_reports_lost_companion() {
 }
 
 #[test]
+fn leash_stands_down_while_a_goal_tracks_the_companion() {
+    // Live bug: H8 (P4, straight line) outbid a non-solo follow goal (P5, path planner) and
+    // dragged the body into a wall between it and the companion.
+    for spec in ["follow companion 3", "come_here", "guard companion"] {
+        let mut s = Sim::new();
+        s.companion_at(14.5, 0.5);
+        s.goal(spec, false);
+        for _ in 0..40 {
+            s.step();
+            assert_ne!(s.exec.owner(Channel::Legs), Some("H8"), "{spec}");
+        }
+    }
+    // A goal that does not track the companion still yields to the leash.
+    let mut s = Sim::new();
+    s.companion_at(0.5, 0.5);
+    s.goal("go_to 14 64 0", false);
+    assert!(s.run_until(120, |s| s.exec.owner(Channel::Legs) == Some("H8")));
+}
+
+#[test]
 fn come_here_reaches_companion_or_fails_when_unseen() {
     let mut s = Sim::new();
     s.companion_at(9.5, -6.5);

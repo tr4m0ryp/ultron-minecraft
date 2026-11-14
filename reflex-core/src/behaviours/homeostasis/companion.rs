@@ -64,7 +64,9 @@ impl Behaviour for CompanionLeash {
             ));
         }
 
-        let solo = ctx.knobs.goal.as_ref().is_some_and(|g| g.solo);
+        let solo = ctx.knobs.goal.as_ref().is_some_and(|g| {
+            g.solo || crate::goals::parse(&g.spec, g.target).is_ok_and(|s| s.tracks_companion())
+        });
         let leash = ctx.knobs.gains.leash;
         if leash <= 0.0 || solo {
             self.following = false;
