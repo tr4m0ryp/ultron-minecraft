@@ -1,6 +1,7 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::behaviours::common::{heading_to, safe_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, OffCmd, Speed};
+use crate::math::Vec3;
 use crate::predict::tau;
 use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
 
@@ -10,7 +11,8 @@ use crate::snapshot::{Entity, EntityKind, ItemKind, Snapshot};
 /// second creeper close, duel it as a skilled player does: meet it at the edge of reach
 /// (the hitbox is reachable from about 3.3, the fuse starts inside 3), sprint-hit it (the
 /// sprint knockback throws it back), then back off past 7 so the fuse cools while the sword
-/// recharges, and repeat; flee outright once the fuse is past `FLEE_SWELL`. Otherwise the
+/// recharges, and repeat; flee outright once the fuse is past `FLEE_SWELL` or a second
+/// creeper is lit within 7. Recoils run from all creepers in view. Otherwise the
 /// old stance: back away to keep 7 blocks while facing it; fuse lit within 7: raise a held
 /// shield (explosions are blocked in Java), else sprint straight away (P2, P0 within 3).
 #[derive(Default)]
@@ -23,8 +25,8 @@ const BLAST: f64 = 3.0;
 const STRIKE: f64 = 3.3;
 /// Past this fuse progress (12 ticks left, about 3.4 blocks of sprint) only fleeing is safe.
 const FLEE_SWELL: u8 = 18;
-/// Another creeper this close turns a duel into a retreat.
-const CROWD: f64 = 8.0;
+/// A second creeper lit this close turns a duel into a retreat.
+const CROWD: f64 = 7.0;
 
 fn sword_slot(snap: &Snapshot) -> Option<u8> {
     snap.me.hotbar_find(|k| k == ItemKind::Sword)
@@ -42,10 +44,13 @@ impl Behaviour for CreeperStance {
         let c = *creepers.first()?;
         let d = c.pos.dist(me.pos);
         let g = &ctx.knobs.gains;
-        let crowded = creepers.iter().skip(1).any(|o| o.pos.dist(me.pos) < CROWD);
+        let crowded = creepers
+            .iter()
+            .skip(1)
+            .any(|o| o.state.fuse_lit && o.pos.dist(me.pos) < CROWD);
         let duel = g.aggression >= 0.5 && me.health >= g.hp_floor && !crowded;
         if duel && sword_slot(snap).is_some() {
-            if let Some(bid) = duel_bid(snap, c, d) {
+            if let Some(bid) = duel_bid(snap, c, d, threat_centre(me.pos, &creepers)) {
                 return Some(bid);
             }
         }
@@ -53,8 +58,20 @@ impl Behaviour for CreeperStance {
     }
 }
 
+/// Where to retreat from: the creepers' positions weighted by inverse square distance, so
+/// backing off from the nearest one does not run into the next.
+fn threat_centre(me: Vec3, creepers: &[&Entity]) -> Vec3 {
+    let (mut sum, mut w) = (Vec3::ZERO, 0.0);
+    for c in creepers {
+        let k = 1.0 / c.pos.dist(me).max(0.5).powi(2);
+        sum = sum + c.pos * k;
+        w += k;
+    }
+    sum * (1.0 / w)
+}
+
 /// One tick of the hit-and-retreat duel; `None` hands over to the plain stance (flee).
-fn duel_bid(snap: &Snapshot, c: &Entity, d: f64) -> Option<Bid> {
+fn duel_bid(snap: &Snapshot, c: &Entity, d: f64, threat: Vec3) -> Option<Bid> {
     let me = &snap.me;
     let face = Commands::default().look_at(c.head());
     if c.state.fuse_lit && c.state.swell >= FLEE_SWELL {
@@ -66,7 +83,7 @@ fn duel_bid(snap: &Snapshot, c: &Entity, d: f64) -> Option<Bid> {
         return Some(Bid::new(Priority::P2, 0.8, "creeper_draw", cmds));
     }
     let ready = me.attack_ready >= 0.95;
-    let away = safe_retreat(snap, c.pos);
+    let away = safe_retreat(snap, threat);
     let toward = heading_to(me.pos, c.pos);
     let urgent = if d <= BLAST {
         Priority::P0
