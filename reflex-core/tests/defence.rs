@@ -233,3 +233,19 @@ fn d2_keeps_swinging_while_o2_holds_the_gaze() {
     let out = ex.tick(&s);
     assert_eq!(out.main, Some(MainCmd::Attack(3)));
 }
+
+/// Kiting: retreating from a swarm still swings at the leading zombie when it is in reach.
+#[test]
+fn d2_retreat_strikes_in_passing() {
+    let mut s = flat();
+    give(&mut s, 0, ItemKind::Sword, 1);
+    for (i, (x, z)) in [(2.5, 0.5), (0.5, 3.5), (-2.5, 0.5)].into_iter().enumerate() {
+        s.entities.push(mob(10 + i as u32, EntityKind::Zombie, x, z));
+    }
+    let bid = eval(&mut MeleeDefence, &s, &knobs()).0.unwrap();
+    assert_eq!(bid.note, "melee_retreat");
+    assert!(matches!(bid.commands.main, Some(MainCmd::Attack(_))));
+    s.me.attack_ready = 0.3;
+    let bid = eval(&mut MeleeDefence, &s, &knobs()).0.unwrap();
+    assert_eq!((bid.commands.main, bid.commands.gaze), (None, None));
+}

@@ -102,6 +102,29 @@ fn engage(note: &'static str, d: f64, urgency: f32, cmds: Commands) -> Bid {
     Bid::new(Priority::P2, urgency, note, cmds).degraded(degraded)
 }
 
+/// Retreat that keeps hitting (kiting): run, but draw the sword, and when the leading foe
+/// is in reach with the swing ready, turn and strike in passing. Live, the pure retreat from
+/// a swarm of six zombies in a walled arena ran laps for 225 s and killed none of them.
+fn kite(snap: &Snapshot, target: &Entity, heading: Vec3, urgency: f32) -> Bid {
+    let me = &snap.me;
+    let legs = LegsCmd::toward(heading, Speed::Sprint);
+    let mut cmds = Commands::default().legs(legs);
+    match me.hotbar_find(|k| k == ItemKind::Sword) {
+        Some(slot) if me.selected_slot != slot => {
+            cmds = cmds.main(MainCmd::SelectSlot(slot));
+        }
+        Some(_) if target.pos.dist(me.pos) <= REACH && me.attack_ready >= 0.95 => {
+            cmds = cmds
+                .look_at(target.head())
+                .main(MainCmd::Attack(target.id));
+        }
+        _ => {}
+    }
+    let mut degraded = cmds.clone();
+    degraded.gaze = None;
+    Bid::new(Priority::P2, urgency, "melee_retreat", cmds).degraded(degraded)
+}
+
 /// D2: zombie, husk, drowned, and spiders at night. Fight with K1 when aggression >= 0.5
 /// and hp above hp_floor; otherwise, or when three or more melee mobs are within 6, retreat
 /// toward the companion or away. Baby zombies trigger the retreat from 10 blocks. Cornered
@@ -151,7 +174,6 @@ impl Behaviour for MeleeDefence {
             }
             return None;
         };
-        let cmds = Commands::default().legs(LegsCmd::toward(heading, Speed::Sprint));
-        Some(Bid::new(Priority::P2, urgency, "melee_retreat", cmds))
+        Some(kite(snap, target, heading, urgency))
     }
 }
