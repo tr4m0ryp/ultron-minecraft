@@ -90,7 +90,7 @@ pub fn tool_list() -> Vec<Value> {
             "ttl_s": {"type": "number", "exclusiveMinimum": 0},
             "once": {"type": "boolean", "default": true},
         }), &["trigger", "response"]),
-        tool("say", "Send one chat line. Keep it short and natural.".into(), json!({
+        tool("say", "Send one chat line. Keep it short and natural. Replies to a player who spoke in the last 90 s always go through; a line nobody asked for is held back if your last one was under 5 minutes ago, and a repeat of a recent line is never sent.".into(), json!({
             "text": {"type": "string", "minLength": 1, "maxLength": 256},
         }), &["text"]),
         tool("recent_chat", "The last chat lines heard, oldest first. Use it to catch up on a conversation.".into(), json!({
