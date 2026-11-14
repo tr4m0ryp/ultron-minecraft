@@ -220,3 +220,28 @@ fn mine_counts_what_reached_the_inventory_not_what_broke() {
         s.goal_text("goal_failed")
     );
 }
+
+#[test]
+fn mine_tunnels_level_with_the_body_and_walks_over_the_drops() {
+    // A 2-high stone seam ahead: the body breaks head then feet height, steps into the
+    // gap and goes on, never digging the floor it stands on.
+    let mut s = Sim::new();
+    for x in 1..=4 {
+        s.block(BlockPos::new(x, 64, 0), "stone");
+        s.block(BlockPos::new(x, 65, 0), "stone");
+    }
+    s.goal("mine stone 6", true);
+    let mut floor_dug = false;
+    for _ in 0..3000 {
+        if let Some(MainCmd::Dig(p)) = s.step().main {
+            floor_dug |= p.y < 64;
+        }
+        if s.has_event("goal_done") {
+            break;
+        }
+    }
+    assert!(s.has_event("goal_done"), "{:?}", s.events("goal_failed"));
+    assert!(!floor_dug);
+    assert!(s.snap.me.pos.x >= 2.0, "advanced into the tunnel: {:?}", s.snap.me.pos);
+    assert!(s.goal_text("goal_done").contains("picked up 6 cobblestone"));
+}
