@@ -1,7 +1,10 @@
 //! Line of sight over the sensed blocks, and the nearest spot that breaks it.
 
 use crate::math::{BlockPos, Vec3};
-use crate::snapshot::{BlockKind, LocalBlocks, Snapshot, EYE_HEIGHT};
+use crate::snapshot::{BlockKind, LocalBlocks, Snapshot};
+
+/// Player eye height above the feet.
+const EYE_HEIGHT: f64 = 1.62;
 
 /// A block whose collision shape stops a mob's sight line and an arrow. Unknown blocks
 /// (outside the sensing radius) count as clear, so exposure is never underestimated.
