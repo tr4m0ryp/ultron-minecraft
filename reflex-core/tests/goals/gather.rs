@@ -25,7 +25,7 @@ fn mine_equips_the_tool_digs_each_block_and_finishes() {
     assert_eq!(s.world.state().blocks.len(), 0, "all three broken");
     assert!(s
         .goal_text("goal_done")
-        .contains("mined 3 iron_ore; picked up 3 items"));
+        .contains("mined 3 iron_ore, picked up 3 raw_iron"));
     let progress = s.events("goal_progress");
     assert!(!progress.is_empty() && progress.len() <= 3, "{progress:?}");
 }
@@ -198,22 +198,25 @@ fn mine_walks_to_drops_that_land_away_from_the_block() {
     assert!(s.run_until(2000, |s| s.has_event("goal_done")));
     assert_eq!(s.world.state().drops.len(), 0, "every drop picked up");
     assert!(
-        s.goal_text("goal_done").contains("picked up 2 items"),
+        s.goal_text("goal_done").contains("picked up 2 raw_iron"),
         "{}",
         s.goal_text("goal_done")
     );
 }
 
 #[test]
-fn mine_says_when_drops_were_left_behind() {
+fn mine_counts_what_reached_the_inventory_not_what_broke() {
+    // Drops out of reach never count: the goal mines on until the blocks run out and
+    // says how many broke against how many arrived.
     let mut s = Sim::new();
     ore_field(&mut s);
     s.drop_offset = Some(Vec3::new(0.0, 3.0, 0.0));
     s.goal("mine iron_ore 1", true);
-    assert!(s.run_until(2000, |s| s.has_event("goal_done")));
+    assert!(s.run_until(3000, |s| s.has_event("goal_failed")));
+    assert!(!s.has_event("goal_done"));
     assert!(
-        s.goal_text("goal_done").contains("picked up only 0 items"),
+        s.goal_text("goal_failed").contains("mined 3 iron_ore, picked up 0 raw_iron"),
         "{}",
-        s.goal_text("goal_done")
+        s.goal_text("goal_failed")
     );
 }

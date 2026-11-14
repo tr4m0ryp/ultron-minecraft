@@ -31,7 +31,8 @@ fn a_new_goal_replaces_the_old_one_which_resumes_with_its_progress() {
     assert!(s.has_event("goal_resumed"));
     assert!(
         s.goal_text("goal_done").contains("mined 3 iron_ore"),
-        "progress kept"
+        "progress kept: {}",
+        s.goal_text("goal_done")
     );
     assert!(s.world.state().blocks.is_empty());
 }
