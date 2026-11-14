@@ -1,6 +1,6 @@
 use super::melee::melee_commands;
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::safe_retreat;
+use crate::behaviours::common::{clearance, open_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, OffCmd, Speed};
 use crate::math::Vec3;
 use crate::predict::cpa;
@@ -71,11 +71,20 @@ impl Behaviour for ProjectileEvade {
 
 /// D3: skeleton, stray or bogged within 16. With aggression >= 0.6 close in with K1,
 /// shield raised while it draws. Otherwise retreat out of its 16-block range, raising the
-/// shield on the draw. Line of sight is not computed: every archer in range counts.
+/// shield on the draw, but only when retreating can work: trapped (no open retreat
+/// heading, or a wall or drop within 3 blocks along it) or with the archer already within
+/// 6 blocks, close in and kill it instead, as a skilled player does in a closed room. Live
+/// in a walled 30x30 arena the pure retreat ran along the walls and was shot to death 5
+/// times in 225 s without a swing. Line of sight is not computed: every archer in range
+/// counts.
 #[derive(Default)]
 pub struct RangedCover;
 
 const RANGE: f64 = 16.0;
+/// Within this an archer hits nearly every shot and is about a second's sprint away.
+const CLOSE_IN: f64 = 6.0;
+/// A retreat needs this much open ground ahead to be worth running.
+const ESCAPE_ROOM: f64 = 3.0;
 
 impl Behaviour for RangedCover {
     fn id(&self) -> &'static str {
@@ -94,17 +103,25 @@ impl Behaviour for RangedCover {
         let d = archer.pos.dist(me.pos);
         let urgency = (1.0 - d / RANGE).clamp(0.2, 1.0) as f32;
         let block = archer.state.drawing_bow && shield_in_offhand(ctx);
-        if ctx.knobs.gains.aggression >= 0.6 {
+        let retreat = open_retreat(snap, archer.pos)
+            .filter(|&h| clearance(&snap.blocks, me.pos, h, ESCAPE_ROOM).0 >= ESCAPE_ROOM);
+        let trapped = retreat.is_none() || d <= CLOSE_IN;
+        if ctx.knobs.gains.aggression >= 0.6 || trapped {
             let mut cmds = melee_commands(snap, archer);
             if block && cmds.main.is_none() {
                 cmds = cmds.off(OffCmd::RaiseShield);
             }
-            return Some(Bid::new(Priority::P2, urgency, "ranged_close_in", cmds));
+            let note = if trapped {
+                "ranged_trapped_close_in"
+            } else {
+                "ranged_close_in"
+            };
+            let mut degraded = cmds.clone();
+            degraded.gaze = None;
+            return Some(Bid::new(Priority::P2, urgency, note, cmds).degraded(degraded));
         }
-        let mut cmds = Commands::default().legs(LegsCmd::toward(
-            safe_retreat(snap, archer.pos),
-            Speed::Sprint,
-        ));
+        let heading = retreat?;
+        let mut cmds = Commands::default().legs(LegsCmd::toward(heading, Speed::Sprint));
         if block {
             cmds = cmds.off(OffCmd::RaiseShield).look_at(archer.head());
             if let Some(l) = cmds.legs.as_mut() {
