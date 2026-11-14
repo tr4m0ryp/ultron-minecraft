@@ -28,8 +28,14 @@ pub struct Executor {
     efference: Efference,
     /// Ids that won a channel (or vetoed) last tick, for onset-only reporting.
     active: HashMap<String, Priority>,
-    goal_lost_since: Option<u64>,
-    goal_interrupt_sent: bool,
+    goal_watch: GoalWatch,
+}
+
+/// Tracks how long the goal has bid without owning the legs.
+#[derive(Default)]
+struct GoalWatch {
+    lost_since: Option<u64>,
+    sent: bool,
 }
 
 impl Executor {
@@ -46,8 +52,7 @@ impl Executor {
             selector: Selector::default(),
             efference: Efference::default(),
             active: HashMap::new(),
-            goal_lost_since: None,
-            goal_interrupt_sent: false,
+            goal_watch: GoalWatch::default(),
         }
     }
 
@@ -158,7 +163,7 @@ impl Executor {
             }
             now_active.insert(c.id.clone(), c.priority);
         }
-        self.track_goal(&ctx, &cands, &alloc.owners);
+        self.goal_watch.update(&ctx, &cands, &alloc.owners);
         let events = ctx.take_events();
         drop(ctx);
 
@@ -170,20 +175,22 @@ impl Executor {
         self.efference = Efference { legs: plan.legs, from: pos };
         out
     }
+}
 
-    fn track_goal(&mut self, ctx: &Ctx, cands: &[Candidate], owners: &HashMap<Channel, usize>) {
+impl GoalWatch {
+    fn update(&mut self, ctx: &Ctx, cands: &[Candidate], owners: &HashMap<Channel, usize>) {
         let goal_bidding = cands.iter().any(|c| c.id == crate::behaviours::GOAL_ID);
         let goal_has_legs = owners
             .get(&Channel::Legs)
             .is_some_and(|&i| cands[i].id == crate::behaviours::GOAL_ID);
         if !goal_bidding || goal_has_legs {
-            self.goal_lost_since = None;
-            self.goal_interrupt_sent = false;
+            self.lost_since = None;
+            self.sent = false;
             return;
         }
-        let since = *self.goal_lost_since.get_or_insert(ctx.snap.tick);
-        if !self.goal_interrupt_sent && ctx.snap.tick >= since + GOAL_INTERRUPT_TICKS {
-            self.goal_interrupt_sent = true;
+        let since = *self.lost_since.get_or_insert(ctx.snap.tick);
+        if !self.sent && ctx.snap.tick >= since + GOAL_INTERRUPT_TICKS {
+            self.sent = true;
             let holder = owners.get(&Channel::Legs).map(|&i| cands[i].id.as_str()).unwrap_or("none");
             ctx.emit(report::goal_interrupted(ctx, holder));
         }
