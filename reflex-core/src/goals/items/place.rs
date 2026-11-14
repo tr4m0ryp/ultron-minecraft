@@ -1,4 +1,5 @@
 use super::equip::equip;
+use super::surfaces::{opens_on_click, replaceable};
 use crate::behaviours::common::away_from;
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::goals::ports::{kind_matches, NavTarget, Navigator};
@@ -10,42 +11,6 @@ const REACH: f64 = 4.0;
 /// Ticks between placement attempts, so the server's answer arrives before a retry.
 const RETRY_GAP: u32 = 5;
 const MAX_ATTEMPTS: u32 = 8;
-
-/// Blocks a placement may overwrite: the server's `#replaceable` tag (plants, litter,
-/// thin layers and fluids that a placed block simply takes the place of).
-pub fn replaceable(name: &str) -> bool {
-    matches!(
-        name,
-        "air"
-            | "cave_air"
-            | "void_air"
-            | "water"
-            | "lava"
-            | "short_grass"
-            | "tall_grass"
-            | "fern"
-            | "large_fern"
-            | "bush"
-            | "dead_bush"
-            | "short_dry_grass"
-            | "tall_dry_grass"
-            | "leaf_litter"
-            | "snow"
-            | "vine"
-            | "glow_lichen"
-            | "resin_clump"
-            | "seagrass"
-            | "tall_seagrass"
-            | "fire"
-            | "soul_fire"
-            | "crimson_roots"
-            | "warped_roots"
-            | "nether_sprouts"
-            | "hanging_roots"
-            | "light"
-            | "structure_void"
-    )
-}
 
 pub struct Place {
     block: String,
@@ -72,20 +37,34 @@ impl Place {
         format!("{} {} {}", self.pos.x, self.pos.y, self.pos.z)
     }
 
-    /// A non-replaceable neighbour to click on; below first.
-    fn support(&self, cx: &GoalCx) -> Option<BlockPos> {
+    /// A non-replaceable neighbour to click on, below first. A block that opens on a click
+    /// (table, chest, door) is never used: live, clicking the crafting table under a chest
+    /// opened its menu instead, and the open menu then failed every later craft.
+    fn support(&self, cx: &GoalCx) -> Result<BlockPos, String> {
         let p = self.pos;
-        [
+        let mut opener = None;
+        for (x, y, z) in [
             (0, -1, 0),
             (1, 0, 0),
             (-1, 0, 0),
             (0, 0, 1),
             (0, 0, -1),
             (0, 1, 0),
-        ]
-        .into_iter()
-        .map(|(x, y, z)| p.offset(x, y, z))
-        .find(|n| cx.world.block_at(*n).is_some_and(|k| !replaceable(&k)))
+        ] {
+            let n = p.offset(x, y, z);
+            match cx.world.block_at(n) {
+                Some(k) if opens_on_click(&k) => opener = opener.or(Some(k)),
+                Some(k) if !replaceable(&k) => return Ok(n),
+                _ => {}
+            }
+        }
+        Err(match opener {
+            Some(k) => format!(
+                "only a {k} to place against at {}; clicking it would open it",
+                self.at()
+            ),
+            None => format!("nothing to place against at {}", self.at()),
+        })
     }
 }
 
@@ -104,8 +83,9 @@ impl GoalTask for Place {
         let Some(slot) = cx.world.item_slot(&self.block) else {
             return Step::Failed(format!("no {} to place", self.block));
         };
-        let Some(support) = self.support(cx) else {
-            return Step::Failed(format!("nothing to place against at {}", self.at()));
+        let support = match self.support(cx) {
+            Ok(b) => b,
+            Err(e) => return Step::Failed(e),
         };
         let centre = |b: BlockPos| b.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
         if cx.me_pos().dist(centre(self.pos)) > REACH + 1.0 {
