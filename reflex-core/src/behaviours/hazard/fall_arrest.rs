@@ -100,7 +100,7 @@ impl Behaviour for FallArrest {
         }
         let fall = ctx.pred.fall?;
         let threshold = (me.hp_total() - ctx.knobs.gains.hp_floor).max(1.0);
-        if fall.into_void || fall.damage < threshold || fall.landing.negates_fall() {
+        if !fall.into_void && (fall.damage < threshold || fall.landing.negates_fall()) {
             return None;
         }
         let block = me.hotbar_find(|k| k == ItemKind::ThrowawayBlock);
@@ -129,6 +129,7 @@ impl Behaviour for FallArrest {
             let cmds = down.main(MainCmd::SelectSlot(slot));
             return Some(Bid::new(Priority::P0, 1.0, "fall_arrest", cmds));
         }
+        // Nothing placed saves a fall into the void; water needs a block to land on.
         let floor = fall.floor.filter(|_| fall.landing.supports())?;
         let fresh = self
             .placed
