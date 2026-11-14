@@ -37,7 +37,7 @@ pub fn default_catalog() -> Vec<Box<dyn Behaviour>> {
         Box::new(locomotion::Swim),
         Box::new(defence::Totem),
         Box::new(defence::ProjectileEvade),
-        Box::new(defence::RangedCover),
+        Box::new(defence::RangedCover::default()),
         Box::new(GoalExecutor::default()),
         Box::new(defence::EndermanGazeFilter),
         Box::new(defence::AttackMask),

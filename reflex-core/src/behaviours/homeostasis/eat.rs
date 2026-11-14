@@ -3,6 +3,13 @@ use crate::snapshot::{ItemKind, SelfState, Slot};
 
 /// Eating takes 32 ticks; the lock holds a little longer so the last tick lands.
 pub const EATING_TICKS: u32 = 34;
+
+/// A meal may start only if it finishes before any archer that sees us can land an arrow:
+/// out of sight, or in the reload after its last shot. Eating slows the player to a crawl
+/// and keeps the shield down, so a meal in an archer's line of fire is 32 ticks as a target.
+pub fn meal_is_safe(snap: &crate::snapshot::Snapshot) -> bool {
+    crate::behaviours::defence::safe_for(snap, EATING_TICKS as f64)
+}
 /// Hotbar slot 8 in the body schema (index 7) holds food.
 const FOOD_SLOT: Slot = 7;
 

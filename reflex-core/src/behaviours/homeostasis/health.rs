@@ -1,12 +1,15 @@
-use super::eat::{best_food, eat_commands, EATING_TICKS};
+use super::eat::{best_food, eat_commands, meal_is_safe, EATING_TICKS};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::behaviours::common::{heading_to, open_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 
-/// H2: hp under hp_floor with a hostile within 16: retreat (toward the companion when it is
-/// farther from the threat than we are). Cornered (no safe retreat heading) it leaves the
-/// legs to D2, which fights back. hp 6 or less with a golden apple and no hostile
+/// H2: hp under hp_floor with a melee hostile within 16: retreat (toward the companion when
+/// it is farther from the threat than we are). Archers are left to D3: running from one in
+/// the open only turns the back to it, and live in a walled arena the low-health sprint
+/// from skeletons was shot down every time. Cornered (no safe retreat heading) it leaves
+/// the legs to D2, which fights back. hp 6 or less with a golden apple and no hostile
 /// within 5: eat it. hp < 20 and food < 18 and no hostile within 12: top off food (P3).
+/// Neither meal starts in an archer's line of fire (`meal_is_safe`).
 #[derive(Default)]
 pub struct Health;
 
@@ -22,11 +25,18 @@ impl Behaviour for Health {
         let me = &snap.me;
         let floor = ctx.knobs.gains.hp_floor;
         let threat = snap.nearest_hostile(16.0);
+        let runnable = snap
+            .nearby(16.0, |e| {
+                e.kind.class() == crate::snapshot::EntityClass::Hostile && !e.kind.is_ranged()
+            })
+            .into_iter()
+            .next();
+        let safe_meal = meal_is_safe(snap);
         let mut cmds = Commands::default();
         let mut priority = None;
         let mut lock = 0;
 
-        if let (Some(t), true) = (threat, me.health < floor) {
+        if let (Some(t), true) = (runnable, me.health < floor) {
             let to_companion = snap
                 .companion
                 .as_ref()
@@ -37,7 +47,11 @@ impl Behaviour for Health {
                 priority = Some(Priority::P1);
             }
         }
-        if me.health <= GOLDEN_HP && threat.is_some() && snap.nearest_hostile(5.0).is_none() {
+        if me.health <= GOLDEN_HP
+            && threat.is_some()
+            && snap.nearest_hostile(5.0).is_none()
+            && safe_meal
+        {
             if let Some(slot) = best_food(me, true) {
                 let eat = eat_commands(me, slot);
                 lock = if eat.main == Some(MainCmd::Use) {
@@ -54,6 +68,7 @@ impl Behaviour for Health {
             && me.health < 20.0
             && me.food < 18
             && snap.nearest_hostile(12.0).is_none()
+            && safe_meal
         {
             let slot = best_food(me, false)?;
             let eat = eat_commands(me, slot);

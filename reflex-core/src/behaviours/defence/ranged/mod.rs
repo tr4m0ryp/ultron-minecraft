@@ -6,7 +6,7 @@ mod evade;
 mod moves;
 mod stance;
 
-pub use cadence::{exposed_to, safe_for, ticks_to_hit, ticks_to_shot, ARROW_SPEED, DRAW, RELOAD};
+pub use cadence::{exposed_to, safe_for, ticks_to_hit, ticks_to_shot};
 pub use evade::{ProjectileEvade, SHIELD_RAISE_TICKS};
 pub use stance::RangedCover;
 

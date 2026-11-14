@@ -1,11 +1,11 @@
-use super::eat::{best_food, eat_commands, food_servings, EATING_TICKS};
+use super::eat::{best_food, eat_commands, food_servings, meal_is_safe, EATING_TICKS};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::channels::MainCmd;
 use crate::events::EventClass;
 
 /// H1: food at or below hunger_floor with no hostile within 12 blocks: eat the best food.
 /// Emergency at food 6 or less (sprinting impossible, so fleeing is too): P1, eats unless
-/// a hostile is within 4.
+/// a hostile is within 4. Never starts a meal in an archer's line of fire (`meal_is_safe`).
 #[derive(Default)]
 pub struct Hunger {
     low_stock_reported: bool,
@@ -36,7 +36,7 @@ impl Behaviour for Hunger {
         }
         let emergency = me.food <= EMERGENCY_FOOD;
         let safe_radius = if emergency { 4.0 } else { 12.0 };
-        if ctx.snap.nearest_hostile(safe_radius).is_some() {
+        if ctx.snap.nearest_hostile(safe_radius).is_some() || !meal_is_safe(ctx.snap) {
             return None;
         }
         let slot = best_food(me, false)?;
