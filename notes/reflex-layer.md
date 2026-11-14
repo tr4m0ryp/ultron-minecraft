@@ -626,7 +626,7 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   sometimes took no damage at all; the shield was otherwise of no use to it (skeletons
   4.6 deaths either way).
   Cover (D3 hides only below hp_floor, or against 3 archers without a shield) is not shown to
-  help here: in the pillar arena it held the legs on under 3 percent of fight ticks, and two
+  help here: in the pillar arena it held the legs on under 1 percent of fight ticks, and two
   variants did no better than the default (5 runs each): cover against 2 archers in sight
   0.2 +- 0.4 deaths, 24 +- 10 HP; recovery from hp 12 instead of 8, 0.4 +- 0.5 deaths,
   32 +- 11 HP. Fighting in the reload already keeps health above the cover threshold, so the
