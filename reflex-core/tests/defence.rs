@@ -183,6 +183,39 @@ fn d3_ranged_cover_or_close_in() {
     assert!(eval(&mut RangedCover, &s, &knobs()).0.is_none());
 }
 
+/// Live in a walled arena the retreat from skeletons ran along the walls and was shot to
+/// death; with nowhere to run, or the archer already close, D3 now closes in.
+#[test]
+fn d3_closes_in_when_trapped_or_close() {
+    let mut s = flat();
+    s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 10.0));
+    assert_eq!(eval(&mut RangedCover, &s, &knobs()).0.unwrap().note, "ranged_cover");
+    s.blocks.fill(
+        reflex_core::BlockPos::new(-12, 64, -3),
+        reflex_core::BlockPos::new(12, 65, -3),
+        reflex_core::snapshot::BlockKind::Solid,
+    );
+    s.blocks.fill(
+        reflex_core::BlockPos::new(-3, 64, -12),
+        reflex_core::BlockPos::new(-3, 65, 12),
+        reflex_core::snapshot::BlockKind::Solid,
+    );
+    s.blocks.fill(
+        reflex_core::BlockPos::new(3, 64, -12),
+        reflex_core::BlockPos::new(3, 65, 12),
+        reflex_core::snapshot::BlockKind::Solid,
+    );
+    let bid = eval(&mut RangedCover, &s, &knobs()).0.unwrap();
+    assert_eq!(bid.note, "ranged_trapped_close_in");
+    assert!(bid.commands.legs.unwrap().heading.z > 0.9, "toward the archer");
+    let mut s = flat();
+    s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 5.0));
+    assert_eq!(
+        eval(&mut RangedCover, &s, &knobs()).0.unwrap().note,
+        "ranged_trapped_close_in"
+    );
+}
+
 /// Live, with several zombies, O2 turned toward the next approaching one, kept the gaze by
 /// hysteresis, and D2's fight (which needed the gaze) lost every channel: 5 swings in 225 s.
 #[test]
