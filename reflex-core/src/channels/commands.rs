@@ -53,6 +53,8 @@ pub enum MainCmd {
     Attack(u32),
     /// Place the held block against the given block, on the face nearest the player.
     PlaceOn(BlockPos),
+    /// Place the held block into `cell` by clicking the face of `against` that touches it.
+    PlaceAt { cell: BlockPos, against: BlockPos },
     Dig(BlockPos),
 }
 

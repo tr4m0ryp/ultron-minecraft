@@ -15,6 +15,7 @@ pub use mode::Mode;
 
 use std::collections::VecDeque;
 
+use crate::goals::travel::route::Region;
 use crate::math::Vec3;
 
 pub const GOAL_QUEUE_MAX: usize = 3;
@@ -29,6 +30,8 @@ pub struct Knobs {
     pub armed: Vec<ArmedResponse>,
     /// DIGEST token budget (the report knob).
     pub report_tokens: usize,
+    /// Builds the body must never break, marked by the thought layer.
+    pub protected: Vec<Region>,
     next_id: u64,
 }
 
@@ -48,6 +51,21 @@ impl Knobs {
     pub fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
         self.gains = mode.preset();
+    }
+
+    /// Marks a region the body must never break; returns how many are marked.
+    pub fn protect(&mut self, r: Region) -> usize {
+        if !self.protected.contains(&r) {
+            self.protected.push(r);
+        }
+        self.protected.len()
+    }
+
+    /// Lifts protection from every region containing `p`; returns how many were lifted.
+    pub fn unprotect(&mut self, p: crate::math::BlockPos) -> usize {
+        let before = self.protected.len();
+        self.protected.retain(|r| !r.contains(p));
+        before - self.protected.len()
     }
 
     pub fn set_gain(&mut self, name: GainName, value: f32) {
