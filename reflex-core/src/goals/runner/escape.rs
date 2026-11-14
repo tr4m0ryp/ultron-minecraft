@@ -65,7 +65,10 @@ impl Escape {
     }
 
     fn say(ctx: &Ctx, text: &str) {
-        ctx.emit(ctx.report(EventClass::Wake, "escape", "body").text(text.to_string()));
+        ctx.emit(
+            ctx.report(EventClass::Wake, "escape", "body")
+                .text(text.to_string()),
+        );
     }
 
     /// One idle tick. Returns the bid while an escape holds the body.
@@ -77,7 +80,7 @@ impl Escape {
         preempted: bool,
     ) -> Option<Bid> {
         let feet = ctx.snap.me.pos.block();
-        if ctx.snap.tick % SKY_CHECK_EVERY == 0 && !self.running() {
+        if ctx.snap.tick.is_multiple_of(SKY_CHECK_EVERY) && !self.running() {
             if world.open_sky(feet) {
                 self.last_sky = Some(feet);
                 self.no_sky = 0;
@@ -144,7 +147,10 @@ impl Escape {
     fn give_up(&mut self, ctx: &Ctx, nav: &mut dyn Navigator, why: &str) -> Option<Bid> {
         nav.cancel();
         self.walker.reset();
-        Self::say(ctx, &format!("could not dig out ({why}); I need help or a goal"));
+        Self::say(
+            ctx,
+            &format!("could not dig out ({why}); I need help or a goal"),
+        );
         self.phase = Phase::Cooldown(COOLDOWN * 2);
         None
     }

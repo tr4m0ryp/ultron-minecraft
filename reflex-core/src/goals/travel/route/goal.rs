@@ -50,7 +50,11 @@ impl RouteGoal {
                 ((n.feet_centre().dist(c) - 1.0).max(0.0), c)
             }
         };
-        let solid = if dig { solid_on_line(t, mid(n), aim) } else { 0 };
+        let solid = if dig {
+            solid_on_line(t, mid(n), aim)
+        } else {
+            0
+        };
         d as f32 * WALK + solid as f32 * SOLID_EST
     }
 }
@@ -64,7 +68,10 @@ fn solid_on_line(t: &dyn Terrain, a: Vec3, b: Vec3) -> u32 {
     let d = b - a;
     let steps = d.len().floor() as i32;
     (1..steps)
-        .filter(|&i| t.cell((a + d * (f64::from(i) / d.len())).block()).is_solid())
+        .filter(|&i| {
+            t.cell((a + d * (f64::from(i) / d.len())).block())
+                .is_solid()
+        })
         .count() as u32
 }
 

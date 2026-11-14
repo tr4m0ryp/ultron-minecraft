@@ -215,7 +215,8 @@ fn mine_counts_what_reached_the_inventory_not_what_broke() {
     assert!(s.run_until(3000, |s| s.has_event("goal_failed")));
     assert!(!s.has_event("goal_done"));
     assert!(
-        s.goal_text("goal_failed").contains("mined 3 iron_ore, picked up 0 raw_iron"),
+        s.goal_text("goal_failed")
+            .contains("mined 3 iron_ore, picked up 0 raw_iron"),
         "{}",
         s.goal_text("goal_failed")
     );
@@ -242,6 +243,10 @@ fn mine_tunnels_level_with_the_body_and_walks_over_the_drops() {
     }
     assert!(s.has_event("goal_done"), "{:?}", s.events("goal_failed"));
     assert!(!floor_dug);
-    assert!(s.snap.me.pos.x >= 2.0, "advanced into the tunnel: {:?}", s.snap.me.pos);
+    assert!(
+        s.snap.me.pos.x >= 2.0,
+        "advanced into the tunnel: {:?}",
+        s.snap.me.pos
+    );
     assert!(s.goal_text("goal_done").contains("picked up 6 cobblestone"));
 }

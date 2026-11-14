@@ -12,11 +12,11 @@ use azalea::{
         BlockState,
     },
     inventory::Menu,
-    physics::collision::BlockWithShape,
     pathfinder::{
         positions::RelBlockPos,
         world::{is_block_state_passable, is_block_state_standable, CachedWorld},
     },
+    physics::collision::BlockWithShape,
     registry::{builtin::BlockKind as Az, tags::blocks},
     world::World,
     Client,
@@ -30,8 +30,10 @@ use reflex_core::{
 use crate::world::names::block_name;
 
 fn falls(k: Az) -> bool {
-    matches!(k, Az::Sand | Az::RedSand | Az::Gravel | Az::SuspiciousGravel | Az::SuspiciousSand)
-        || blocks::CONCRETE_POWDERS.contains(&k)
+    matches!(
+        k,
+        Az::Sand | Az::RedSand | Az::Gravel | Az::SuspiciousGravel | Az::SuspiciousSand
+    ) || blocks::CONCRETE_POWDERS.contains(&k)
 }
 
 /// The cell for one block state; `menu` (the inventory) prices digging, `None` forbids it.
@@ -47,12 +49,10 @@ pub fn classify(state: BlockState, menu: Option<&Menu>) -> Cell {
         };
     }
     let k = Az::from(state);
-    let dig = menu
-        .filter(|_| natural(&block_name(state)))
-        .and_then(|m| {
-            let pct = best_tool_in_hotbar_for_block(state, m).percentage_per_tick;
-            (pct > 0.0).then(|| (1.0 / pct).ceil().min(f32::from(u16::MAX)) as u16)
-        });
+    let dig = menu.filter(|_| natural(&block_name(state))).and_then(|m| {
+        let pct = best_tool_in_hotbar_for_block(state, m).percentage_per_tick;
+        (pct > 0.0).then(|| (1.0 / pct).ceil().min(f32::from(u16::MAX)) as u16)
+    });
     Cell::Solid {
         floor: is_block_state_standable(state) && k != Az::MagmaBlock,
         dig,
@@ -160,7 +160,9 @@ impl Terrain for LiveTerrain<'_> {
         let Ok(world) = self.bot.world() else {
             return Cell::Unknown;
         };
-        let state = world.read().get_block_state(azalea::BlockPos::new(p.x, p.y, p.z));
+        let state = world
+            .read()
+            .get_block_state(azalea::BlockPos::new(p.x, p.y, p.z));
         match state {
             Some(s) => self.cache.get(s, None),
             None => Cell::Unknown,

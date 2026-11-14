@@ -1,8 +1,8 @@
 //! Turning a path's hand work (dig a block in the way, place a scaffold block) into
 //! commands, with the right tool or block in hand first.
 
-use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::behaviours::common::heading_to;
+use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
 use crate::goals::items::equip;
 use crate::goals::ports::{NavFailure, Steer, ToolNeed, Work};
 use crate::goals::task::{GoalCx, Plan};
@@ -19,7 +19,12 @@ pub fn scaffold_slot(cx: &GoalCx) -> Option<Slot> {
     SCAFFOLD.iter().find_map(|b| cx.world.item_slot(b))
 }
 
-pub fn work_plan(cx: &mut GoalCx, s: Steer, w: Work, note: &'static str) -> Result<Plan, NavFailure> {
+pub fn work_plan(
+    cx: &mut GoalCx,
+    s: Steer,
+    w: Work,
+    note: &'static str,
+) -> Result<Plan, NavFailure> {
     let me = cx.snap().me.clone();
     let off = (me.pos - s.waypoint).horizontal().len();
     let mut legs = if off > HOLD {

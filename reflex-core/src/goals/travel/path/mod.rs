@@ -80,11 +80,7 @@ impl PathFollower {
     }
 
     /// Next steering command; `None` once every hop is done.
-    pub fn steer(
-        &mut self,
-        snap: &Snapshot,
-        t: &dyn Terrain,
-    ) -> Option<Result<Steer, NavFailure>> {
+    pub fn steer(&mut self, snap: &Snapshot, t: &dyn Terrain) -> Option<Result<Steer, NavFailure>> {
         // Skip ahead only over hops with no hand work left.
         let free = self
             .hops
@@ -92,7 +88,9 @@ impl PathFollower {
             .take(LOOKAHEAD)
             .take_while(|h| !h.has_work())
             .count();
-        let hit = (0..free).rev().find(|&i| Self::reached(snap, self.hops[i].to));
+        let hit = (0..free)
+            .rev()
+            .find(|&i| Self::reached(snap, self.hops[i].to));
         if let Some(i) = hit {
             self.hops.drain(..=i);
             self.since_progress = 0;

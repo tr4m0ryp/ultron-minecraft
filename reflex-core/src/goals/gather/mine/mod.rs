@@ -243,7 +243,10 @@ impl GoalTask for Mine {
                     self.phase = Phase::Dig { pos, ticks: 0 };
                     return self.dig(cx, pos, 0);
                 }
-                match self.walker.walk(cx, NavTarget::Beside { block: pos }, "goal_mine_walk") {
+                match self
+                    .walker
+                    .walk(cx, NavTarget::Beside { block: pos }, "goal_mine_walk")
+                {
                     Walk::Arrived => {
                         self.phase = Phase::Dig { pos, ticks: 0 };
                         self.dig(cx, pos, 0)

@@ -132,7 +132,11 @@ impl Reporter {
 
     fn send_now(&self, ctx: &Ctx, kind: &str, text: &str) {
         let text = format!("#{} {}: {text}", self.goal_id, self.label);
-        ctx.emit(ctx.report(EventClass::Wake, kind, self.label).text(text).critical());
+        ctx.emit(
+            ctx.report(EventClass::Wake, kind, self.label)
+                .text(text)
+                .critical(),
+        );
     }
 
     /// The goal's status for the brain; `preempted` says a reflex holds the body.

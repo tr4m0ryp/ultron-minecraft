@@ -18,15 +18,17 @@ use reflex_core::math::BlockPos;
 
 /// The face of `against` that touches `cell`, or `None` when they are not neighbours.
 pub fn face_between(cell: BlockPos, against: BlockPos) -> Option<Direction> {
-    Some(match (cell.x - against.x, cell.y - against.y, cell.z - against.z) {
-        (0, 1, 0) => Direction::Up,
-        (0, -1, 0) => Direction::Down,
-        (1, 0, 0) => Direction::East,
-        (-1, 0, 0) => Direction::West,
-        (0, 0, 1) => Direction::South,
-        (0, 0, -1) => Direction::North,
-        _ => return None,
-    })
+    Some(
+        match (cell.x - against.x, cell.y - against.y, cell.z - against.z) {
+            (0, 1, 0) => Direction::Up,
+            (0, -1, 0) => Direction::Down,
+            (1, 0, 0) => Direction::East,
+            (-1, 0, 0) => Direction::West,
+            (0, 0, 1) => Direction::South,
+            (0, 0, -1) => Direction::North,
+            _ => return None,
+        },
+    )
 }
 
 pub fn place_at(bot: &Client, cell: BlockPos, against: BlockPos) {

@@ -132,7 +132,11 @@ fn apply<H: Host>(
 }
 
 fn block(p: [f64; 3]) -> BlockPos {
-    BlockPos::new(p[0].floor() as i32, p[1].floor() as i32, p[2].floor() as i32)
+    BlockPos::new(
+        p[0].floor() as i32,
+        p[1].floor() as i32,
+        p[2].floor() as i32,
+    )
 }
 
 fn protect<H: Host>(
@@ -150,7 +154,9 @@ fn protect<H: Host>(
             let r = Region::new(block(a), block(b));
             let size = (r.max.x - r.min.x + 1) * (r.max.y - r.min.y + 1) * (r.max.z - r.min.z + 1);
             if size > PROTECT_MAX_BLOCKS {
-                return Err(format!("region too large ({size} blocks, at most {PROTECT_MAX_BLOCKS})"));
+                return Err(format!(
+                    "region too large ({size} blocks, at most {PROTECT_MAX_BLOCKS})"
+                ));
             }
             let n = host.knobs().protect(r);
             format!("protected; {n} region(s) marked")

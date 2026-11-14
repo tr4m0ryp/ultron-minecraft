@@ -24,7 +24,10 @@ fn opts(scaffold: u32) -> RouteOpts {
 /// No hop ever digs the block its body stands on.
 fn never_digs_down(r: &Route) {
     for h in &r.hops {
-        assert!(!h.dig.contains(&h.from.below()), "dug under the feet: {h:?}");
+        assert!(
+            !h.dig.contains(&h.from.below()),
+            "dug under the feet: {h:?}"
+        );
     }
 }
 
@@ -91,7 +94,12 @@ fn liquid_behind_a_block_keeps_it() {
 fn a_sealed_pocket_is_escaped_by_a_staircase() {
     let g = Grid::new(G);
     g.fill(p(0, 58, 0), p(1, 59, 0), Cell::Open);
-    let r = plan(&g, p(0, 58, 0), &RouteGoal::Sky { hint: p(0, 64, 0) }, &opts(0));
+    let r = plan(
+        &g,
+        p(0, 58, 0),
+        &RouteGoal::Sky { hint: p(0, 64, 0) },
+        &opts(0),
+    );
     assert!(!r.partial, "expanded {}", r.expanded);
     assert!(r.digs() > 0);
     never_digs_down(&r);
@@ -107,7 +115,10 @@ fn a_pit_is_climbed_by_pillar_or_staircase() {
     let out = near(p(3, 64, 0), 0.5);
     let r = plan(&g, p(0, 58, 0), &out, &opts(16));
     assert!(!r.partial);
-    assert_eq!(r.hops.iter().filter(|h| h.kind == HopKind::Pillar).count(), 5);
+    assert_eq!(
+        r.hops.iter().filter(|h| h.kind == HopKind::Pillar).count(),
+        5
+    );
     assert_eq!(r.digs(), 0);
     let stairs = plan(&g, p(0, 58, 0), &out, &opts(0));
     assert!(!stairs.partial);
@@ -123,7 +134,10 @@ fn a_gap_is_bridged_only_with_blocks_in_hand() {
     let goal = near(p(9, 64, 0), 0.5);
     let r = plan(&g, p(0, 64, 0), &goal, &opts(8));
     assert!(!r.partial);
-    assert_eq!(r.hops.iter().filter(|h| h.kind == HopKind::Bridge).count(), 4);
+    assert_eq!(
+        r.hops.iter().filter(|h| h.kind == HopKind::Bridge).count(),
+        4
+    );
     let mut o = opts(0);
     o.max_nodes = 3_000;
     o.dig = false;
@@ -145,7 +159,12 @@ fn a_ledge_is_reached_by_pillaring_beside_it() {
 fn deep_stone_is_reached_by_a_staircase_from_the_side() {
     let g = Grid::new(G);
     let target = p(4, 58, 0);
-    let r = plan(&g, p(0, 64, 0), &RouteGoal::Beside { block: target }, &opts(0));
+    let r = plan(
+        &g,
+        p(0, 64, 0),
+        &RouteGoal::Beside { block: target },
+        &opts(0),
+    );
     assert!(!r.partial, "{} {:?}", r.expanded, r.hops.last());
     never_digs_down(&r);
     let end = r.hops.last().unwrap().to;
@@ -172,10 +191,23 @@ fn never_pillars_under_gravel() {
 
 #[test]
 fn natural_terrain_is_told_from_builds() {
-    for b in ["stone", "grass_block", "deepslate_iron_ore", "oak_leaves", "gravel"] {
+    for b in [
+        "stone",
+        "grass_block",
+        "deepslate_iron_ore",
+        "oak_leaves",
+        "gravel",
+    ] {
         assert!(natural(b), "{b}");
     }
-    for b in ["cobblestone", "oak_planks", "oak_log", "glass", "infested_stone", "ice"] {
+    for b in [
+        "cobblestone",
+        "oak_planks",
+        "oak_log",
+        "glass",
+        "infested_stone",
+        "ice",
+    ] {
         assert!(!natural(b), "{b}");
     }
     assert_eq!(drop_of("stone"), "cobblestone");

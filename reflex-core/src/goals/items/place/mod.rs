@@ -127,14 +127,20 @@ impl Place {
 impl GoalTask for Place {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
         if let Some(out) = self.outcome.clone() {
-            let c = self.cleanup.as_mut().expect("outcome waits only for a cleanup");
+            let c = self
+                .cleanup
+                .as_mut()
+                .expect("outcome waits only for a cleanup");
             if let Some(p) = c.step(cx) {
                 return Step::Bid(p);
             }
             return out;
         }
         let current = cx.world.block_at(self.pos);
-        if current.as_deref().is_some_and(|n| kind_matches(&self.block, n)) {
+        if current
+            .as_deref()
+            .is_some_and(|n| kind_matches(&self.block, n))
+        {
             let done = Step::Done(format!("placed {} at {}", self.block, self.at()));
             return self.conclude(cx, done);
         }
@@ -181,7 +187,10 @@ impl GoalTask for Place {
             return Step::Bid(Plan::new("goal_place", aim));
         }
         if self.attempts >= MAX_ATTEMPTS {
-            let failed = Step::Failed(format!("the server did not accept a block at {}", self.at()));
+            let failed = Step::Failed(format!(
+                "the server did not accept a block at {}",
+                self.at()
+            ));
             return self.conclude(cx, failed);
         }
         if !cx.preempted {

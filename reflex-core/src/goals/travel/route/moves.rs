@@ -166,7 +166,14 @@ impl Moves<'_> {
 
     /// Into column `c` at the same level, then whatever its floor allows: stand, dig a step
     /// down (never under the body), drop, or bridge the gap.
-    fn forward(&self, n: BlockPos, c: BlockPos, solid_floor: bool, scaffold: u32, out: &mut Vec<Edge>) {
+    fn forward(
+        &self,
+        n: BlockPos,
+        c: BlockPos,
+        solid_floor: bool,
+        scaffold: u32,
+        out: &mut Vec<Edge>,
+    ) {
         let mut dig = Vec::new();
         let Some(body) = self.clear_body(c, &mut dig) else {
             return;

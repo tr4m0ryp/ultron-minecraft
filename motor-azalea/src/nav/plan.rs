@@ -51,7 +51,13 @@ pub fn max_drop() -> i32 {
 
 impl Planner {
     /// Starts a search from the standing cell `from` toward `goal`.
-    pub fn start(&mut self, bot: &Client, from: BlockPos, goal: RouteGoal, opts: RouteOpts) -> bool {
+    pub fn start(
+        &mut self,
+        bot: &Client,
+        from: BlockPos,
+        goal: RouteGoal,
+        opts: RouteOpts,
+    ) -> bool {
         self.cancel();
         let Ok(world) = bot.world() else {
             return false;

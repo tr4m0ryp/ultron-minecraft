@@ -55,7 +55,9 @@ pub fn choose(cx: &mut GoalCx, kind: &str, skipped: &mut Vec<BlockPos>) -> Optio
     for _ in 0..MAX_REJECTS {
         let mut exclude = skipped.clone();
         exclude.push(feet.below());
-        let p = cx.world.nearest_block(kind, feet, SEARCH_RADIUS, &exclude)?;
+        let p = cx
+            .world
+            .nearest_block(kind, feet, SEARCH_RADIUS, &exclude)?;
         if safe(cx, p) {
             return Some(p);
         }

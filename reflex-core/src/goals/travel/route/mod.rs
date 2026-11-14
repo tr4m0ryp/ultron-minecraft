@@ -13,8 +13,8 @@ mod search;
 mod tests;
 
 pub use cell::{drop_of, natural, Cell, Region, Terrain, SCAFFOLD};
+pub use goal::{escaped, open_sky, RouteGoal, SKY_SCAN};
 pub use grid::Grid;
 pub use hop::{Hop, HopKind, Placement};
 pub use moves::RouteOpts;
-pub use goal::{escaped, open_sky, RouteGoal, SKY_SCAN};
 pub use search::{plan, search, Route};
