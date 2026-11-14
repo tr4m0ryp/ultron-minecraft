@@ -221,3 +221,18 @@ fn place_box_stops_when_the_blocks_run_out() {
     let text = s.goal_text("goal_failed");
     assert!(text.contains("ran out of oak_planks; placed 2"), "{text}");
 }
+
+#[test]
+fn place_refuses_a_roof_block_whose_support_face_is_above_the_eyes() {
+    // Live: a two-high wall, the body inside, every roof block "not accepted".
+    let at = BlockPos::new(3, 66, 2);
+    let mut s = Sim::new();
+    s.block(BlockPos::new(3, 64, 2), "oak_planks");
+    s.block(BlockPos::new(3, 65, 2), "oak_planks");
+    s.item("oak_planks", 4, Some(13));
+    s.place_at = Some(at);
+    s.goal("place oak_planks 3 66 2", true);
+    assert!(s.run_until(300, |s| s.has_event("goal_failed")));
+    let text = s.goal_text("goal_failed");
+    assert!(text.contains("is visible from here"), "{text}");
+}
