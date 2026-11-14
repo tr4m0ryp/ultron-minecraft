@@ -54,7 +54,12 @@ impl Behaviour for CreeperStance {
                 return Some(bid);
             }
         }
-        stance_bid(ctx, c, d)
+        let lit = creepers
+            .iter()
+            .find(|e| e.state.fuse_lit && e.pos.dist(me.pos) < KEEP)
+            .copied()
+            .unwrap_or(c);
+        stance_bid(ctx, lit, lit.pos.dist(me.pos), threat_centre(me.pos, &creepers))
     }
 }
 
@@ -109,11 +114,11 @@ fn duel_bid(snap: &Snapshot, c: &Entity, d: f64, threat: Vec3) -> Option<Bid> {
     Some(Bid::new(Priority::P2, 0.8, "creeper_engage", cmds))
 }
 
-fn stance_bid(ctx: &Ctx, c: &Entity, d: f64) -> Option<Bid> {
+fn stance_bid(ctx: &Ctx, c: &Entity, d: f64, threat: Vec3) -> Option<Bid> {
     let snap = ctx.snap;
     let me = &snap.me;
     let approaching = tau(me.pos, me.vel, c.pos, c.vel).is_some();
-    let away = safe_retreat(snap, c.pos);
+    let away = safe_retreat(snap, if c.state.fuse_lit { c.pos } else { threat });
     let face = Commands::default().look_at(c.head());
     if c.state.fuse_lit && d < KEEP {
         let priority = if d <= BLAST {
