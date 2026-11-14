@@ -66,7 +66,9 @@ def latency(events, sessions):
         say, goal = after("chat out"), after("goal set")
         woke = next((c["result"][0] for c in calls if c["name"] == "wait_event" and c["result"]
                      and c["ts"] < t0 <= c["result"][0]), None)
-        rows.append({"chat": text, "say_s": say and (say - t0) / 1000,
+        trace = [f"{c['name']}@{(c['ts'] - t0) / 1000:.1f}" for c in calls
+                 if t0 <= c["ts"] <= (say or t0 + REPLY_WINDOW_MS)]
+        rows.append({"chat": text, "trace": trace, "say_s": say and (say - t0) / 1000,
                      "goal_s": goal and (goal - t0) / 1000,
                      "wake_s": woke and (woke - t0) / 1000})
     return rows
@@ -121,6 +123,7 @@ def main():
     print("reply latency, set_goal:", report["goal"])
     for r in lat:
         print(f"  {r['say_s']}s say, {r['goal_s']}s goal, wake {r['wake_s']}s | {r['chat']}")
+        print(f"     calls: {' '.join(r['trace'])}")
     print("unprompted chat lines:", len(report["unprompted_chat"]))
     for x in report["unprompted_chat"]:
         print("  ", x)
