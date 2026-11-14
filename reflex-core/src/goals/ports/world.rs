@@ -76,6 +76,10 @@ pub trait World {
     fn item_drops(&self, item: Option<&str>, around: Vec3, radius: f64) -> Vec<ItemDrop>;
     /// The player is lying in a bed.
     fn sleeping(&self) -> bool;
+    /// Nothing but air above the head at the standing cell `feet`.
+    fn open_sky(&self, _feet: BlockPos) -> bool {
+        true
+    }
     /// Start crafting `crafts` times; `table` is the crafting table to use for 3x3 recipes.
     fn start_craft(&mut self, item: &str, crafts: u32, table: Option<BlockPos>);
     fn craft_status(&mut self) -> MenuStatus;

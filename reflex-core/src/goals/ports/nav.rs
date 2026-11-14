@@ -12,8 +12,8 @@ pub enum NavTarget {
     /// Stand level with `block` in a neighbouring column, to mine it from the side.
     Beside { block: BlockPos },
     /// Get out under open sky (escaping an enclosure); `hint` is the last place known to
-    /// have it.
-    Sky { hint: BlockPos },
+    /// have it. Without `dig` only walking routes count (a probe for "enclosed").
+    Sky { hint: BlockPos, dig: bool },
 }
 
 /// Hand work a path needs before the legs can go on.

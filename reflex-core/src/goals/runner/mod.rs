@@ -1,10 +1,12 @@
 //! The goal behaviour: one P5 bidder (id `GOAL`) that parses the brain's goal spec into a
 //! resumable state machine, steps it each tick, and reports its status upward.
 
+mod escape;
 mod handle;
 mod report;
 mod status;
 
+pub use escape::ENCLOSED_TICKS;
 pub use handle::GoalHandle;
 pub use report::{Reporter, REPEAT_GAP_TICKS};
 pub use status::{GoalState, GoalStatus};
@@ -33,6 +35,7 @@ pub struct GoalRunner {
     bid_last: bool,
     preempted: bool,
     intent: Option<Intent>,
+    escape: escape::Escape,
 }
 
 impl GoalRunner {
@@ -46,6 +49,7 @@ impl GoalRunner {
             bid_last: false,
             preempted: false,
             intent: None,
+            escape: escape::Escape::default(),
         }
     }
 
@@ -126,8 +130,17 @@ impl Behaviour for GoalRunner {
         let Some(goal) = ctx.knobs.goal.as_ref() else {
             self.retire_active(ctx, false);
             self.suspended.clear();
-            return None;
+            let preempted = self.preempted;
+            let bid = self
+                .escape
+                .tick(ctx, self.nav.as_mut(), self.world.as_mut(), preempted);
+            self.bid_last = bid.is_some();
+            return bid;
         };
+        if self.escape.running() {
+            self.nav.cancel();
+        }
+        self.escape.reset();
         if self.active.as_ref().map(|a| a.goal_id) != Some(goal.id) {
             let queued = |id: u64| ctx.knobs.goal_queue.iter().any(|g| g.id == id);
             let keep = self.active.as_ref().is_some_and(|a| queued(a.goal_id));

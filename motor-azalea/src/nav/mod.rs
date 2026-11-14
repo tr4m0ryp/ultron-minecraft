@@ -78,11 +78,14 @@ impl AzaleaNav {
                 (goal, p)
             }
             NavTarget::Beside { block } => (RouteGoal::Beside { block }, block.feet_centre()),
-            NavTarget::Sky { hint } => (RouteGoal::Sky { hint }, hint.feet_centre()),
+            NavTarget::Sky { hint, .. } => (RouteGoal::Sky { hint }, hint.feet_centre()),
         })
     }
 
-    fn opts(&self) -> RouteOpts {
+    fn opts(&self, t: NavTarget) -> RouteOpts {
+        if let NavTarget::Sky { dig: false, .. } = t {
+            return RouteOpts::walk_only(max_drop());
+        }
         RouteOpts {
             max_drop: max_drop(),
             scaffold: crate::world::scaffold_count(&self.bot),
@@ -97,7 +100,7 @@ impl AzaleaNav {
         };
         self.aimed_at = Some(aim);
         let from = (snap.me.pos + Vec3::new(0.0, 0.01, 0.0)).block();
-        let opts = self.opts();
+        let opts = self.opts(t);
         if self.planner.start(&self.bot, from, goal, opts) {
             NavStatus::Planning
         } else {
