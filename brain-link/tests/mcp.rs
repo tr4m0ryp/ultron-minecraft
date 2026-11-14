@@ -147,7 +147,7 @@ fn tools_round_trip_compactly() {
     let t0 = std::time::Instant::now();
     let (t, _) = m.tool("wait_event", json!({"timeout_s":30}));
     assert!(
-        t.starts_with("no event (timeout)") && t.contains("standing idle"),
+        t.starts_with("no event: the body has no goal") && t.contains("standing idle"),
         "{t}"
     );
     assert!(
