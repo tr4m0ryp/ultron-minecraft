@@ -600,6 +600,12 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   0.45 blocks, so a knock-off takes several hits. Air-strafe alone (R15 airborne) saved 0 of
   8; adding the on-ground step back once the centre is past the edge saved 7 of 7 valid
   trials over about 19 hits each; the block clutch (R6, cobblestone) saved 8 of 8.
+- Staged survival (tools/live/staged/survival.py: 30x30 walled arena, frozen midnight, iron
+  sword and 8 bread, brain absent, 4 waves of 225 s): melee-only baseline (D2 alone) 16
+  deaths, 562 HP taken, 3 kills; full catalog 10 deaths, 351 HP, 0 kills; after fixing D2's
+  gaze starvation and D3's futile retreat, 7 deaths, 324 HP, 3 kills. One seed per arm, so
+  per-wave differences of one or two deaths are within run-to-run noise. Skeleton arrows
+  remain the main killer (no shield, no cover in the arena), then creepers.
 - Mindcraft profile defaults for cowardice vs self_defense were not checked.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
