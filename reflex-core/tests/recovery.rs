@@ -107,6 +107,23 @@ fn r15_steers_back_to_the_ledge_when_knocked_off() {
 }
 
 #[test]
+fn r15_steps_back_when_a_hit_leaves_the_centre_past_the_edge() {
+    let mut s = platform_edge();
+    s.me.pos = Vec3::new(3.17, 64.0, 0.5);
+    let bid = eval(&mut KnockbackRecovery, &s, &knobs())
+        .0
+        .expect("overhanging");
+    assert_eq!(bid.priority, Priority::P1);
+    assert_eq!(bid.note, "edge_step_back");
+    assert!(bid.commands.legs.unwrap().heading.x < -0.9);
+    s.me.pos.x = 2.9;
+    assert!(
+        eval(&mut KnockbackRecovery, &s, &knobs()).0.is_none(),
+        "centre still over the platform"
+    );
+}
+
+#[test]
 fn r15_is_p1_for_a_survivable_drop() {
     let mut s = flat();
     cliff(&mut s, 3, Some(6));

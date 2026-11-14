@@ -1,5 +1,5 @@
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
-use crate::behaviours::common::nearest_ledge;
+use crate::behaviours::common::{heading_to, nearest_ledge, unsafe_drop};
 use crate::channels::{Commands, GazeCmd, LegsCmd, Speed};
 use crate::math::{yaw_pitch_to, Vec3};
 
@@ -13,6 +13,12 @@ const LEDGE_RADIUS: i32 = 3;
 /// sprint held and the yaw turned toward it, which is the most air control vanilla allows.
 /// P0 when the landing would be lethal, else P1. The landing save itself (block or water)
 /// is R6's.
+///
+/// On the ground with the centre already past the edge (a hit pushed us there; R5 stops
+/// our own steps well short of it), step back to the middle of the nearest standable cell
+/// at P1 before the next hit finishes the job. Live, a zombie's push moves the player only
+/// about 0.45 blocks, so the knock-off usually takes two or three hits and this step is
+/// where it is won.
 #[derive(Default)]
 pub struct KnockbackRecovery;
 
@@ -23,8 +29,17 @@ impl Behaviour for KnockbackRecovery {
 
     fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
         let me = &ctx.snap.me;
-        if me.on_ground || me.in_water {
+        if me.in_water {
             return None;
+        }
+        if me.on_ground {
+            if !unsafe_drop(&ctx.snap.blocks, me.pos.block()) {
+                return None;
+            }
+            let ledge = nearest_ledge(&ctx.snap.blocks, me.pos, 1)?;
+            let back = heading_to(me.pos, ledge.cell.feet_centre());
+            let cmds = Commands::default().legs(LegsCmd::toward(back, Speed::Walk));
+            return Some(Bid::new(Priority::P1, 1.0, "edge_step_back", cmds));
         }
         let fall = ctx.pred.fall?;
         if !fall.into_void && fall.damage < 1.0 {
