@@ -1,5 +1,11 @@
 //! Geometry helpers shared by the behaviours: escape steps, retreat headings, hazard probes.
 
+mod terrain;
+
+pub use terrain::{
+    clearance, knockback_room, nearest_ledge, nearest_shore, unsafe_drop, Bound, Ledge, SAFE_FALL,
+};
+
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{BlockKind, LocalBlocks, Snapshot};
 
@@ -87,21 +93,41 @@ pub fn safe_retreat(snap: &Snapshot, threat: Vec3) -> Vec3 {
     open_retreat(snap, threat).unwrap_or_else(|| away_from(snap.me.pos, threat))
 }
 
+/// Retreat headings need this much clear ground ahead to count as open.
+const RETREAT_CLEAR: f64 = 2.5;
+/// Below this the heading is not taken at all.
+const RETREAT_MIN: f64 = 1.0;
+
 /// Like `safe_retreat`, but `None` when every retreat heading is blocked or unsafe: the
-/// player is cornered and running only presses it against the edge or wall.
+/// player is cornered and running only presses it against the edge or wall. Tries straight
+/// away, then 45 and 90 degrees either side, taking the first with `RETREAT_CLEAR` of
+/// ground ahead; otherwise the roomiest heading with at least `RETREAT_MIN`. Probing a few
+/// blocks ahead (not just the next cell) keeps the retreat from running onto an edge and
+/// then fighting there with the back to the drop.
 pub fn open_retreat(snap: &Snapshot, threat: Vec3) -> Option<Vec3> {
     let base = away_from(snap.me.pos, threat);
     let rot = |v: Vec3, deg: f64| {
         let (s, c) = deg.to_radians().sin_cos();
         Vec3::new(v.x * c - v.z * s, 0.0, v.x * s + v.z * c)
     };
-    [0.0, 45.0, -45.0, 90.0, -90.0].into_iter().find_map(|deg| {
+    let mut best: Option<(f64, Vec3)> = None;
+    for deg in [0.0, 45.0, -45.0, 90.0, -90.0] {
         let h = rot(base, deg);
         let next = (snap.me.pos + h * 1.0).block();
         let floor = snap.blocks.get(next.below());
         let body_ok = snap.blocks.get(next).passable() && !snap.blocks.get(next).contact_hazard();
-        (body_ok && (floor.supports() || floor == BlockKind::Water)).then_some(h)
-    })
+        if !(body_ok && (floor.supports() || floor == BlockKind::Water)) {
+            continue;
+        }
+        let (room, _) = clearance(&snap.blocks, snap.me.pos, h, RETREAT_CLEAR);
+        if room >= RETREAT_CLEAR {
+            return Some(h);
+        }
+        if room >= RETREAT_MIN && best.is_none_or(|(r, _)| room > r) {
+            best = Some((room, h));
+        }
+    }
+    best.map(|(_, h)| h)
 }
 
 pub fn heading_to(me: Vec3, target: Vec3) -> Vec3 {
