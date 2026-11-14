@@ -12,6 +12,9 @@ pub struct FallPrediction {
     /// Predicted fall damage in HP after mitigation by the landing block.
     pub damage: f32,
     pub landing: BlockKind,
+    /// Block whose top (or, for a non-supporting landing like water, whose volume) the feet
+    /// reach; `None` over the void.
+    pub floor: Option<crate::math::BlockPos>,
     /// The column has no floor above the void.
     pub into_void: bool,
 }
@@ -31,6 +34,7 @@ pub fn predict_fall(snap: &Snapshot) -> Option<FallPrediction> {
             t_land: ticks_to_reach(me.pos.y, me.vel.y, (snap.world_min_y - 64) as f64),
             damage: f32::INFINITY,
             landing: BlockKind::Air,
+            floor: None,
             into_void: true,
         });
     };
@@ -51,6 +55,7 @@ pub fn predict_fall(snap: &Snapshot) -> Option<FallPrediction> {
         t_land,
         damage,
         landing: kind,
+        floor: Some(floor_pos),
         into_void: false,
     })
 }

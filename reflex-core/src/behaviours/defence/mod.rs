@@ -9,6 +9,6 @@ mod totem;
 
 pub use creeper::CreeperStance;
 pub use filters::{AttackMask, EndermanGazeFilter};
-pub use melee::{melee_commands, MeleeDefence};
+pub use melee::{footing, melee_commands, MeleeDefence};
 pub use ranged::{ProjectileEvade, RangedCover};
 pub use totem::Totem;
