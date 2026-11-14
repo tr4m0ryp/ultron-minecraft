@@ -11,7 +11,7 @@ pub use target::SEARCH_RADIUS;
 
 use crate::behaviours::common::heading_to;
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
-use crate::goals::items::equip;
+use crate::goals::items::{equip, replaceable};
 use crate::goals::ports::{kind_matches, NavTarget, Navigator, ToolNeed};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::route::{drop_of, natural};
@@ -149,7 +149,7 @@ impl Mine {
     fn advance(&mut self, cx: &mut GoalCx, pos: BlockPos, ticks: u32) -> Step {
         let feet = cx.me_pos().block();
         let floor = cx.world.block_at(pos.below()).unwrap_or_default();
-        let solid_floor = !floor.is_empty() && !super::super::items::replaceable(&floor);
+        let solid_floor = !floor.is_empty() && !replaceable(&floor);
         if pos.y != feet.y || !solid_floor || ticks > ADVANCE_TICKS + DIG_LIMIT_TICKS {
             self.pickup.arm();
             self.phase = Phase::Pickup(pos);
@@ -163,7 +163,7 @@ impl Mine {
         }
         let head = pos.above();
         let head_name = cx.world.block_at(head).unwrap_or_default();
-        if !super::super::items::replaceable(&head_name) && !head_name.is_empty() {
+        if !replaceable(&head_name) && !head_name.is_empty() {
             if !natural(&head_name) || !target::safe(cx, head) {
                 self.pickup.arm();
                 self.phase = Phase::Pickup(pos);

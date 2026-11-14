@@ -59,6 +59,7 @@ impl Sim {
                 if n >= self.dig_ticks {
                     let mut w = self.world.state();
                     if let Some(name) = w.blocks.remove(&p) {
+                        let name = reflex_core::goals::travel::route::drop_of(&name).to_string();
                         match self.drop_offset {
                             Some(off) => {
                                 let id = 500 + w.drops.len() as u32;
