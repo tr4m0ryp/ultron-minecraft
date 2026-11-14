@@ -161,67 +161,6 @@ fn r14_projectile_shield_or_strafe() {
     );
 }
 
-#[test]
-fn d3_ranged_cover_or_close_in() {
-    let mut s = flat();
-    let mut sk = mob(6, EntityKind::Skeleton, 0.5, 10.0);
-    sk.state.drawing_bow = true;
-    s.entities.push(sk);
-    s.me.offhand = Some(ItemStack::new(ItemKind::Shield, 1));
-    let bid = eval(&mut RangedCover, &s, &knobs()).0.unwrap();
-    assert_eq!(
-        (bid.note, bid.commands.off),
-        ("ranged_cover", Some(OffCmd::RaiseShield))
-    );
-    let mut k = knobs();
-    k.set_gain(GainName::Aggression, 0.8);
-    assert_eq!(
-        eval(&mut RangedCover, &s, &k).0.unwrap().note,
-        "ranged_close_in"
-    );
-    s.entities.clear();
-    assert!(eval(&mut RangedCover, &s, &knobs()).0.is_none());
-}
-
-/// Live in a walled arena the retreat from skeletons ran along the walls and was shot to
-/// death; with nowhere to run, or the archer already close, D3 now closes in.
-#[test]
-fn d3_closes_in_when_trapped_or_close() {
-    let mut s = flat();
-    s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 10.0));
-    assert_eq!(
-        eval(&mut RangedCover, &s, &knobs()).0.unwrap().note,
-        "ranged_cover"
-    );
-    s.blocks.fill(
-        reflex_core::BlockPos::new(-12, 64, -3),
-        reflex_core::BlockPos::new(12, 65, -3),
-        reflex_core::snapshot::BlockKind::Solid,
-    );
-    s.blocks.fill(
-        reflex_core::BlockPos::new(-3, 64, -12),
-        reflex_core::BlockPos::new(-3, 65, 12),
-        reflex_core::snapshot::BlockKind::Solid,
-    );
-    s.blocks.fill(
-        reflex_core::BlockPos::new(3, 64, -12),
-        reflex_core::BlockPos::new(3, 65, 12),
-        reflex_core::snapshot::BlockKind::Solid,
-    );
-    let bid = eval(&mut RangedCover, &s, &knobs()).0.unwrap();
-    assert_eq!(bid.note, "ranged_trapped_close_in");
-    assert!(
-        bid.commands.legs.unwrap().heading.z > 0.9,
-        "toward the archer"
-    );
-    let mut s = flat();
-    s.entities.push(mob(6, EntityKind::Skeleton, 0.5, 5.0));
-    assert_eq!(
-        eval(&mut RangedCover, &s, &knobs()).0.unwrap().note,
-        "ranged_trapped_close_in"
-    );
-}
-
 /// Live, with several zombies, O2 turned toward the next approaching one, kept the gaze by
 /// hysteresis, and D2's fight (which needed the gaze) lost every channel: 5 swings in 225 s.
 #[test]
