@@ -137,7 +137,9 @@ fn c6_sliding_along_a_wall_still_escalates_to_digging() {
         s.tick = 1000 + t;
         let from = s.me.pos;
         // The wall blocks x; any sideways input slides along it.
-        s.me.pos.z += legs.heading.z.signum() * 0.2;
+        if legs.heading.z.abs() > 0.1 {
+            s.me.pos.z += legs.heading.z.signum() * 0.2;
+        }
         let eff = Efference {
             legs: Some(legs),
             from,
