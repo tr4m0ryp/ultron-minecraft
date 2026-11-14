@@ -21,6 +21,8 @@ pub struct Shared {
     pub jobs: VecDeque<Job>,
     pub wakes: VecDeque<WakeEvent>,
     pub chat: VecDeque<ChatLine>,
+    /// No goal is running (none set, or the last one ended).
+    pub idle: bool,
 }
 
 impl Shared {

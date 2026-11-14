@@ -18,6 +18,7 @@ use std::sync::mpsc::{self, Receiver};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
+use reflex_core::goals::GoalState;
 use reflex_core::Snapshot;
 use serde_json::Value;
 
@@ -101,6 +102,7 @@ impl Bridge {
                 return Events {
                     events: s.wakes.drain(..).collect(),
                     timed_out: false,
+                    idle: false,
                 };
             }
             let now = Instant::now();
@@ -108,6 +110,7 @@ impl Bridge {
                 return Events {
                     events: Vec::new(),
                     timed_out: true,
+                    idle: s.idle,
                 };
             }
             s = self
@@ -139,8 +142,12 @@ impl Bridge {
         mut echo: impl FnMut(&WakeEvent),
     ) -> Vec<String> {
         let wakes = host.upward().take_wake(snap.tick);
+        let idle = host
+            .goal_status()
+            .is_none_or(|g| matches!(g.state, GoalState::Done | GoalState::Failed));
         let (jobs, wakes_pending) = {
             let mut s = self.lock();
+            s.idle = idle;
             s.hear(snap);
             if !wakes.is_empty() {
                 let fresh = wakes.len();

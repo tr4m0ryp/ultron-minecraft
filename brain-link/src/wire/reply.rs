@@ -86,6 +86,9 @@ pub struct WakeEvent {
 pub struct Events {
     pub events: Vec<WakeEvent>,
     pub timed_out: bool,
+    /// On a timeout: the body has no running goal, so it stands idle.
+    #[serde(default)]
+    pub idle: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
