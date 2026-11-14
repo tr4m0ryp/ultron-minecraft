@@ -26,6 +26,11 @@ pub fn probe_drop(ctx: &Ctx, legs: &LegsCmd) -> Option<Drop> {
     if !me.on_ground || legs.speed == Speed::Stop || legs.heading.horizontal().len() < 1e-6 {
         return None;
     }
+    // A sneaking body backs off from edges by itself (the physics keeps its box over a
+    // block), so a sneaking step never drops: that is how a player bridges a gap.
+    if legs.speed == Speed::Sneak {
+        return None;
+    }
     let step = expected_step(legs);
     let next = me.pos + step + legs.heading.horizontal().normalized() * LOOKAHEAD;
     let cell = next.block();

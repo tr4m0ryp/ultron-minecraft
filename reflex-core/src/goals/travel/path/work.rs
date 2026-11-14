@@ -15,6 +15,8 @@ const PLACE_LIMIT: u32 = 80;
 const CLICK_GAP: u32 = 4;
 /// Feet this far above the cell's floor clear the block about to go under them.
 const PILLAR_CLEARANCE: f64 = 1.02;
+/// The eye this far past the edge sees the face of the block it stands on.
+const EDGE_MARGIN: f64 = 0.08;
 
 pub enum Outcome {
     /// Hand work under way: bid this steer.
@@ -94,7 +96,19 @@ pub fn step(
                 s.work = Some(Work::Place { at, click: false });
             }
         }
-        _ => s.work = Some(Work::Place { at, click }),
+        _ => {
+            // Bridge like a player: sneak to the edge until the eye is past the face to
+            // click (the face of the floor block that looks into the gap), then place.
+            let dir = (at.cell.feet_centre() - at.against.feet_centre()).horizontal();
+            let past = (me.pos - hold).dot(dir) - 0.5;
+            s.waypoint = hold + dir * 0.9;
+            s.sneak = true;
+            let seen = past > EDGE_MARGIN;
+            s.work = Some(Work::Place {
+                at,
+                click: click && seen,
+            });
+        }
     }
     Outcome::Busy(s)
 }

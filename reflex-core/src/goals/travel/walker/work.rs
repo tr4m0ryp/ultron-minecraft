@@ -27,7 +27,7 @@ pub fn work_plan(
 ) -> Result<Plan, NavFailure> {
     let me = cx.snap().me.clone();
     let off = (me.pos - s.waypoint).horizontal().len();
-    let mut legs = if off > HOLD {
+    let mut legs = if off > HOLD || s.sneak {
         LegsCmd::toward(heading_to(me.pos, s.waypoint), Speed::Sneak)
     } else {
         LegsCmd::stop()

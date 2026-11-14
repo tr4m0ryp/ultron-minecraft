@@ -37,6 +37,8 @@ pub struct Steer {
     pub sprint: bool,
     /// Dig or place first; the legs hold the waypoint meanwhile.
     pub work: Option<Work>,
+    /// Approach the waypoint sneaking (to the edge of a block, never off it).
+    pub sneak: bool,
 }
 
 impl Steer {
@@ -46,6 +48,7 @@ impl Steer {
             jump,
             sprint,
             work: None,
+            sneak: false,
         }
     }
 }
