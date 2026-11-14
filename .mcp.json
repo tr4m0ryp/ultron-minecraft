@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "minecraft": {
+      "type": "stdio",
+      "command": "./target/release/brain-link-mcp",
+      "args": []
+    }
+  }
+}
