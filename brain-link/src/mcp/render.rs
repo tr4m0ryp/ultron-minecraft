@@ -93,8 +93,8 @@ fn observation(o: &Observation) -> String {
 
 fn events(e: &Events) -> String {
     if e.events.is_empty() && e.idle {
-        return "no event (timeout). The body has no goal and is standing idle: take the next \
-                step of your project now (at night too: craft, build or fix at the base)"
+        return "no event: the body has no goal and is standing idle. Take the next step of \
+                your project now (at night too: craft, build or fix at the base)"
             .into();
     }
     if e.events.is_empty() {
