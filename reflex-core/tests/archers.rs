@@ -50,7 +50,11 @@ fn cover_is_the_nearest_hidden_reachable_cell() {
     wall(&mut s, (2, 2), (3, 3));
     let spot = cover_spot(&s, &[eye]).expect("behind the pillar");
     assert!(spot.z <= 1 && spot.x >= 2, "south of the pillar: {spot:?}");
-    assert!(!reflex_core::behaviours::common::sees(&s.blocks, eye, spot.feet_centre()));
+    assert!(!reflex_core::behaviours::common::sees(
+        &s.blocks,
+        eye,
+        spot.feet_centre()
+    ));
 }
 
 #[test]
@@ -61,7 +65,11 @@ fn shield_goes_up_only_when_the_arrow_is_due_and_down_to_strike() {
     s.entities.push(archer(6, 0.5, 10.5, Some(5)));
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
     assert_eq!((bid.note, bid.commands.off), ("ranged_close_in", None));
-    assert_eq!(bid.commands.legs.unwrap().speed, Speed::Sprint, "reload: sprint in");
+    assert_eq!(
+        bid.commands.legs.unwrap().speed,
+        Speed::Sprint,
+        "reload: sprint in"
+    );
     s.entities = vec![archer(6, 0.5, 10.5, Some(17))];
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "ranged_shield_advance");
@@ -69,7 +77,11 @@ fn shield_goes_up_only_when_the_arrow_is_due_and_down_to_strike() {
     assert!(matches!(bid.commands.gaze, Some(GazeCmd::LookAt(p)) if p.z > 10.0));
     s.entities = vec![archer(6, 0.5, 2.5, Some(17))];
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
-    assert_eq!(bid.commands.main, Some(MainCmd::Attack(6)), "in reach: strike");
+    assert_eq!(
+        bid.commands.main,
+        Some(MainCmd::Attack(6)),
+        "in reach: strike"
+    );
     assert_eq!(bid.commands.off, None, "shield lowered for the strike");
 }
 
@@ -89,7 +101,10 @@ fn without_a_shield_the_approach_zigzags_and_holds_its_side_through_a_release() 
     s.entities = vec![archer(6, 0.5, 11.5, None)];
     s.entities[0].state.since_shot = Some(1);
     let flipped = eval(&mut d3, &s, &knobs()).0.unwrap();
-    assert!(flipped.commands.legs.unwrap().heading.x * h.x < 0.0, "reload: flip");
+    assert!(
+        flipped.commands.legs.unwrap().heading.x * h.x < 0.0,
+        "reload: flip"
+    );
 }
 
 #[test]
@@ -100,7 +115,10 @@ fn low_health_takes_cover_or_circles_instead_of_running() {
     let bid = eval(&mut RangedCover::default(), &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "ranged_evade");
     let legs = bid.commands.legs.unwrap();
-    assert!(legs.heading.z.abs() < 0.1 && legs.speed == Speed::Walk, "sideways walk");
+    assert!(
+        legs.heading.z.abs() < 0.1 && legs.speed == Speed::Walk,
+        "sideways walk"
+    );
     assert!(
         eval(&mut Health, &s, &knobs()).0.is_none(),
         "H2 does not run from archers"
@@ -156,10 +174,17 @@ fn meals_wait_for_the_reload_or_for_cover() {
     s.me.selected_slot = 7;
     s.me.food = 5;
     s.entities.push(archer(6, 0.5, 13.5, None));
-    assert!(eval(&mut Hunger::default(), &s, &knobs()).0.is_none(), "may draw now");
+    assert!(
+        eval(&mut Hunger::default(), &s, &knobs()).0.is_none(),
+        "may draw now"
+    );
     s.entities[0].state.since_shot = Some(2);
     let bid = eval(&mut Hunger::default(), &s, &knobs()).0.unwrap();
-    assert_eq!(bid.commands.main, Some(MainCmd::Use), "just shot: 58 ticks of reload");
+    assert_eq!(
+        bid.commands.main,
+        Some(MainCmd::Use),
+        "just shot: 58 ticks of reload"
+    );
     s.entities[0].state.since_shot = Some(40);
     assert!(eval(&mut Hunger::default(), &s, &knobs()).0.is_none());
     wall(&mut s, (-2, 5), (2, 5));

@@ -34,13 +34,20 @@ fn duel_meets_strikes_and_recoils() {
     let bid = eval(&mut CreeperStance, &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "creeper_strike");
     assert_eq!(bid.commands.main, Some(MainCmd::Attack(1)));
-    assert_eq!(bid.commands.legs.unwrap().speed, Speed::Sprint, "sprint hit");
+    assert_eq!(
+        bid.commands.legs.unwrap().speed,
+        Speed::Sprint,
+        "sprint hit"
+    );
 
     s.entities = vec![creeper(4.5, Some(6))];
     s.me.attack_ready = 0.3;
     let bid = eval(&mut CreeperStance, &s, &knobs()).0.unwrap();
     assert_eq!(bid.note, "creeper_recoil");
-    assert!(bid.commands.legs.unwrap().heading.z < -0.9, "back off past 7");
+    assert!(
+        bid.commands.legs.unwrap().heading.z < -0.9,
+        "back off past 7"
+    );
 
     s.entities = vec![creeper(10.5, None)];
     assert_eq!(

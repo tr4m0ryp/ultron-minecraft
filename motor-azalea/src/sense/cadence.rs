@@ -79,7 +79,11 @@ mod tests {
         let st = step(12, false);
         assert_eq!((st.draw_ticks, st.since_shot), (0, None), "abandoned draw");
         step(13, true);
-        assert_eq!(step(33, false).since_shot, Some(0), "20-tick draw ended: shot");
+        assert_eq!(
+            step(33, false).since_shot,
+            Some(0),
+            "20-tick draw ended: shot"
+        );
         assert_eq!(step(43, false).since_shot, Some(10));
     }
 
