@@ -92,7 +92,6 @@ def pillar_tops(r: Rcon) -> list[tuple[int, int, int]]:
                 lo = mid
             else:
                 hi = mid - 1
-        # a spike's centre column is obsidian up to the top, then bedrock under the crystal
-        if lo > 60 and (block_is(r, x, lo + 1, z, "bedrock") or block_is(r, x, lo + 1, z, "obsidian")):
+        if lo >= 76:  # spikes are 76..103 high; anything lower is not a pillar column
             tops.append((x, z, lo))
     return tops
