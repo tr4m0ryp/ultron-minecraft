@@ -1,20 +1,18 @@
 //! Per-tick debug trace, enabled by `MOTOR_TRACE=1`: the snapshot vitals, the owner of each
 //! body channel, and every event the executor emitted this tick (including Log class).
 
-use std::time::Instant;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use reflex_core::{Channel, Executor, Snapshot};
 
 pub struct Trace {
     on: bool,
-    start: Instant,
 }
 
 impl Default for Trace {
     fn default() -> Self {
         Self {
             on: std::env::var_os("MOTOR_TRACE").is_some_and(|v| v != "0"),
-            start: Instant::now(),
         }
     }
 }
@@ -33,7 +31,9 @@ impl Trace {
             "T {} ms={} pos={:.2},{:.2},{:.2} hp={:.1} food={} sat={:.1} air={} fire={} \
              water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={}",
             snap.tick,
-            self.start.elapsed().as_millis(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map_or(0, |d| d.as_millis()),
             me.pos.x,
             me.pos.y,
             me.pos.z,
@@ -53,7 +53,10 @@ impl Trace {
             own(Channel::Inv),
         );
         for c in &snap.chat {
-            println!("C {} sender={} pos={:?} text={}", snap.tick, c.sender, c.sender_pos, c.text);
+            println!(
+                "C {} sender={} pos={:?} text={}",
+                snap.tick, c.sender, c.sender_pos, c.text
+            );
         }
         for d in &snap.damage {
             println!(
@@ -62,7 +65,10 @@ impl Trace {
             );
         }
         for e in exec.upward.log().rev().take_while(|e| e.tick == snap.tick) {
-            println!("E {} {:?} {} {} {}", e.tick, e.class, e.kind, e.subject, e.text);
+            println!(
+                "E {} {:?} {} {} {}",
+                e.tick, e.class, e.kind, e.subject, e.text
+            );
         }
     }
 }

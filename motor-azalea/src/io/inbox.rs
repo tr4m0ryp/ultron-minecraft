@@ -11,7 +11,11 @@ use reflex_core::{math::Vec3, Executor, Mode};
 
 #[derive(Debug, PartialEq)]
 pub enum BrainCmd {
-    Goal { target: Vec3, priority: f32, spec: String },
+    Goal {
+        target: Vec3,
+        priority: f32,
+        spec: String,
+    },
     GoalEnd,
     Mode(Mode),
     Say(String),
@@ -46,7 +50,11 @@ impl Inbox {
         let mut say = Vec::new();
         while let Ok(cmd) = self.rx.try_recv() {
             match cmd {
-                BrainCmd::Goal { target, priority, spec } => {
+                BrainCmd::Goal {
+                    target,
+                    priority,
+                    spec,
+                } => {
                     exec.knobs.set_goal(spec, priority, Some(target), false);
                 }
                 BrainCmd::GoalEnd => {
@@ -70,8 +78,16 @@ pub fn parse(line: &str) -> Option<BrainCmd> {
             let target = Vec3::new(num()?, num()?, num()?);
             let priority = num().unwrap_or(0.5) as f32;
             let spec: Vec<&str> = it.collect();
-            let spec = if spec.is_empty() { "walk".to_string() } else { spec.join(" ") };
-            Some(BrainCmd::Goal { target, priority, spec })
+            let spec = if spec.is_empty() {
+                "walk".to_string()
+            } else {
+                spec.join(" ")
+            };
+            Some(BrainCmd::Goal {
+                target,
+                priority,
+                spec,
+            })
         }
         "goal-end" => Some(BrainCmd::GoalEnd),
         "mode" => Some(BrainCmd::Mode(match rest.trim() {

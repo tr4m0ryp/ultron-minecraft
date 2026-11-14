@@ -12,7 +12,11 @@ pub fn publish(exec: &mut Executor, now: u64) {
     if now % DIGEST_EVERY == 0 {
         let d = exec.take_digest();
         if !d.text.is_empty() {
-            println!("DIGEST t={now} dropped={}\n{}", d.dropped, d.text.trim_end());
+            println!(
+                "DIGEST t={now} dropped={}\n{}",
+                d.dropped,
+                d.text.trim_end()
+            );
         }
     }
 }

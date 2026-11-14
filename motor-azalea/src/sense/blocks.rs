@@ -6,9 +6,13 @@ use super::block_kind::classify;
 pub const RADIUS_H: i32 = 6;
 pub const BELOW: i32 = 8;
 pub const ABOVE: i32 = 3;
+/// Columns within this horizontal radius are also read up to `COLUMN_UP` above the feet, so
+/// the surface reflex (R8 scans 16 up from the head) can see open water above.
+pub const COLUMN_RADIUS: i32 = 4;
+pub const COLUMN_UP: i32 = 18;
 
-/// Fill `out` with the box around `feet` plus the full column under the feet down to the
-/// world floor. Cells in unloaded chunks stay unset (`Unknown`).
+/// Fill `out` with the box around `feet`, the columns above it, and the full column under
+/// the feet down to the world floor. Cells in unloaded chunks stay unset (`Unknown`).
 pub fn read(world: &World, feet: BlockPos, out: &mut LocalBlocks) {
     let get = |p: BlockPos| {
         world
@@ -18,6 +22,16 @@ pub fn read(world: &World, feet: BlockPos, out: &mut LocalBlocks) {
     for dx in -RADIUS_H..=RADIUS_H {
         for dz in -RADIUS_H..=RADIUS_H {
             for dy in -BELOW..=ABOVE {
+                let p = feet.offset(dx, dy, dz);
+                if let Some(k) = get(p) {
+                    out.set(p, k);
+                }
+            }
+        }
+    }
+    for dx in -COLUMN_RADIUS..=COLUMN_RADIUS {
+        for dz in -COLUMN_RADIUS..=COLUMN_RADIUS {
+            for dy in ABOVE + 1..=COLUMN_UP {
                 let p = feet.offset(dx, dy, dz);
                 if let Some(k) = get(p) {
                     out.set(p, k);
