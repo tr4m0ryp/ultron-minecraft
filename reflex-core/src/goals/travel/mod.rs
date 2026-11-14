@@ -13,4 +13,4 @@ pub use follow::{person_label, resolve_person, Follow};
 pub use go_to::GoTo;
 pub use path::{face_point, PathFollower, DIG_LIMIT, STALL_TICKS};
 pub use stay::Stay;
-pub use walker::{arrived, target_pos, Walk, Walker, MAX_NAV_FAILURES};
+pub use walker::{arrived, scaffold_slot, target_pos, Walk, Walker, MAX_NAV_FAILURES};
