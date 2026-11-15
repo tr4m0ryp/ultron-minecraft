@@ -44,7 +44,7 @@ class LMEncoder(Encoder):
         from transformers import AutoModel, AutoTokenizer
         torch.set_num_threads(threads)
         path = os.path.expanduser(path)
-        self.tok, self.model = AutoTokenizer.from_pretrained(path), AutoModel.from_pretrained(path).eval()
+        self.tok, self.model = AutoTokenizer.from_pretrained(path), AutoModel.from_pretrained(path).float().eval()
         self.path = os.path.join(DATA, "emb-lm135-last.npz") if cache else None
         self.cache = dict(np.load(self.path)) if self.path and os.path.exists(self.path) else {}
 
