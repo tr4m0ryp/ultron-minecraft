@@ -20,12 +20,12 @@ def options(c):
 
 
 RULES = [  # first match wins; reads the Chat field first, then the body state
-    ("eat_now", lambda s, ch: int(re.search(r"Hunger (\d+)", s).group(1)) <= 6),
+    ("eat_now", lambda s, ch: int(re.search(r"hunger (\d+)", s).group(1)) <= 6),
     ("stay", lambda s, ch: re.search(r"\b(wait|stay|hold still|don't move)\b", ch)),
     ("guard", lambda s, ch: re.search(r"\b(guard|protect|cover me|watch my back|keep me safe)\b", ch)),
-    ("sleep_in_bed", lambda s, ch: "bed " in s.split("Nearby:")[1].split("|")[0] and re.search(r"night|dusk", s)),
+    ("sleep_in_bed", lambda s, ch: "bed " in s.split("nearby:")[1].split("|")[0] and re.search(r"night|dusk", s)),
     ("give", lambda s, ch: re.search(r"\b(give me|hand me|pass me|toss me|can i have)\b", ch)),
-    ("craft", lambda s, ch: "crafting table" in s.split("Nearby:")[1].split("|")[0]),
+    ("craft", lambda s, ch: "crafting table" in s.split("nearby:")[1].split("|")[0]),
     ("collect", lambda s, ch: "dropped item" in s),
     ("place", lambda s, ch: re.search(r"\b(place|put|set|block the)\b", ch)),
     ("come_here", lambda s, ch: re.search(r"\b(come|over here)\b", ch)),
@@ -40,7 +40,7 @@ def rule(c):
     s = c["state"].lower()
     ch = s.split("chat:")[1].split("|")[0] if "chat:" in s else ""
     for goal, test in RULES:
-        if test(c["state"] if goal == "eat_now" else s, ch):
+        if test(s, ch):
             return goal
     return "follow"
 
