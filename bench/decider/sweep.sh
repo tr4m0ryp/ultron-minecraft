@@ -49,7 +49,7 @@ full)     # all 60 mixed cases, accuracy
     run "full60-$1" "$2" --reps 1 --calib
   done ;;
 embed)
-  e() { [ -s "$OUT/$1.json" ] || "$EPY" "$HERE/embed_run.py" --out "$OUT/$1.json" --gate-wait "${GATE_WAIT:-45}" "${@:2}" >/dev/null 2>"$OUT/$1.err" || echo "failed: $1"; }
+  e() { [ -s "$OUT/$1.json" ] || "$EPY" "$HERE/embed_run.py" --label "$1" --out "$OUT/$1.json" --gate-wait "${GATE_WAIT:-45}" "${@:2}" >/dev/null 2>"$OUT/$1.err" || echo "failed: $1"; }
   e embed-mixed20 --stride 3; e embed-mixed60 --reps 1
   e embed-goals --cases "$HERE/cases_goals.jsonl" --shots "$HERE/shots/goals.jsonl"
   for t in 2 8; do e "embed-goals-t$t" --cases "$HERE/cases_goals.jsonl" --shots "$HERE/shots/goals.jsonl" --threads $t; done ;;
