@@ -88,10 +88,12 @@ fn an_impossible_potion_gives_the_whole_shopping_list() {
     let e = plan(&book(), &kit, "healing_potion", 1, STAND, false).unwrap_err();
     assert_eq!(
         e,
-        "cannot craft healing_potion: need 1 awkward_potion, have 0: brew 1 from 1 water_potion \
+        "cannot craft healing_potion: need 1 crafting_table, have 0: craft 1 from 4 any plank; \
+         need 4 any plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; \
+         need 1 awkward_potion, have 0: brew 1 from 1 water_potion \
          and 1 nether_wart; need 1 nether_wart, have 0; need 1 glistering_melon_slice, have 0: \
          craft 1 from 8 gold_nugget and 1 melon_slice; need 8 gold_nugget, have 0; \
-         need 1 melon_slice, have 0. Get 1 nether_wart, 8 gold_nugget, 1 melon_slice."
+         need 1 melon_slice, have 0. Get 1 any log, 1 nether_wart, 8 gold_nugget, 1 melon_slice."
     );
 }
 
@@ -114,8 +116,9 @@ fn a_diamond_pickaxe_is_upgraded_at_a_smithing_table() {
     assert_eq!(
         steps(&p),
         [
-            "craft 8 oak_planks",
+            "craft 4 oak_planks",
             "craft 1 crafting_table",
+            "craft 4 oak_planks",
             "craft 1 smithing_table",
             "smith 1 netherite_pickaxe"
         ]

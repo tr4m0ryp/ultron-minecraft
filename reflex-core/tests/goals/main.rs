@@ -14,5 +14,6 @@ mod runner;
 mod sight;
 mod sim;
 mod spec;
+mod stations;
 mod trace;
 mod travel;
