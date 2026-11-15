@@ -17,8 +17,7 @@ fn side(yaw: f32) -> (i32, i32) {
     }
 }
 
-#[test]
-fn a_bed_against_the_back_wall_gets_its_head_inside() {
+fn shelter() -> Sim {
     let mut s = Sim::new();
     // 5x5 shelter around x 3..7, z -2..2: walls two high, roof, door in the west wall.
     for y in 64..=66 {
@@ -32,8 +31,14 @@ fn a_bed_against_the_back_wall_gets_its_head_inside() {
             }
         }
     }
-    s.snap.me.pos = Vec3::new(5.5, 64.0, 0.5);
     s.item("white_bed", 1, Some(3));
+    s
+}
+
+#[test]
+fn a_bed_against_the_back_wall_gets_its_head_inside() {
+    let mut s = shelter();
+    s.snap.me.pos = Vec3::new(5.5, 64.0, 0.5);
     let foot = BlockPos::new(6, 64, 0);
     s.place_at = Some(foot);
     s.goal("place white_bed 6 64 0", true);
@@ -62,4 +67,26 @@ fn a_bed_against_the_back_wall_gets_its_head_inside() {
         );
         assert_eq!(before, Some(yaw), "the yaw was held before the click");
     }
+}
+
+#[test]
+fn no_click_while_the_body_grazes_the_bed_cell() {
+    // Live: the walk ended at z 1.25 in the cell south of the foot, the hitbox 0.05 into
+    // the foot cell, and the server refused eight clicks.
+    let mut s = shelter();
+    s.snap.me.pos = Vec3::new(6.06, 64.0, 1.25);
+    let foot = BlockPos::new(6, 64, 0);
+    s.place_at = Some(foot);
+    s.goal("place white_bed 6 64 0", true);
+    for _ in 0..300 {
+        let at = s.snap.me.pos;
+        let out = s.step();
+        if let Some(MainCmd::PlaceAt { .. }) = out.main {
+            assert!(at.z - 0.3 >= 1.0, "clicked with the body in the cell: {at:?}");
+        }
+        if s.has_event("goal_done") || s.has_event("goal_failed") {
+            break;
+        }
+    }
+    assert!(s.has_event("goal_done"), "{:?}", s.events("goal_failed"));
 }

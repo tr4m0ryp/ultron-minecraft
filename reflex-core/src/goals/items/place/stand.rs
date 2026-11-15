@@ -171,3 +171,21 @@ pub fn find(
     }
     best.map(|(_, s)| s)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_hitbox_overlaps_a_cell_it_only_grazes() {
+        let cell = BlockPos::new(5, 64, 5);
+        // Centred in the next cell south: clear of it.
+        assert!(!body_overlaps(Vec3::new(5.5, 64.0, 6.5), cell));
+        // Live: 0.25 into the next cell is 0.05 into this one.
+        assert!(body_overlaps(Vec3::new(5.06, 64.0, 6.25), cell));
+        // Standing on top of the cell, or on the cell below it, is no overlap.
+        assert!(!body_overlaps(Vec3::new(5.5, 65.0, 5.5), cell));
+        assert!(body_overlaps(Vec3::new(5.5, 63.0, 5.5), cell));
+        assert!(!body_overlaps(Vec3::new(5.5, 62.2, 5.5), cell));
+    }
+}
