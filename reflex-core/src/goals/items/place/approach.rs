@@ -25,8 +25,12 @@ impl Place {
                 return Step::Failed(format!("no spot found that sees a face at {}", self.at()));
             }
             let held = Self::scaffold_held(cx);
-            let (keep, tried) = (&self.keep_clear, &self.tried);
-            self.spot = stand::find(cx, &self.block, self.pos, keep, tried, held);
+            let bars = stand::Bars {
+                keep_clear: &self.keep_clear,
+                tried: &self.tried,
+                cover: &self.cover,
+            };
+            self.spot = stand::find(cx, &self.block, self.pos, bars, held);
             self.settle = 0;
             self.spots_tried += 1;
             if self.spot.is_none() {

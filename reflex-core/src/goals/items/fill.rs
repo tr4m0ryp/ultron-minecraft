@@ -146,6 +146,7 @@ impl GoalTask for Fill {
                     let rest = self.cells[self.next + 1..].to_vec();
                     let place = Place::in_fill(self.block.clone(), pos, rest)
                         .replacing(self.replace)
+                        .under(&self.cells)
                         .over_scaffold(self.cleanup.pending());
                     self.current = Some(place);
                 }

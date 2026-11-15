@@ -48,6 +48,9 @@ pub struct Place {
     scaffold: Vec<BlockPos>,
     /// Cells a fill still has to place: never stand in them or pillar through them.
     keep_clear: Vec<BlockPos>,
+    /// Every cell of the fill this placement belongs to, placed or not: a spot under one
+    /// of them is a last resort (see `stand::UNDER_FILL_COST`).
+    cover: Vec<BlockPos>,
     /// The goal said `replace`: clear a placed block or a protected cell too.
     replace: bool,
     clear_ticks: u32,
@@ -78,6 +81,7 @@ impl Place {
             in_way: in_way::InWay::default(),
             scaffold: Vec::new(),
             keep_clear,
+            cover: Vec::new(),
             replace: false,
             clear_ticks: 0,
             cleanup: None,
@@ -88,6 +92,12 @@ impl Place {
     /// `replace` lets the placement clear whatever is in the cell, placed or protected.
     pub fn replacing(mut self, replace: bool) -> Self {
         self.replace = replace;
+        self
+    }
+
+    /// The whole fill this cell is part of: the body keeps out from under it.
+    pub fn under(mut self, cells: &[BlockPos]) -> Self {
+        self.cover = cells.to_vec();
         self
     }
 

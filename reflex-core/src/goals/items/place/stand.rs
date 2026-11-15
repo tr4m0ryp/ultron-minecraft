@@ -139,17 +139,39 @@ pub fn free(cx: &GoalCx, p: BlockPos) -> bool {
         .is_some_and(|k| replaceable(&k) && k != "water" && k != "lava")
 }
 
-/// The best spot to place into `cell`, never with the body or a pillar in `cell` or in any
-/// of `keep_clear` (cells still to fill), and none of `tried` (spots the face turned out
-/// hidden from once the body stood there).
-pub fn find(
-    cx: &GoalCx,
-    block: &str,
-    cell: BlockPos,
-    keep_clear: &[BlockPos],
-    tried: &[BlockPos],
-    scaffold: u32,
-) -> Option<Spot> {
+/// Where a placement may not, or should not, stand.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Bars<'a> {
+    /// Cells still to fill: never the body or a pillar in one.
+    pub keep_clear: &'a [BlockPos],
+    /// Spots the face turned out hidden from once the body stood there.
+    pub tried: &'a [BlockPos],
+    /// Every cell of the fill, placed or not: a spot under one costs `UNDER_FILL_COST`.
+    pub cover: &'a [BlockPos],
+}
+
+/// Extra cost, in blocks of walking, of a spot under a cell of the fill being placed. Live,
+/// a body laying a hut roof stood inside the walls (the nearest spots), was roofed in, and
+/// dug out under its own wall to reach the edge cells only in sight from outside: 7 floor
+/// blocks over 5 huts. Under the fill is now the last place to stand; the roof is laid from
+/// outside and from on top, and the body ends outside. The cost is finite so a ceiling in
+/// a cave, where every spot is under the fill, can still be placed.
+pub const UNDER_FILL_COST: f64 = 100.0;
+
+fn under(cover: &[BlockPos], feet: BlockPos) -> bool {
+    cover
+        .iter()
+        .any(|c| c.x == feet.x && c.z == feet.z && c.y > feet.y)
+}
+
+/// The best spot to place into `cell`, never with the body or a pillar in `cell` or in a
+/// barred cell (`bars`).
+pub fn find(cx: &GoalCx, block: &str, cell: BlockPos, bars: Bars, scaffold: u32) -> Option<Spot> {
+    let Bars {
+        keep_clear,
+        tried,
+        cover,
+    } = bars;
     let sup = supports(cx, cell);
     if sup.is_empty() {
         return None;
@@ -191,7 +213,12 @@ pub fn find(
                 } else {
                     me.dist(feet.feet_centre()) + 1.0
                 };
-                let cost = walk + PILLAR_COST * f64::from(pillar);
+                let roofed = if under(cover, feet) {
+                    UNDER_FILL_COST
+                } else {
+                    0.0
+                };
+                let cost = walk + PILLAR_COST * f64::from(pillar) + roofed;
                 if best.is_none_or(|(c, _)| cost < c) {
                     best = Some((cost, Spot { feet, pillar }));
                 }
