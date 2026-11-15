@@ -104,6 +104,8 @@ impl Craft {
         };
         let inv = cx.world.inventory();
         let p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
+        let steps: Vec<String> = p.steps.iter().map(PlanStep::describe).collect();
+        cx.doing(format!("plan: {}", steps.join(", then ")));
         let held = |cx: &GoalCx, b: &str| cx.world.count_item(b) > 0;
         self.phase = match p.steps.into_iter().next() {
             None => return Err(format!("nothing to do for {}", self.item)),

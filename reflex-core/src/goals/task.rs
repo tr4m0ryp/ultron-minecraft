@@ -131,6 +131,10 @@ impl GoalCx<'_> {
     pub fn note(&mut self, text: impl Into<String>) {
         self.rep.note(self.ctx, text.into());
     }
+    /// The plan step under way, shown in the goal's status and the decision log; no event.
+    pub fn doing(&mut self, text: impl Into<String>) {
+        self.rep.doing(text.into());
+    }
     /// The goal cannot advance right now and the body is working around it (a re-plan, a
     /// skipped block): a digest line, and a wake only when the spell outlasts
     /// `BLOCK_WAKE_TICKS`.

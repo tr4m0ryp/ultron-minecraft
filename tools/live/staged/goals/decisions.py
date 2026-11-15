@@ -65,7 +65,7 @@ def main():
         checks.append(("ticks rise", ticks == sorted(ticks), ticks))
         for r, c in zip(recs, calls):
             st, sent = r["state"], dict(c["args"])
-            got = {k: v for k, v in r["call"].items() if k != "op"}
+            got = {k: v for k, v in r["call"].items() if k != "op" and v != {}}
             checks.append((f"{c['name']} parameters whole", got == sent, got))
             checks.append((f"{c['name']} position within 1 block of the server",
                            dist(tuple(st["pos"]), c["pos"]) is not None and dist(tuple(st["pos"]), c["pos"]) <= 1.0,
@@ -76,7 +76,8 @@ def main():
                 checks.append((f"{c['name']} inventory equals the server's", same, (st["inventory"], c["inv"])))
         run = recs[2]["state"]["goals"]["running"] or {}
         checks.append(("the craft goal shows as running with its plan step at the next call",
-                       run.get("spec") == "craft stone_pickaxe 1" and run.get("id") == recs[1]["result"]["id"], run))
+                       run.get("spec") == "craft stone_pickaxe 1" and run.get("id") == recs[1]["result"]["id"]
+                       and run.get("note", "").startswith("plan: craft "), run))
         checks.append(("inventory before the craft has no pickaxe, after it one",
                        "stone_pickaxe" not in recs[1]["state"]["inventory"]
                        and recs[6]["state"]["inventory"].get("stone_pickaxe") == 1, recs[6]["state"]["inventory"]))

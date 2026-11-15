@@ -107,6 +107,11 @@ impl Reporter {
         }
     }
 
+    /// What the goal is doing now (the plan step under way), for the status only: no event.
+    pub fn doing(&mut self, text: String) {
+        self.note = Some(text);
+    }
+
     pub fn blocked(&mut self, ctx: &Ctx, reason: String, how: Block) {
         self.blocked_this_tick = true;
         let now = ctx.snap.tick;
