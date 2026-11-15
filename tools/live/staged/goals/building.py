@@ -25,7 +25,7 @@ def clear():
 
 
 def stat(objective):
-    out = rc(f"scoreboard players get Ultron {objective}")
+    out = rc(f"scoreboard players get {NAME} {objective}")
     m = re.search(r"has (\d+)", out)
     return int(m.group(1)) if m else 0
 
@@ -33,14 +33,14 @@ def stat(objective):
 def mine():
     rc(f"fill {X0} {Y} {Z0} {X1} {Y} {Z1} dirt",
        "scoreboard objectives add mined_stone minecraft.mined:minecraft.stone",
-       "scoreboard players set Ultron mined_stone 0")
+       f"scoreboard players set {NAME} mined_stone 0")
     prep(items=[("hotbar.0", "iron_pickaxe", 1)], at=(CX + 0.5, Y + 1, CZ + 0.5))
     t0 = time.time()
     n = task("mine stone 16")
     kind, text, _ = outcome(n, 300, "mine")
     time.sleep(2)
     broken = stat("mined_stone")
-    got = count_item("Ultron", "cobblestone")
+    got = count_item(NAME, "cobblestone")
     got = got if isinstance(got, int) else 0
     return dict(ok=kind == "goal_done", outcome=kind, secs=round(time.time() - t0, 1),
                 broken=broken, picked=got, ratio=round(got / broken, 3) if broken else None,

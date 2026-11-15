@@ -9,11 +9,14 @@ import os, re, subprocess, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from arena import REPO, rc, send, rows, events, first, now_ms, S  # noqa: F401
+from arena import NAME, REPO, rc, send, rows, events, first, now_ms, S  # noqa: F401
 
-X0, X1, Z0, Z1, Y = 1400, 1440, 1000, 1040, 100
-CX, CZ = 1420, 1020
-COMP = "Buddy"
+# SITE_DX / SITE_DZ shift the site and BOT_NAME / BOT_COMP rename the bots, so several
+# agents can stage at once on one server without touching each other.
+DX, DZ = int(os.environ.get("SITE_DX", "0")), int(os.environ.get("SITE_DZ", "0"))
+X0, X1, Z0, Z1, Y = 1400 + DX, 1440 + DX, 1000 + DZ, 1040 + DZ, 100
+CX, CZ = 1420 + DX, 1020 + DZ
+COMP = os.environ.get("BOT_COMP", "Buddy")
 WAKE_RE = re.compile(r"^WAKE t=(\d+) (goal_\w+) (\S+) #(\d+) \S+: (.*)$")
 
 
@@ -35,8 +38,8 @@ def start(binary=None, companion=True):
         cenv = dict(env, MOTOR_ONLY="none", ULTRON_BRIDGE="0")
         subprocess.run(["bash", sh, "start", "comp", COMP], env=cenv, check=True)
         wait_joined(COMP)
-    subprocess.run(["bash", sh, "start", "bot", "Ultron", COMP], env=env, check=True)
-    wait_joined("Ultron")
+    subprocess.run(["bash", sh, "start", "bot", NAME, COMP], env=env, check=True)
+    wait_joined(f"{NAME}")
 
 
 def wait_joined(name):
@@ -56,12 +59,12 @@ def stop():
 
 def prep(items=(), night=False, at=(CX + 0.5, Y + 1, CZ + 0.5), comp_at=None):
     """Clean survival bot with `items` [(slot, item, n)], placed at `at`."""
-    rc("effect clear Ultron", "gamemode survival Ultron", "clear Ultron",
-       "effect give Ultron instant_health 1 5", "effect give Ultron saturation 1 20",
+    rc(f"effect clear {NAME}", f"gamemode survival {NAME}", f"clear {NAME}",
+       f"effect give {NAME} instant_health 1 5", f"effect give {NAME} saturation 1 20",
        f"time set {'midnight' if night else 'noon'}",
        f"kill @e[type=!player,x={CX},y={Y},z={CZ},distance=..60]",
-       *[f"item replace entity Ultron {s} with {i} {n}" for s, i, n in items],
-       f"tp Ultron {at[0]} {at[1]} {at[2]}")
+       *[f"item replace entity {NAME} {s} with {i} {n}" for s, i, n in items],
+       f"tp {NAME} {at[0]} {at[1]} {at[2]}")
     if comp_at:
         rc(f"gamemode creative {COMP}", f"tp {COMP} {comp_at[0]} {comp_at[1]} {comp_at[2]}")
     send("goal-end")
@@ -92,7 +95,7 @@ def outcome(since, timeout, label=None):
     return "timeout", None, [m.groups() for l in log_lines()[since:] if (m := WAKE_RE.match(l))]
 
 
-def pos(name="Ultron"):
+def pos(name=NAME):
     out = rc(f"data get entity {name} Pos")
     v = re.findall(r"(-?[\d.]+)d", out)
     return tuple(round(float(a), 2) for a in v[:3]) if len(v) >= 3 else None

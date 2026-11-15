@@ -121,7 +121,7 @@ def come():
 
 def give():
     broken()
-    rc("item replace entity Ultron hotbar.2 with oak_planks 8")
+    rc(f"item replace entity {NAME} hotbar.2 with oak_planks 8")
     kind, text, secs = run("give companion oak_planks 3", "give", 150)
     time.sleep(3)
     got = count_item(COMP, "oak_planks")

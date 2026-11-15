@@ -11,7 +11,7 @@ def entity_count(kind, r=40):
     return int(m.group(1)) if m else 0
 
 
-def nbt(path, name="Ultron"):
+def nbt(path, name=NAME):
     out = rc(f"data get entity {name} {path}")
     m = re.search(r"data: (.*)$", out)
     return m.group(1) if m else out
@@ -31,15 +31,15 @@ def sleep():
 
 def eat():
     prep(items=[("hotbar.2", "bread", 4)], comp_at=(CX - 3.5, Y + 1, CZ - 3.5))
-    rc("effect give Ultron hunger 6 255")
+    rc(f"effect give {NAME} hunger 6 255")
     time.sleep(6)
-    rc("effect clear Ultron hunger")
+    rc(f"effect clear {NAME} hunger")
     before = nbt("foodLevel")
     n = task("eat_now")
     kind, text, _ = outcome(n, 30, "eat_now")
     time.sleep(1)
     return dict(case="eat_now", outcome=kind, text=text, food_before=before,
-                food_after=nbt("foodLevel"), bread_left=count_item("Ultron", "bread"))
+                food_after=nbt("foodLevel"), bread_left=count_item(NAME, "bread"))
 
 
 def attack():
@@ -87,7 +87,7 @@ def preempt():
     goal_events = [w[1] for w in wakes]
     rc(f"kill @e[type=creeper,x={CX},y={Y},z={CZ},distance=..60]")
     return dict(case="preempt", outcome=kind, text=text,
-                cobblestone=count_item("Ultron", "cobblestone"),
+                cobblestone=count_item(NAME, "cobblestone"),
                 legs_owner_sequence=[o[0] for o in owners][:16], goal_events=goal_events,
                 bot_hp=nbt("Health"))
 

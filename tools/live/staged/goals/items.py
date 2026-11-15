@@ -25,7 +25,7 @@ def craft_chain():
     kind, text = run("craft wooden_pickaxe 1", "craft", 60)
     steps.append(dict(spec="craft wooden_pickaxe 1 (table placed)", outcome=kind, text=text))
     time.sleep(1)
-    inv = {i: count_item("Ultron", i) for i in ("oak_log", "oak_planks", "stick", "wooden_pickaxe")}
+    inv = {i: count_item(NAME, i) for i in ("oak_log", "oak_planks", "stick", "wooden_pickaxe")}
     return dict(case="craft_chain", steps=steps, server_inventory=inv)
 
 
@@ -36,7 +36,7 @@ def give():
     time.sleep(3)
     return dict(case="give", outcome=kind, text=text,
                 companion_planks=count_item(COMP, "oak_planks"),
-                bot_planks=count_item("Ultron", "oak_planks"))
+                bot_planks=count_item(NAME, "oak_planks"))
 
 
 def place():
@@ -46,7 +46,7 @@ def place():
     kind, text = run(f"place cobblestone {spot[0]} {spot[1]} {spot[2]}", "place", 40)
     time.sleep(1)
     return dict(case="place", outcome=kind, text=text,
-                placed=is_block(*spot, "cobblestone"), left=count_item("Ultron", "cobblestone"))
+                placed=is_block(*spot, "cobblestone"), left=count_item(NAME, "cobblestone"))
 
 
 CASES = dict(craft_chain=craft_chain, give=give, place=place)

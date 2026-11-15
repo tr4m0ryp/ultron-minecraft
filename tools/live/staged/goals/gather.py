@@ -14,7 +14,7 @@ def mine_stone():
     kind, text, _ = outcome(n, 60, "mine")
     time.sleep(2)
     return dict(case="mine_stone", outcome=kind, text=text,
-                cobblestone=count_item("Ultron", "cobblestone"))
+                cobblestone=count_item(NAME, "cobblestone"))
 
 
 def mine_missing_tool():
@@ -39,7 +39,7 @@ def collect():
     kind, text, _ = outcome(n, 60, "collect")
     time.sleep(1)
     return dict(case="collect", outcome=kind, text=text,
-                oak_log=count_item("Ultron", "oak_log"), dirt=count_item("Ultron", "dirt"))
+                oak_log=count_item(NAME, "oak_log"), dirt=count_item(NAME, "dirt"))
 
 
 CASES = dict(mine_stone=mine_stone, mine_missing_tool=mine_missing_tool, collect=collect)

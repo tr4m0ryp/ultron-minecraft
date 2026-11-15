@@ -63,7 +63,7 @@ def stay():
     rc(f"tp {COMP} 1438.5 {Y + 1} 1005.5")
     time.sleep(8)
     held = dist(start, pos())
-    rc(f"tp Ultron 1414.5 {Y + 1} 1013.5")
+    rc(f"tp {NAME} 1414.5 {Y + 1} 1013.5")
     time.sleep(8)
     kind, text, wakes = outcome(n, 0)
     return dict(case="stay", moved_while_companion_left=held,
