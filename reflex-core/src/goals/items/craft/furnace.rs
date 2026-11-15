@@ -179,7 +179,10 @@ impl Smelting {
         if left == 0 {
             // Live, a visit clicked before the server sent the slots and left the cooked
             // items behind: go back for them rather than call it done.
-            let output = seen.output.as_ref().filter(|(n, _)| *n == self.recipe.result);
+            let output = seen
+                .output
+                .as_ref()
+                .filter(|(n, _)| *n == self.recipe.result);
             if output.is_some() && self.retakes < MAX_STALLS {
                 self.retakes += 1;
                 self.phase = Phase::Visit(FurnaceJob::default());

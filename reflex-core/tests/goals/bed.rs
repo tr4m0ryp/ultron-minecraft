@@ -82,7 +82,10 @@ fn no_click_while_the_body_grazes_the_bed_cell() {
         let at = s.snap.me.pos;
         let out = s.step();
         if let Some(MainCmd::PlaceAt { .. }) = out.main {
-            assert!(at.z - 0.3 >= 1.0, "clicked with the body in the cell: {at:?}");
+            assert!(
+                at.z - 0.3 >= 1.0,
+                "clicked with the body in the cell: {at:?}"
+            );
         }
         if s.has_event("goal_done") || s.has_event("goal_failed") {
             break;
