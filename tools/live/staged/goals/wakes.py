@@ -1,6 +1,6 @@
 """Wakes per goal when the body reports a block, live. Three cases on the goal site:
 sealed (a go_to into a bedrock shell: path problems, then the goal fails), mine_mixed (two
-iron ore blocks in bedrock shells nearest the body and two in the open: the sealed ones are
+iron ore blocks deep in bedrock nearest the body and two in the open: the sealed ones are
 skipped, the open ones mined) and follow_gone (the companion out of sight: a block only
 thought can clear, which must still wake).
 
@@ -20,9 +20,12 @@ def cell(dx, dy, dz):
     return X0 + dx, Y + dy, Z0 + dz
 
 
-def shell(dx, dz, inner):
+def shell(dx, dz, inner, r=1):
+    """A bedrock box of half-width `r` round one cell on the floor. The hands dig a block in
+    reach through a wall, so a block that must stay out of reach needs r = 4."""
     x, y, z = cell(dx, 1, dz)
-    return [f"fill {x - 1} {y} {z - 1} {x + 1} {y + 2} {z + 1} bedrock", f"setblock {x} {y} {z} {inner}"]
+    return [f"fill {x - r} {y} {z - r} {x + r} {y + r + 1} {z + r} bedrock",
+            f"setblock {x} {y} {z} {inner}"]
 
 
 def counts(since):
@@ -45,8 +48,8 @@ def sealed():
 
 
 def mine_mixed():
-    ores = [cell(24, 1, 16), cell(24, 1, 24)]
-    rc(*shell(8, 16, "iron_ore"), *shell(8, 24, "iron_ore"),
+    ores = [cell(30, 1, 16), cell(30, 1, 24)]
+    rc(*shell(8, 10, "iron_ore", 4), *shell(8, 30, "iron_ore", 4),
        *[f"setblock {x} {y} {z} iron_ore" for x, y, z in ores])
     prep(items=[("hotbar.0", "stone_pickaxe", 1)], at=(X0 + 8.5, Y + 1, Z0 + 20.5))
     n = task("mine iron_ore 2")
