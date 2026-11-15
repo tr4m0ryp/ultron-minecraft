@@ -788,6 +788,8 @@ local model that picks the next action from a one-line game state. Bar for "usab
 under 500 ms per decision and accuracy clearly above the trivial baselines. Machine: Xeon
 E5-1410 v2, 4 cores / 8 threads, AVX without AVX2, no GPU. Run of 2026-11-15, replacing the
 first run of 2026-11-14 that was taken while builds were compiling.
+A second run on 2026-11-15 trained the small models on 470 recorded Thought decisions (9.7):
+latency passes, accuracy does not, and the layer stays empty.
 
 ### 9.1 Conditions
 
@@ -927,18 +929,237 @@ and chat, 43 tokens, which holds when nothing else changed since the last decisi
 - What would have to be true: accuracy grows with size on the goal cases (33, 45, 54 of 65
   at 135M, 360M, 1.5B) while 500 ms on this CPU buys 135M. The 1.5B model needs 2.9x to
   5.6x more speed, which is an AVX2 or GPU machine, or the small model needs training on
-  Ultron's own decisions instead of 13 examples.
+  Ultron's own decisions instead of 13 examples (tested in 9.7).
 
-### 9.6 Open
+### 9.6 Open after the first run
 
-- Fine-tune or probe-train the 135M model or the 33M encoder on recorded Thought decisions
-  (never tested; the habit compiler of 4.7 would supply the data).
+- Fine-tune or probe-train the 135M model or the 33M encoder on recorded Thought decisions:
+  tested in 9.7.
 - Laya with fitted thresholds on more than 20 cases, a base-size Laya checkpoint, and an
   exported integer build of it (never tested).
-- Goal cases without a chat line, where a keyword rule has nothing to read. The current 65
-  flatter the rule.
+- Goal cases without a chat line, where a keyword rule has nothing to read: written and
+  measured in 9.7 (the rule gets 9 of 48 there, and 4 of 108 real decisions).
 - Rows marked "!" ran with more than 1.0 core of foreign load and are upper bounds.
 - The strict idle target (load under 0.5) needs the desktop session closed.
+
+### 9.7 Trained on recorded Thought decisions (second run of 2026-11-15)
+
+The path 9.6 listed as never tested: train the small models on what Thought really decided
+instead of 13 solved examples. Measurement only, nothing is wired into the player. Code in
+bench/decider/intuition, run by bench/decider/trained.sh, tables by intuition/report.py,
+raw results in bench/decider/results/trained.
+
+Data:
+
+- Source: the 11 session transcripts the play relay wrote on 2026-11-14 and 2026-11-15
+  (logs/brain/<run>/session-<n>.jsonl, all on the live game). The journal and the bot logs
+  hold no decisions. intuition/extract.py makes one pair per decision point (session start
+  and every wait_event result). The state is the event text, the last observe line Thought
+  had seen, its last three decisions, the mode, and the active line of its project journal
+  as it stood when the event arrived. The decision is what Thought did before its next
+  wait_event: the goal it set, else say, arm, set_mode or inhibit, else wait.
+- Real pairs: 470. By decision: place 126, craft 81, go_to 78, wait 73, mine 64, collect 27,
+  say 5, smelt 5, set_mode 3, inhibit 2, give 2, attack 2, end 1, follow 1. A chat line drives
+  6 of the 470 (1.3 %) and the companion is visible in 31: this is solo building and
+  crafting. The split-second calls this layer was meant for (fight or run, which target) do
+  not occur once; the reflexes had handled them before Thought was asked.
+- 204 of the 470 decisions (43 %) carry coordinates and 181 (39 %) an item and a count, which
+  a classifier over goal names does not produce. Only wait (73, 16 %) is complete as a label.
+- Split by time, whole sessions: train = 2026-11-14 (8 sessions, 362 pairs), test_real =
+  2026-11-15 (3 sessions, 108 pairs, none with a chat line). The second day is another
+  activity (tools, iron, armour: craft 44, mine 22 of 108) than the first (a hut and a dirt
+  stair: place 118, go_to 72 of 362), so test_real measures transfer to a new day. Two
+  cross-checks over all 470 stand next to it: leave one session out (11 fits) and 3 folds
+  of whole sessions.
+- test_hand = bench/decider/cases_nochat.jsonl: 48 cases in the real state format, none with
+  a chat line, written and frozen before any training. 23 continue a project the way the
+  recorded play does, 25 are driven by body, companion or danger (eating, sleeping,
+  fighting, following, guarding, retreating, dusk). 14 of the 48 have a decision that never
+  occurs in the training day.
+- Synthetic pairs (intuition/synth.py), labelled synthetic, never in a test set. "vary":
+  1086, three copies of every training pair with coordinates, ticks, ids, distances and
+  stack counts varied and the recorded decision kept. "rules": 633, a grid over state fields
+  for the decisions the recorded play lacks, labelled by the written playing rules. The
+  rules set shares its author with test_hand and was written after it, so on test_hand its
+  rows are an upper bound, as the keyword rule was in 9.2.
+- Thought itself, timed from the same transcripts: median 1.7 s from an event to its next
+  action (p90 3.2 s, 392 turns) and 1.2 s to decide to keep waiting (68 turns).
+
+Results: correct decisions, with the 95 % interval in percent (Wilson). Every arm predicts
+the goal name only. Latency is one decision at a time on 4 threads, the whole path from the
+pair to a label, n = 468 per row (156 cases, 3 repetitions), behind bench/decider/idle.py.
+
+| arm | trained on | test_real /108 | test_hand /48 | leave one session out /470 | p50 / p90 ms |
+|---|---|---|---|---|---|
+| uniform chance, 18 options | - | 6.0 | 2.7 | 26.1 | - |
+| majority decision of the training day (place) | - | 8 (3.8 to 13.9) | 6 (5.9 to 24.7) | 126 (23.0 to 31.0) | - |
+| repeat the last decision | - | 41 (29.4 to 47.4) | 9 (10.2 to 31.9) | 170 (32.0 to 40.6) | - |
+| keyword rule of 9.2 | - | 4 (1.4 to 9.1) | 9 (10.2 to 31.9) | 16 (2.1 to 5.5) | under 1 |
+| 135M as in 9.4: 12 solved examples cached, argmax | 12 examples | 8, calibrated 5 | 4, calibrated 1 | n/a | 469 / 739 |
+| 1.5B 4-bit, same | 12 examples | 1, calibrated 15 | 5, calibrated 8 | n/a | 6627 / 8691 ! |
+| encoder as in 9.4: nearest of 12 solved examples | 12 examples | 30 (20.2 to 36.9) | 8 (8.7 to 29.6) | n/a | 81 / 118 ! |
+| a1 encoder, logistic head | 362 real | 53 (39.8 to 58.4) | 17 (23.4 to 49.6) | 151 (28.1 to 36.5) | 69 / 95 |
+| a1 | real + vary + rules | 43 (31.1 to 49.2) | 30 (48.4 to 74.8) | n/a | 69 / 95 |
+| a2 encoder, MLP head | 362 real | 54 (40.7 to 59.3) | 17 (23.4 to 49.6) | 159 (29.7 to 38.2) | 70 / 97 |
+| a3 encoder and state features, logistic head | 362 real | 32 (21.8 to 38.8) | 12 (14.9 to 38.8) | 173 (32.6 to 41.3) | 72 / 96 |
+| a4 encoder trained end to end, 6 epochs | 362 real | 61 (47.1 to 65.5) | 14 (18.2 to 43.2) | 3 folds: 234 (45.3 to 54.3) | as a1 |
+| b1 encoder, nearest neighbour over the training set | 362 real | 50 (37.2 to 55.7) | 14 (18.2 to 43.2) | 131 (24.0 to 32.1) | 105 / 142 |
+| b5 encoder, 5 nearest neighbours | 362 real | 55 (41.6 to 60.2) | 14 (18.2 to 43.2) | 168 (31.5 to 40.2) | 104 / 140 |
+| c1 state features, logistic regression | 362 real | 37 (26.0 to 43.6) | 13 (16.6 to 41.0) | 184 (34.8 to 43.6) | 0.9 / 2.0 |
+| c1 | real + vary + rules | 35 (24.3 to 41.7) | 28 (44.3 to 71.2) | n/a | 0.9 / 2.0 |
+| c2 state features, gradient-boosted trees | 362 real | 39 (27.7 to 45.5) | 14 (18.2 to 43.2) | 149 (27.7 to 36.0) | 36 / 46 |
+| c3 habit table (counts per event kind, no model) | 362 real | 49 (36.3 to 54.8) | 15 (19.9 to 45.3) | 183 (34.6 to 43.4) | not timed |
+| d0 135M frozen, logistic head on its last state | 362 real | 29 (19.4 to 35.9) | 7 (7.2 to 27.2) | 121 (22.0 to 29.9) | 239 / 337 |
+| d 135M with a low-rank adapter (top 8 layers, 8 epochs), argmax | 362 real | 46 (33.7 to 52.0) | 16 (21.7 to 47.5) | n/a | 239 / 337 |
+
+- Conditions: no compiler ran during any latency row. The load target (under 0.5) was met in
+  none: the 1-minute load read 1.7 to 5.2, the tail of the training jobs, and other
+  processes used 0.8 of a core, as in 9.1. The row marked "!" (the encoder pass alone) ran
+  with 1.4 cores of foreign load. The b rows were timed against 2081 stored rows. The d rows
+  are the adapter prompt (84 tokens, nothing cached) through llama.cpp on the base weights:
+  an adapter merged into the weights changes no shapes, so the cost is the same; d's
+  accuracy comes from the training framework. The 1.5B row was timed while my own training jobs used 5 cores, so its latency is an upper bound; its clean figure for a suffix of this length is 2804 / 2975 ms (9.4).
+- Two launches died with an illegal-instruction signal before computing anything (a timing
+  probe and the first d0 run), as one did in 9.1; both ran on the second try. Cause unknown.
+- The 3-fold cross-check (whole sessions, 470 decisions): a1 158, a2 179, b5 168, c1 203,
+  c2 162, c3 178, repeat-last 170, a4 234 (45.3 to 54.3).
+- (a) against (c). On test_real the frozen encoder (a1) is right where c1 is wrong 30 times
+  and the reverse 14 times (exact sign test p = 0.023), against c2 26 and 12 (p = 0.034),
+  against the habit table 14 and 10 (p = 0.54). The encoder trained end to end (a4) leads
+  c1 by 35 to 11 (p = 0.0005), c2 by 32 to 10 (p = 0.0009) and the habit table by 21 to 9
+  (p = 0.043). Over all sessions the order of the frozen encoder reverses: leave one session
+  out gives a1 151, c1 184, c3 183; 3 folds give a1 158, c1 203. The encoder trained end to end (a4) keeps its
+  lead on the 3 folds: 234 of 470 against 203 for c1 (right where c1 is wrong 85 times, the
+  reverse 54, p = 0.011) and against every other arm (p under 0.001). By fold it reads 37,
+  70, 127 against c1's 40, 73, 90: level on two folds and far ahead on the one that holds
+  the long building sessions. So (a) is clearly above (c) only when the encoder itself is
+  trained; with a frozen encoder the feature classifier is the better of the two.
+- No arm is right in more than 61 of 108 decisions, and on the cross-checks none passes 50 %.
+  "Repeat the last decision" gets 41 of 108 and 170 of 470 with no model at all.
+- Yesterday's variants on real decisions: the keyword rule falls from 63/65 to 4/108, since
+  it read chat lines and real decisions have none. The 135M model with cached examples
+  falls from 37/65 to 8/108 (it answers go_to 84 times) and its suffix now costs 469 ms
+  behind a 1450-token cached prefix. The 1.5B model falls from 54/65 to 1/108 (it answers
+  arm 99 times; 15 with calibration). The encoder with the nearest of 12 examples gets 30;
+  the same encoder with a trained head 53. Training on recorded decisions is worth 23 to 31
+  cases of 108 over solved examples.
+- Synthetic "vary" changes nothing (a1 53 to 53, a2 54 to 51): the fields it varies are the
+  ones the text rendering drops. Synthetic "rules" lifts test_hand from 17 to 30 of 48 and
+  costs test_real 10 cases (53 to 43): its states reuse real event kinds with other
+  decisions.
+- The plan line of the journal in the text (results/trained/classic-plan.json) lifts leave
+  one session out from 151 to 203 of 470 (a1) and from 159 to 208 (a2) and lowers test_real
+  from 53 to 41 and from 54 to 51: it helps while the project is one the model has seen and
+  misleads on a new day.
+- Goal plus item as the decision ("craft stick", "mine iron_ore") instead of the goal name:
+  best arm 28 of 108.
+
+Accuracy against coverage on test_real, for the rule "act when confidence is at least t,
+else wake Thought". Cells are "decisions taken: percent of those that match Thought". The
+last two columns are the number taken at 95 % precision or better, first with t chosen on
+the test day itself (an upper bound), then with t chosen on the training day (leave one
+training session out) and applied unchanged.
+
+| arm | t = 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 0.95 | at 95 %, t from the test day | at 95 %, t from the training day |
+|---|---|---|---|---|---|---|---|---|
+| a1 | 36: 69.4 | 16: 93.8 | 4: 100 | 0 | 0 | 0 | 11 (10.2 %) | 4 (3.7 %), all 4 right |
+| a2 | 63: 61.9 | 42: 66.7 | 26: 76.9 | 6: 100 | 1: 100 | 0 | 12 (11.1 %) | 4 (3.7 %), all 4 right |
+| a4 | 61: 67.2 | 39: 74.4 | 22: 95.5 | 14: 100 | 4: 100 | 0 | 22 (20.4 %) | not measured |
+| b5 | 82: 58.5 | 42: 69.0 | 42: 69.0 | 13: 69.2 | 13: 69.2 | 9: 55.6 | 4 (3.7 %) | 0, no such t exists |
+| c1 | 43: 46.5 | 25: 48.0 | 13: 61.5 | 8: 62.5 | 2: 0 | 0 | 0 | 0 |
+| c2 | 73: 45.2 | 43: 51.2 | 26: 61.5 | 17: 58.8 | 10: 60.0 | 3: 33.3 | 1 (0.9 %) | 0, no such t exists |
+| c3 | 86: 55.8 | 20: 75.0 | 11: 100 | 10: 100 | 10: 100 | 0 | 12 (11.1 %) | 0, no such t exists |
+| d | 54: 59.3 | 30: 60.0 | 10: 60.0 | 3: 100.0 | 1: 100.0 | 1: 100.0 | 5 (4.6 %) | not measured |
+
+- Coverage at 95 % precision: at best 22 of 108 decisions (20.4 %, a4) with the threshold
+  chosen on the test day, and 4 of 108 (3.7 %) with a threshold fixed beforehand. On the
+  cross-checks, thresholds chosen with hindsight: leave one session out, at best 14 of 470
+  (3.0 %, c2); 3 folds, at best 21 of 470 (4.5 %, c1), and 3 of 470 (0.6 %) for a4.
+- What the confident predictions are: a4's 22 are 11 wait, 8 craft, 3 mine (one wrong); a1's
+  16 above 0.6 are 9 wait and 7 craft; the habit table's 11 above 0.7 are all wait after a
+  goal_blocked event. A confident "craft" still lacks the item and the count, so the part a
+  model could really take over is wait: the body reports "path problem, re-planning" and
+  Thought answers by waiting.
+- As a wake filter (wait against act, intuition/wake_filter.py, 18 waits in test_real): the
+  one-line rule "goal_blocked means wait" filters 11 of the 108 test decisions, all 11
+  rightly, and 41 of the 362 training decisions, 35 rightly (85 %). With a threshold from
+  the training day a1 filters 5 of 108 (all right), c1 and c2 none; with the threshold
+  chosen on the test day a1 filters 14, c1 12, c2 11, the rule 11, all at 100 %.
+- Filtering every recorded wait would save 98 s of the 896 s Thought spent between an event
+  and its next call (11 %) and makes no action faster.
+
+Verdict against the bar (median under 500 ms; on held-out cases clearly above the
+non-neural baseline, with accuracy that can be acted on):
+
+- The non-neural half of the bar is met by one arm (a4 against c1, both views). The half
+  that matters is not met by any.
+- Latency: passes for every trained arm. 0.9 ms for the feature classifier, 69 to 105 ms
+  for the encoder arms, 239 ms for the 135M model with the short adapter prompt.
+- Accuracy: does not pass for any arm. The best is right in 61 of 108 decisions on a new
+  day and 234 of 470 on the 3 folds, the takeover at 95 % precision is 4 of 108 with a
+  threshold fixed beforehand (22 with hindsight, at most 4.5 % on the cross-checks), and
+  what is taken is the goal name without its item, count or coordinates. Intuition cannot be filled with a model
+  trained on these 470 decisions, on this hardware or on a faster one.
+- (a) encoder with a trained head. a1 and a2 (frozen encoder): lost a comparison, to the
+  bar and to the feature classifier on both cross-checks (151 and 159 on leave one session
+  out against 184; 158 and 179 on the 3 folds against 203). a4, the
+  encoder trained end to end, works as a predictor of the goal name and is the best arm on
+  both views (61 of 108, 234 of 470, clearly above c1 on both). It lost the comparison to
+  the bar: it matches Thought in every second decision, and at 95 % precision it takes 3 of
+  470 decisions on the folds (0.6 %; above a confidence of 0.9 it takes 51, of which 78 %
+  match).
+- (b) encoder nearest neighbour over the training set: lost a comparison, to the bar and to
+  c1 on the cross-checks (131 and 168 against 184); level with a1 on test_real (50 and 55
+  against 53).
+- (c) feature classifier and habit table: lost a comparison, to the bar (32 to 45 % right).
+  c1 is the best arm without a trained network over all sessions (184, 203) and the habit
+  table is level with the frozen encoder on the new day (49 against 53, p = 0.54). Neither
+  is the better Intuition: a4 is ahead of both. c1 stays as the floor to beat: 0.9 ms, no
+  model file, readable.
+- (d) 135M with a low-rank adapter: lost a comparison, to a4 (46 against 61 of
+  108, right alone 7 times against 22, p = 0.008) and not separated from c1 (right alone 23 times against 14, p = 0.19),
+  at 3.5 times the encoder's latency and 64 minutes of training against 17. Not closed: the
+  adapter covered the top 8 of 30 layers for 8 epochs and its loss was still falling
+  (0.99 at the end).
+- (d0) frozen 135M with a trained head: lost a comparison, to the 33M encoder with the
+  same head (29 against 53) at 3.5 times its latency.
+- Untrained variants of 9.4 on real decisions: lost a comparison, to chance in the case of
+  the 135M model (8 against 6.0) and to "repeat the last decision" in the case of the
+  nearest-example encoder (30 against 41).
+- Synthetic variation of real pairs: closed under its premise. The varied fields
+  (coordinates, ticks, ids) are not in the model input, so the copies are near duplicates.
+  Reopen only with a state rendering that keeps positions.
+- Wake filter: works, as a rule and without a model. "goal_blocked means wait" was right in
+  46 of 52 recorded cases (35 of 41, then 11 of 11). It belongs in the body's event
+  reporting, not in this layer: such an event need not wake Thought at all.
+- Nothing is proven closed. Every negative above is a lost comparison on 470 decisions from
+  two days of solo play.
+
+Why: once the model is trained, this machine is no longer the limit, since a 33M encoder
+with a head decides in 69 ms. The limit is what the state contains. After the same event
+and the same last decision Thought went different ways (after a finished craft: craft 20,
+mine 13, place 5, wait 4 of 42 cases), because the next step comes from its plan and its
+inventory, and neither is in the one-line state. A model trained on these pairs learns to
+be a weaker Thought at the job Thought exists for. It does not learn the fast judgement
+between reflex and thought this layer was meant for, because Thought was never asked for
+that judgement in the recorded play.
+
+### 9.8 Open after the second run
+
+- A decision log written by the body at the moment Thought decides: the fresh snapshot (the
+  pairs above carry the last observe line Thought saw, often thousands of ticks old), the
+  inventory, the running plan step, and the full call with its parameters. Without the
+  inventory and the plan the next craft or mine step cannot be predicted by anything.
+- The fast judgements themselves as the target (mode, gains, arming, inhibiting, fight or
+  run): 10 of the 470 recorded decisions. They need play with the companion and with danger,
+  which the two recorded days do not contain. Never tested.
+- a4 with a threshold fixed on the training day, a4 on leave one session out, and d on any
+  cross-check: not measured (one a4 fit takes 17 to 30 minutes on this CPU next to other
+  jobs, one d fit 64).
+- d with more than the top 8 of 30 layers adapted and more epochs: with all layers adapted,
+  one epoch over 362 pairs did not finish in 11 minutes here. A first d run (5 epochs, half
+  the learning rate, loss 1.50) was lost to a scoring fault before it was scored.
+- test_hand is 48 cases by one author; its interval is 25 points wide.
 
 ## 10. References
 
