@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Trained-Intuition measurement: pairs from recorded Thought decisions, then every arm, in sequence.
-#   bench/decider/trained.sh data floors classic plan habit probe encoder lora untrained latency
+#   bench/decider/trained.sh data floors classic plan habit probe encoder latency untrained_small untrained_large \\
+#                            lora_real lora_rules
 # Weights live outside the repository ($GGUF, $HF); pairs and logs are ignored by git (data/, logs/).
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; I="$HERE/intuition"
@@ -27,10 +28,10 @@ floors)    step floors "$EPY" -u "$I/floors.py"; step wake-filter "$EPY" -u "$I/
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
 encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 6
            step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 3 ;;
-lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 8 --lr 1e-3 --save "$TRAINED/lm135-lora-real"
-           step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 --lr 1e-3 --save "$TRAINED/lm135-lora-rules" ;;
-untrained) old untrained-smol135-real $S135 lm_test_real; old untrained-smol135-hand $S135 lm_test_hand
-           old untrained-qwen15-real $Q15 lm_test_real; old untrained-qwen15-hand $Q15 lm_test_hand ;;
+lora_real)  step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 8 --lr 1e-3 --save "$TRAINED/lm135-lora-real" ;;
+lora_rules) step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 --lr 1e-3 --save "$TRAINED/lm135-lora-rules" ;;
+untrained_small) old untrained-smol135-real $S135 lm_test_real; old untrained-smol135-hand $S135 lm_test_hand ;;
+untrained_large) old untrained-qwen15-real $Q15 lm_test_real; old untrained-qwen15-hand $Q15 lm_test_hand ;;
 latency)   step latency-classic "$EPY" -u "$I/latency.py" classic --gate-wait "${GATE_WAIT:-300}"
            step latency-lm "$PY" -u "$I/latency.py" lm --model "$GGUF/$S135.gguf" --gate-wait "${GATE_WAIT:-300}" ;;
 esac; done
