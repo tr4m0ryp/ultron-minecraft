@@ -1,0 +1,49 @@
+{
+ "label": "kev-0.8b-t2-r1",
+ "backend": "http",
+ "threads": 2,
+ "accuracy": 0.4,
+ "correct": 8,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "4/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 3654.2,
+  "p90": 4171.1,
+  "p95": 4325.9,
+  "mean": 3479.5,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 9927.4,
+  "p90": 10664.7,
+  "p95": 10664.7,
+  "mean": 9928.0,
+  "n": 3
+ },
+ "load_s": 0.0,
+ "first_call_s": 4.38,
+ "rss_gb": 5.42,
+ "peak_rss_gb": null,
+ "errors": [],
+ "n_errors": 0,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.33,
+  "busy_cores": 1.1,
+  "java_cpu_pct": 0.5,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.76,
+  "foreign_cores_max": 1.02,
+  "compilers_seen": [],
+  "samples": 48
+ }
+}
