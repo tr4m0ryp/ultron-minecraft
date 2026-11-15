@@ -43,8 +43,8 @@ fn busy_world() -> FakeWorld {
         ("oak_log".into(), 3),
         ("cobblestone".into(), 9),
     ];
-    w.exec.knobs.set_goal("collect oak_log 4".into(), 0.5, None, true);
-    let id = w.exec.knobs.set_goal("mine stone 8".into(), 0.6, None, true);
+    w.exec.knobs.set_goal("collect oak_log 4", 0.5, None, true);
+    let id = w.exec.knobs.set_goal("mine stone 8", 0.6, None, true);
     w.exec.status = Some(GoalStatus {
         goal_id: id,
         label: "mine",
