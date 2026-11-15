@@ -1,0 +1,542 @@
+[
+{
+"id": "c01",
+"kind": "choice",
+"gold": "back_away",
+"test": true,
+"choice": "keep_mining",
+"noul": null,
+"score": null
+},
+{
+"id": "c02",
+"kind": "choice",
+"gold": "eat",
+"test": false,
+"choice": "mine",
+"noul": null,
+"score": null
+},
+{
+"id": "c03",
+"kind": "choice",
+"gold": "place_water",
+"test": false,
+"choice": "place_block",
+"noul": null,
+"score": null
+},
+{
+"id": "c04",
+"kind": "choice",
+"gold": "sleep",
+"test": true,
+"choice": "sleep",
+"noul": null,
+"score": null
+},
+{
+"id": "c05",
+"kind": "choice",
+"gold": "go_around",
+"test": false,
+"choice": "walk_forward",
+"noul": null,
+"score": null
+},
+{
+"id": "c06",
+"kind": "choice",
+"gold": "swim_up",
+"test": false,
+"choice": "mine",
+"noul": null,
+"score": null
+},
+{
+"id": "c07",
+"kind": "choice",
+"gold": "look_away",
+"test": true,
+"choice": "attack",
+"noul": null,
+"score": null
+},
+{
+"id": "c08",
+"kind": "choice",
+"gold": "equip_pickaxe",
+"test": false,
+"choice": "drop_pickaxe",
+"noul": null,
+"score": null
+},
+{
+"id": "c09",
+"kind": "choice",
+"gold": "switch_iron",
+"test": false,
+"choice": "mine_wooden",
+"noul": null,
+"score": null
+},
+{
+"id": "c10",
+"kind": "choice",
+"gold": "drop_cobble",
+"test": true,
+"choice": "keep_mining",
+"noul": null,
+"score": null
+},
+{
+"id": "c11",
+"kind": "choice",
+"gold": "attack",
+"test": false,
+"choice": "attack",
+"noul": null,
+"score": null
+},
+{
+"id": "c12",
+"kind": "choice",
+"gold": "jump_in_water",
+"test": false,
+"choice": "keep_walking",
+"noul": null,
+"score": null
+},
+{
+"id": "c13",
+"kind": "choice",
+"gold": "approach_tree",
+"test": true,
+"choice": "approach_tree",
+"noul": null,
+"score": null
+},
+{
+"id": "c14",
+"kind": "choice",
+"gold": "kill_cow",
+"test": false,
+"choice": "kill_cow",
+"noul": null,
+"score": null
+},
+{
+"id": "c15",
+"kind": "choice",
+"gold": "craft_stone_pickaxe",
+"test": false,
+"choice": "craft_stone_pickaxe",
+"noul": null,
+"score": null
+},
+{
+"id": "c16",
+"kind": "choice",
+"gold": "smelt_iron",
+"test": true,
+"choice": "smelt_iron",
+"noul": null,
+"score": null
+},
+{
+"id": "c17",
+"kind": "choice",
+"gold": "sneak_away",
+"test": false,
+"choice": "sneak_away",
+"noul": null,
+"score": null
+},
+{
+"id": "c18",
+"kind": "choice",
+"gold": "place_water",
+"test": false,
+"choice": "place_water",
+"noul": null,
+"score": null
+},
+{
+"id": "c19",
+"kind": "choice",
+"gold": "eat_chicken",
+"test": true,
+"choice": "eat_flesh",
+"noul": null,
+"score": null
+},
+{
+"id": "c20",
+"kind": "choice",
+"gold": "equip_armor",
+"test": false,
+"choice": "equip_armor",
+"noul": null,
+"score": null
+},
+{
+"id": "c21",
+"kind": "choice",
+"gold": "equip_axe",
+"test": false,
+"choice": "equip_axe",
+"noul": null,
+"score": null
+},
+{
+"id": "c22",
+"kind": "choice",
+"gold": "pick_up",
+"test": true,
+"choice": "pick_up",
+"noul": null,
+"score": null
+},
+{
+"id": "c23",
+"kind": "choice",
+"gold": "open_chest",
+"test": false,
+"choice": "open_chest",
+"noul": null,
+"score": null
+},
+{
+"id": "c24",
+"kind": "choice",
+"gold": "swap_pickaxe",
+"test": false,
+"choice": "swap_pickaxe",
+"noul": null,
+"score": null
+},
+{
+"id": "c25",
+"kind": "choice",
+"gold": "run_away",
+"test": true,
+"choice": "mine",
+"noul": null,
+"score": null
+},
+{
+"id": "c26",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.181,
+"score": null
+},
+{
+"id": "c27",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.1895,
+"score": null
+},
+{
+"id": "c28",
+"kind": "yesno",
+"gold": "yes",
+"test": true,
+"choice": null,
+"noul": 0.1688,
+"score": null
+},
+{
+"id": "c29",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.2295,
+"score": null
+},
+{
+"id": "c30",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.2638,
+"score": null
+},
+{
+"id": "c31",
+"kind": "yesno",
+"gold": "no",
+"test": true,
+"choice": null,
+"noul": 0.1427,
+"score": null
+},
+{
+"id": "c32",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1351,
+"score": null
+},
+{
+"id": "c33",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1111,
+"score": null
+},
+{
+"id": "c34",
+"kind": "yesno",
+"gold": "no",
+"test": true,
+"choice": null,
+"noul": 0.103,
+"score": null
+},
+{
+"id": "c35",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1562,
+"score": null
+},
+{
+"id": "c36",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.1739,
+"score": null
+},
+{
+"id": "c37",
+"kind": "yesno",
+"gold": "yes",
+"test": true,
+"choice": null,
+"noul": 0.1457,
+"score": null
+},
+{
+"id": "c38",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.1555,
+"score": null
+},
+{
+"id": "c39",
+"kind": "yesno",
+"gold": "yes",
+"test": false,
+"choice": null,
+"noul": 0.1971,
+"score": null
+},
+{
+"id": "c40",
+"kind": "yesno",
+"gold": "yes",
+"test": true,
+"choice": null,
+"noul": 0.152,
+"score": null
+},
+{
+"id": "c41",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1457,
+"score": null
+},
+{
+"id": "c42",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1618,
+"score": null
+},
+{
+"id": "c43",
+"kind": "yesno",
+"gold": "no",
+"test": true,
+"choice": null,
+"noul": 0.0967,
+"score": null
+},
+{
+"id": "c44",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.074,
+"score": null
+},
+{
+"id": "c45",
+"kind": "yesno",
+"gold": "no",
+"test": false,
+"choice": null,
+"noul": 0.1368,
+"score": null
+},
+{
+"id": "c46",
+"kind": "score",
+"gold": 0,
+"test": true,
+"choice": null,
+"noul": null,
+"score": 0.5171
+},
+{
+"id": "c47",
+"kind": "score",
+"gold": 2,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 0.9534
+},
+{
+"id": "c48",
+"kind": "score",
+"gold": 0,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 0.4774
+},
+{
+"id": "c49",
+"kind": "score",
+"gold": 0,
+"test": true,
+"choice": null,
+"noul": null,
+"score": 0.8581
+},
+{
+"id": "c50",
+"kind": "score",
+"gold": 2,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 0.811
+},
+{
+"id": "c51",
+"kind": "score",
+"gold": 0,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 1.1868
+},
+{
+"id": "c52",
+"kind": "score",
+"gold": 2,
+"test": true,
+"choice": null,
+"noul": null,
+"score": 1.3295
+},
+{
+"id": "c53",
+"kind": "score",
+"gold": 0,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 0.8748
+},
+{
+"id": "c54",
+"kind": "score",
+"gold": 2,
+"test": false,
+"choice": null,
+"noul": null,
+"score": 0.9476
+},
+{
+"id": "c55",
+"kind": "rank",
+"gold": "pickaxe",
+"test": true,
+"choice": "axe",
+"noul": null,
+"score": null
+},
+{
+"id": "c56",
+"kind": "rank",
+"gold": "axe",
+"test": false,
+"choice": "axe",
+"noul": null,
+"score": null
+},
+{
+"id": "c57",
+"kind": "rank",
+"gold": "shovel",
+"test": false,
+"choice": "axe",
+"noul": null,
+"score": null
+},
+{
+"id": "c58",
+"kind": "rank",
+"gold": "cooked_beef",
+"test": true,
+"choice": "cooked_beef",
+"noul": null,
+"score": null
+},
+{
+"id": "c59",
+"kind": "rank",
+"gold": "cobblestone",
+"test": false,
+"choice": "cobblestone",
+"noul": null,
+"score": null
+},
+{
+"id": "c60",
+"kind": "rank",
+"gold": "cow",
+"test": false,
+"choice": "zombie",
+"noul": null,
+"score": null
+}
+]
