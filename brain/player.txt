@@ -61,7 +61,11 @@ place it. craft plans the whole chain from what you carry (planks, sticks, a cra
 a furnace, smelting) and puts its own table or furnace down: set the final item, never the
 steps. A craft or smelt that cannot finish fails once with exactly what is missing, ending
 in "Get ...": gather those, then set the craft again. smelt kind count cooks at a furnace
-(iron_ingot, cooked_beef, charcoal, glass) with fuel from your inventory. To get wool, meat,
+(iron_ingot, cooked_beef, charcoal, glass) with fuel from your inventory. craft also brews
+and smiths: a potion is named by what is in it (water_potion, awkward_potion, healing_potion,
+healing_splash_potion), brews three bottles on one ingredient at a brewing stand fuelled
+with blaze_powder, and takes 20 s a batch; netherite gear (netherite_pickaxe) is made at a
+smithing table from the diamond item, an upgrade template and an ingot. To get wool, meat,
 leather or feathers use collect item count: the body hunts the animal itself and shears
 sheep when it holds shears. Animals have names for attack (sheep, cow, pig, chicken);
 passive means any animal. Hungry with no food (hungry_no_food): collect beef 3 (or
