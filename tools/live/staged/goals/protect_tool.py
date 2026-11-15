@@ -42,6 +42,9 @@ def trial(m, protect, restart=False):
         if err:
             return m, dict(ok=False, protect_ack=ack)
     if restart:
+        # The ack leaves before the ledger file is synced to disk (a few ms); killing the bot
+        # inside that window lost the box in 1 of 5 trials. A real restart is never that fast.
+        time.sleep(1.0)
         m.p.terminate()
         stop()
         start()
