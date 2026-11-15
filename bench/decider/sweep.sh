@@ -39,7 +39,7 @@ layout)   # solved examples in the cached prefix; only the volatile state fields
     run "$1-shots-volatile" "$2" $M20 --shots "$HERE/shots/mixed.jsonl" --volatile
   done ;;
 goals)    # 65 cases over the 13 real goals, one fixed question
-  G="--cases $HERE/cases_goals.jsonl --reps 1"
+  G="--cases $HERE/cases_goals.jsonl --reps 3 --no-shuffle"   # one fixed option order, as it would be deployed
   for m in "smol135 $BEST135" "smol360 $BEST360" "qwen05 $BEST05" "qwen15 Qwen2.5-1.5B-Instruct-Q4_K_M"; do set -- $m
     run "goals-$1" "$2" $G --calib
     run "goals-$1-shots-key-volatile" "$2" $G --shots "$HERE/shots/goals.jsonl" --label-by key --volatile --calib

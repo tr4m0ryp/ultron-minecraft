@@ -22,7 +22,7 @@ kev() {  # label threads ("" = server default)
   local pid=$!
   until curl -sf -m 2 http://127.0.0.1:8009/v1/models >/dev/null; do sleep 2; kill -0 $pid 2>/dev/null || return 1; done
   "$TP/kev/.venv/bin/python" "$HERE/run.py" --backend http --load-kw '{"url": "http://127.0.0.1:8009", "model": "kev-latest"}' --label "$1" --threads "${2:-4}" --pid $pid $COMMON --out "$OUT/$1.json" >/dev/null 2>"$OUT/$1.log"
-  kill $pid; wait $pid 2>/dev/null
+  kill $pid; wait $pid 2>/dev/null; return 0
 }
 jeff() {  # label; the first run used every 15th case (4 cases), it is too slow for more
   [ -s "$OUT/$1.json" ] && return
