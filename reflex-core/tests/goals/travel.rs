@@ -140,3 +140,19 @@ fn stay_walks_back_when_displaced() {
     assert!(s.run_until(60, |s| s.snap.me.pos.dist(Vec3::new(0.5, 64.0, 0.5)) <= 1.5));
     assert_eq!(s.exec.owner(Channel::Legs), Some("GOAL"));
 }
+
+#[test]
+fn a_body_moved_by_the_server_replans_from_where_it_stands() {
+    // Live: teleported mid-walk, the body followed its old route into a wall for 100 ticks
+    // before the stall watch noticed.
+    let mut s = Sim::new();
+    s.goal("go_to 14 64 0", true);
+    assert!(s.run_until(60, |s| s.snap.me.pos.x > 4.0));
+    let requests = s.nav.state().requests;
+    s.snap.me.pos = Vec3::new(0.5, 64.0, 9.5);
+    s.step();
+    s.step();
+    assert_eq!(s.nav.state().requests, requests + 1, "re-planned at once");
+    assert!(s.run_until(300, |s| s.has_event("goal_done")));
+    assert!(!s.has_event("goal_blocked"), "no stall on the way");
+}

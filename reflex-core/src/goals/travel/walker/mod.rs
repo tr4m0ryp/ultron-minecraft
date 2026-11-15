@@ -1,3 +1,4 @@
+mod jolt;
 mod scrape;
 mod work;
 
@@ -8,6 +9,7 @@ use crate::channels::{Commands, LegsCmd, Speed};
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget};
 use crate::goals::task::{GoalCx, Plan};
 use crate::math::{BlockPos, Vec3};
+use jolt::Jolt;
 use scrape::Scrape;
 
 /// Planner failures in a row before a walk gives up.
@@ -34,6 +36,7 @@ pub struct Walker {
     failures: u32,
     planning: u32,
     scrape: Scrape,
+    jolt: Jolt,
     /// Times the walk re-planned after a pre-emption.
     pub replans: u32,
     /// Scaffold blocks the paths of this walker placed, for the goal to clean up.
@@ -93,6 +96,10 @@ impl Walker {
             }
             return Walk::Moving(Plan::hold(note));
         }
+        // Moved by something other than the legs: the route starts where the body was.
+        if self.jolt.step(cx.snap().tick, cx.me_pos()) && self.target.take().is_some() {
+            cx.nav.cancel();
+        }
         if self.target != Some(target) || self.paused {
             if self.paused {
                 self.replans += 1;
@@ -137,6 +144,8 @@ impl Walker {
             }
             NavStatus::Arrived => {
                 self.stop(cx);
+                // Live, stalls counted across three separate escapes ended the third one.
+                self.failures = 0;
                 Walk::Arrived
             }
             NavStatus::Failed(f) => self.fail(cx, f),
@@ -176,6 +185,7 @@ impl Walker {
         self.paused = false;
         self.planning = 0;
         self.scrape.reset();
+        self.jolt.reset();
     }
 
     /// Forget the request without touching the planner (it was cancelled elsewhere).
