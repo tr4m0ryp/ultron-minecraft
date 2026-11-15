@@ -1160,6 +1160,8 @@ that judgement in the recorded play.
 - d with more than the top 8 of 30 layers adapted and more epochs: with all layers adapted,
   one epoch over 362 pairs did not finish in 11 minutes here. A first d run (5 epochs, half
   the learning rate, loss 1.50) was lost to a scoring fault before it was scored.
+- a4 and d trained with the synthetic "rules" pairs (phases encoder-ft-rules and lora_rules
+  of trained.sh): not run, for CPU time.
 - test_hand is 48 cases by one author; its interval is 25 points wide.
 
 ## 10. References

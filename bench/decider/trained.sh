@@ -2,7 +2,8 @@
 # Trained-Intuition measurement: pairs from recorded Thought decisions, then every arm, in sequence.
 #   bench/decider/trained.sh data floors classic plan habit probe encoder folds latency untrained_small untrained_large \
 #                            lora_real lora_rules
-# Weights live outside the repository ($GGUF, $HF); pairs and logs are ignored by git (data/, logs/).
+# Weights live outside the repository ($GGUF, ~/models/intuition/hf, $TRAINED); pairs and logs are ignored by git
+# (data/, logs/). Not run so far: encoder-ft-rules and lora_rules.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; I="$HERE/intuition"
 GGUF="${GGUF:-$HOME/models/intuition/gguf}"
