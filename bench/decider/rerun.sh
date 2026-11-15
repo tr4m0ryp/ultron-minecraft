@@ -25,9 +25,11 @@ jeff() {  # label; the first run used every 15th case (4 cases), it is too slow 
   "$TP/jeff/.venv/bin/python" "$HERE/run.py" --backend jeff --label "$1" --threads 8 --stride 15 --n-lat 4 --n-batch 3 --gate-wait "${GATE_WAIT:-240}" --out "$OUT/$1.json" >/dev/null 2>"$OUT/$1.log"
 }
 
-for i in $(seq 1 "$REPS"); do laya "laya-421M-t8-r$i" 8; done
-for i in $(seq 1 "$REPS"); do kev "kev-0.8b-t4-r$i" ""; done
-for t in 2 4; do laya "laya-421M-t$t-r1" $t; done
-for t in 2 8; do kev "kev-0.8b-t$t-r1" $t; done
-for i in $(seq 1 "$REPS"); do jeff "jeff-router-r$i"; done
+try() { "$@" || { echo "failed once, retrying: $*"; "$@"; }; }  # one laya launch in six died with SIGILL at start-up
+
+for i in $(seq 1 "$REPS"); do try laya "laya-421M-t8-r$i" 8; done
+for i in $(seq 1 "$REPS"); do try kev "kev-0.8b-t4-r$i" ""; done
+for t in 2 4; do try laya "laya-421M-t$t-r1" $t; done
+for t in 2 8; do try kev "kev-0.8b-t$t-r1" $t; done
+for i in $(seq 1 "$REPS"); do try jeff "jeff-router-r$i"; done
 echo finished
