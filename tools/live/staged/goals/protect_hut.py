@@ -190,7 +190,8 @@ def dug_cells(since):
 def hut_build():
     """The building itself: walls and roof by five fill goals, one pass, then 15 s with no
     goal. Counted on the server: hut cells standing, and floor blocks gone (the repair fill
-    says how many it put back). From the trace: hut cells and floor cells the hand dug."""
+    says how many it put back), dirt left inside the room (scaffold). From the trace: hut
+    cells and floor cells the hand dug."""
     reset_site()
     rc(f"fill {HX0} {Y + 1} {HZ0} {HX1} {ROOF} {HZ1} air")
     prep(items=[("hotbar.1", "dirt", 64), ("hotbar.2", "dirt", 64), ("hotbar.0", "iron_pickaxe", 1)],
@@ -211,12 +212,15 @@ def hut_build():
     out = rc(f"fill {X0} {Y - 3} {Z0} {X1} {Y} {Z1} stone replace air")
     m = re.search(r"filled (\d+) block", out)
     floor = int(m.group(1)) if m else 0
+    out = rc(f"fill {HX0 + 1} {Y + 1} {HZ0 + 1} {HX1 - 1} {Y + 2} {HZ1 - 1} air replace dirt")
+    m = re.search(r"filled (\d+) block", out)
+    inside = int(m.group(1)) if m else 0
     dug = dug_cells(n0)
     hut_dug = sorted(c for c in dug if c in CELLS)
     floor_dug = sorted(c for c in dug if c[1] <= Y)
     return dict(ok=not gone and floor == 0 and not hut_dug and not floor_dug, placed=len(CELLS) - len(gone),
                 of=len(CELLS), floor_blocks_gone=floor, hut_cells_dug=len(hut_dug), floor_cells_dug=len(floor_dug),
-                inside_at_end=bool(in_hut(p)), secs=secs, roof=texts[-1], pos=p)
+                inside_at_end=bool(in_hut(p)), scaffold_left_inside=inside, secs=secs, roof=texts[-1], pos=p)
 
 
 def cleanup():

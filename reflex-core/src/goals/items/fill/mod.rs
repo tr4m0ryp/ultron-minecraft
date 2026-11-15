@@ -28,6 +28,7 @@ pub struct Fill {
     replace: bool,
     failures: Vec<String>,
     cleanup: Cleanup,
+    stray: stray::Budget,
     outcome: Option<Step>,
 }
 
@@ -66,6 +67,7 @@ impl Fill {
             replace: false,
             failures: Vec::new(),
             cleanup: Cleanup::default(),
+            stray: stray::Budget::default(),
             outcome: None,
         }
     }
@@ -159,9 +161,12 @@ impl GoalTask for Fill {
         // while it can still be reached (see `stray`).
         let mut scaffold = self.cleanup.pending().to_vec();
         scaffold.extend_from_slice(place.scaffold());
+        scaffold.retain(|b| !self.stray.given_up(*b));
         if let Some(b) = stray::reachable(cx, &self.cells, &scaffold) {
             self.cleanup.add(place.release_scaffold(b));
-            return Step::Bid(self.cleanup.dig(cx, b));
+            if self.stray.spend(b, cx.preempted) {
+                return Step::Bid(self.cleanup.dig(cx, b));
+            }
         }
         self.cleanup.tally(cx);
         let step = place.step(cx);

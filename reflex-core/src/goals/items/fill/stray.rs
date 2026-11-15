@@ -33,3 +33,52 @@ pub fn reachable(cx: &GoalCx, cover: &[BlockPos], scaffold: &[BlockPos]) -> Opti
             && hand_sees(&*cx.world, eye, top, &[b])
     })
 }
+
+/// Ticks one such block may take. Live, the client showed a pillar block the server did not
+/// have (it had refused the placement), and digging it never ended.
+const DIG_TICKS: u32 = 60;
+
+/// Bounds the digging per block; a block that outlasts it is left to the cleanup at the end.
+#[derive(Debug, Default)]
+pub struct Budget {
+    current: Option<(BlockPos, u32)>,
+    gave_up: Vec<BlockPos>,
+}
+
+impl Budget {
+    pub fn given_up(&self, b: BlockPos) -> bool {
+        self.gave_up.contains(&b)
+    }
+
+    /// One more tick on `b`; false once its ticks are spent.
+    pub fn spend(&mut self, b: BlockPos, preempted: bool) -> bool {
+        let ticks = match &mut self.current {
+            Some((cur, t)) if *cur == b => t,
+            slot => &mut slot.insert((b, 0)).1,
+        };
+        *ticks += u32::from(!preempted);
+        if *ticks > DIG_TICKS {
+            self.gave_up.push(b);
+            return false;
+        }
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_block_that_will_not_break_is_given_up_after_its_ticks() {
+        let (a, b) = (BlockPos::new(1, 64, 1), BlockPos::new(2, 64, 1));
+        let mut budget = Budget::default();
+        assert!((0..DIG_TICKS).all(|_| budget.spend(a, false)));
+        assert!(
+            budget.spend(a, true),
+            "a tick a reflex held the body does not count"
+        );
+        assert!(!budget.spend(a, false) && budget.given_up(a));
+        assert!(budget.spend(b, false) && !budget.given_up(b));
+    }
+}
