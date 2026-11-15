@@ -723,8 +723,10 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   Not done: filling a bottle at water, the blast furnace, smoker, campfire and stonecutter
   (394 recipes whose results the grid or the furnace also makes), and trims. Two
   weaknesses seen: a count of healing_potion also counts strong_healing_potion (names
-  match by their last words), and the shopping list for a deep chain names odd steps
-  ("smelt 4 gold_ingot from 4 gold_nugget").
+  match by their last words), and the shopping list for a deep chain picks odd routes (gold
+  nuggets "from 8 one of 12 kinds such as golden_pickaxe" where one gold ingot would do).
+  One fault in that list was fixed on the way: a smelt step was printed with a craft's
+  input ("smelt 4 gold_ingot from 4 gold_nugget", now "from 4 gold_ore").
 - Placing into an occupied cell (tools/live/staged/goals/protect.py): leaves, dirt and grass
   dug out of the cell first, 15 of 15; a block the player placed refused without `replace`
   and replaced with it, 5 of 5.

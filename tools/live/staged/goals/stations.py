@@ -34,25 +34,26 @@ WATER = [("inventory.0", potion("water"), 1), ("inventory.1", potion("water"), 1
 
 NO_UPGRADE = (
     "cannot craft netherite_pickaxe: need 1 crafting_table, have 0: craft 1 from 4 any plank; need 4 any "
-    "plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; need 1 furnace, have 0: craft 1 from 8 "
-    "cobblestone/blackstone/cobbled_deepslate; need 8 cobblestone/blackstone/cobbled_deepslate, have 0; "
+    "plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; need 1 furnace, have 0: craft 1 from "
+    "8 cobblestone/blackstone/cobbled_deepslate; need 8 cobblestone/blackstone/cobbled_deepslate, have 0; "
     "need 1 netherite_upgrade_smithing_template, have 0: craft 2 from 7 diamond and 1 "
     "netherite_upgrade_smithing_template and 1 netherrack; need 7 diamond, have 0; need 1 "
-    "netherite_upgrade_smithing_template, have 0; need 1 netherrack, have 0; need 1 netherite_ingot, have 0: "
-    "craft 1 from 4 netherite_scrap and 4 gold_ingot; need 4 netherite_scrap, have 0: smelt 4 from 4 "
-    "ancient_debris; need 4 ancient_debris, have 0; need 4 gold_ingot, have 0: smelt 4 from 4 gold_nugget; "
-    "need 4 gold_nugget, have 0; need fuel for 8 more smelts: 1 coal or 6 logs or planks. Get 1 any log, 8 "
+    "netherite_upgrade_smithing_template, have 0; need 1 netherrack, have 0; need 1 netherite_ingot, have "
+    "0: craft 1 from 4 netherite_scrap and 4 gold_ingot; need 4 netherite_scrap, have 0: smelt 4 from 4 "
+    "ancient_debris; need 4 ancient_debris, have 0; need 4 gold_ingot, have 0: smelt 4 from 4 gold_ore; "
+    "need 4 gold_ore, have 0; need fuel for 8 more smelts: 1 coal or 6 logs or planks. Get 1 any log, 8 "
     "cobblestone/blackstone/cobbled_deepslate, 7 diamond, 1 netherite_upgrade_smithing_template, 1 "
-    "netherrack, 4 ancient_debris, 4 gold_nugget, 1 coal.")
+    "netherrack, 4 ancient_debris, 4 gold_ore, 1 coal.")
 NO_POTION = (
-    "cannot craft healing_potion: need 1 crafting_table, have 0: craft 1 from 4 any plank; need 4 any plank, "
-    "have 0: craft 4 from 1 any log; need 1 any log, have 0; need 1 furnace, have 0: craft 1 from 8 "
-    "cobblestone/blackstone/cobbled_deepslate; need 8 cobblestone/blackstone/cobbled_deepslate, have 0; "
-    "need 1 awkward_potion, have 0: brew 1 from 1 water_potion and 1 nether_wart; need 1 nether_wart, have "
-    "0; need 1 glistering_melon_slice, have 0: craft 1 from 8 gold_nugget and 1 melon_slice; need 8 "
-    "gold_nugget, have 0: smelt 8 from 8 gold_ingot; need 8 gold_ingot, have 0; need 1 melon_slice, have 0; "
-    "need fuel for 8 more smelts: 1 coal or 6 logs or planks. Get 1 any log, 8 "
-    "cobblestone/blackstone/cobbled_deepslate, 1 nether_wart, 8 gold_ingot, 1 melon_slice, 1 coal.")
+    "cannot craft healing_potion: need 1 crafting_table, have 0: craft 1 from 4 any plank; need 4 any "
+    "plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; need 1 furnace, have 0: craft 1 from "
+    "8 cobblestone/blackstone/cobbled_deepslate; need 8 cobblestone/blackstone/cobbled_deepslate, have 0; "
+    "need 1 awkward_potion, have 0: brew 1 from 1 water_potion and 1 nether_wart; need 1 nether_wart, "
+    "have 0; need 1 glistering_melon_slice, have 0: craft 1 from 8 gold_nugget and 1 melon_slice; need 8 "
+    "gold_nugget, have 0: smelt 8 from 8 one of 12 kinds such as golden_pickaxe; need 8 one of 12 kinds "
+    "such as golden_pickaxe, have 0; need 1 melon_slice, have 0; need fuel for 8 more smelts: 1 coal or 6 "
+    "logs or planks. Get 1 any log, 8 cobblestone/blackstone/cobbled_deepslate, 1 nether_wart, 8 one of "
+    "12 kinds such as golden_pickaxe, 1 melon_slice, 1 coal.")
 
 
 def site():
