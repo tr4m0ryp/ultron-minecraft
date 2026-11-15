@@ -25,7 +25,7 @@ probe)     step classic-lm135-probe "$EPY" -u "$I/classic.py" --encoder lm135 --
 floors)    step floors "$EPY" -u "$I/floors.py"; step wake-filter "$EPY" -u "$I/wake_filter.py" ;;
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
 encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 10
-           step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 6 ;;
+           step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 3 ;;
 lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 5
            step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 ;;
 untrained) old untrained-smol135-real $S135 lm_test_real; old untrained-smol135-hand $S135 lm_test_hand
