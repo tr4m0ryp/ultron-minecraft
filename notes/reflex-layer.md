@@ -959,8 +959,8 @@ Data:
   as it stood when the event arrived. The decision is what Thought did before its next
   wait_event: the goal it set, else say, arm, set_mode or inhibit, else wait.
 - Real pairs: 470. By decision: place 126, craft 81, go_to 78, wait 73, mine 64, collect 27,
-  say 5, smelt 5, set_mode 3, inhibit 2, give 2, attack 2, end 1, follow 1. A chat line drives
-  6 of the 470 (1.3 %) and the companion is visible in 31: this is solo building and
+  say 5, smelt 5, set_mode 3, inhibit 2, give 2, attack 2, end 1, follow 1. A chat line
+  drives 6 of the 470 (1.3 %) and the companion is visible in 31: this is solo building and
   crafting. The split-second calls this layer was meant for (fight or run, which target) do
   not occur once; the reflexes had handled them before Thought was asked.
 - 204 of the 470 decisions (43 %) carry coordinates and 181 (39 %) an item and a count, which
@@ -1018,22 +1018,24 @@ pair to a label, n = 468 per row (156 cases, 3 repetitions), behind bench/decide
   with 1.4 cores of foreign load. The b rows were timed against 2081 stored rows. The d rows
   are the adapter prompt (84 tokens, nothing cached) through llama.cpp on the base weights:
   an adapter merged into the weights changes no shapes, so the cost is the same; d's
-  accuracy comes from the training framework. The 1.5B row was timed while my own training jobs used 5 cores, so its latency is an upper bound; its clean figure for a suffix of this length is 2804 / 2975 ms (9.4).
+  accuracy comes from the training framework. The 1.5B row was timed while my own training
+  jobs used 5 cores, so its latency is an upper bound; its clean figure for a suffix of this
+  length is 2804 / 2975 ms (9.4).
 - Two launches died with an illegal-instruction signal before computing anything (a timing
   probe and the first d0 run), as one did in 9.1; both ran on the second try. Cause unknown.
 - The 3-fold cross-check (whole sessions, 470 decisions): a1 158, a2 179, b5 168, c1 203,
   c2 162, c3 178, repeat-last 170, a4 234 (45.3 to 54.3).
 - (a) against (c). On test_real the frozen encoder (a1) is right where c1 is wrong 30 times
   and the reverse 14 times (exact sign test p = 0.023), against c2 26 and 12 (p = 0.034),
-  against the habit table 14 and 10 (p = 0.54). The encoder trained end to end (a4) leads
-  c1 by 35 to 11 (p = 0.0005), c2 by 32 to 10 (p = 0.0009) and the habit table by 21 to 9
-  (p = 0.043). Over all sessions the order of the frozen encoder reverses: leave one session
-  out gives a1 151, c1 184, c3 183; 3 folds give a1 158, c1 203. The encoder trained end to end (a4) keeps its
-  lead on the 3 folds: 234 of 470 against 203 for c1 (right where c1 is wrong 85 times, the
-  reverse 54, p = 0.011) and against every other arm (p under 0.001). By fold it reads 37,
-  70, 127 against c1's 40, 73, 90: level on two folds and far ahead on the one that holds
-  the long building sessions. So (a) is clearly above (c) only when the encoder itself is
-  trained; with a frozen encoder the feature classifier is the better of the two.
+  against the habit table 14 and 10 (p = 0.54). The encoder trained end to end (a4) leads c1
+  by 35 to 11 (p = 0.0005), c2 by 32 to 10 (p = 0.0009) and the habit table by 21 to 9 (p =
+  0.043). Over all sessions the order of the frozen encoder reverses: leave one session out
+  gives a1 151, c1 184, c3 183; 3 folds give a1 158, c1 203. The encoder trained end to end
+  (a4) keeps its lead on the 3 folds: 234 of 470 against 203 for c1 (right where c1 is wrong
+  85 times, the reverse 54, p = 0.011) and against every other arm (p under 0.001). By fold
+  it reads 37, 70, 127 against c1's 40, 73, 90: level on two folds and far ahead on the one
+  that holds the long building sessions. So (a) is clearly above (c) only when the encoder
+  itself is trained; with a frozen encoder the feature classifier is the better of the two.
 - No arm is right in more than 61 of 108 decisions, and on the cross-checks none passes 50 %.
   "Repeat the last decision" gets 41 of 108 and 170 of 470 with no model at all.
 - Yesterday's variants on real decisions: the keyword rule falls from 63/65 to 4/108, since
@@ -1095,11 +1097,11 @@ non-neural baseline, with accuracy that can be acted on):
   that matters is not met by any.
 - Latency: passes for every trained arm. 0.9 ms for the feature classifier, 69 to 105 ms
   for the encoder arms, 239 ms for the 135M model with the short adapter prompt.
-- Accuracy: does not pass for any arm. The best is right in 61 of 108 decisions on a new
-  day and 234 of 470 on the 3 folds, the takeover at 95 % precision is 4 of 108 with a
-  threshold fixed beforehand (22 with hindsight, at most 4.5 % on the cross-checks), and
-  what is taken is the goal name without its item, count or coordinates. Intuition cannot be filled with a model
-  trained on these 470 decisions, on this hardware or on a faster one.
+- Accuracy: does not pass for any arm. The best is right in 61 of 108 decisions on a new day
+  and 234 of 470 on the 3 folds, the takeover at 95 % precision is 4 of 108 with a threshold
+  fixed beforehand (22 with hindsight, at most 4.5 % on the cross-checks), and what is taken
+  is the goal name without its item, count or coordinates. Intuition cannot be filled with a
+  model trained on these 470 decisions, on this hardware or on a faster one.
 - (a) encoder with a trained head. a1 and a2 (frozen encoder): lost a comparison, to the
   bar and to the feature classifier on both cross-checks (151 and 159 on leave one session
   out against 184; 158 and 179 on the 3 folds against 203). a4, the
@@ -1116,11 +1118,11 @@ non-neural baseline, with accuracy that can be acted on):
   table is level with the frozen encoder on the new day (49 against 53, p = 0.54). Neither
   is the better Intuition: a4 is ahead of both. c1 stays as the floor to beat: 0.9 ms, no
   model file, readable.
-- (d) 135M with a low-rank adapter: lost a comparison, to a4 (46 against 61 of
-  108, right alone 7 times against 22, p = 0.008) and not separated from c1 (right alone 23 times against 14, p = 0.19),
-  at 3.5 times the encoder's latency and 64 minutes of training against 17. Not closed: the
-  adapter covered the top 8 of 30 layers for 8 epochs and its loss was still falling
-  (0.99 at the end).
+- (d) 135M with a low-rank adapter: lost a comparison, to a4 (46 against 61 of 108, right
+  alone 7 times against 22, p = 0.008) and not separated from c1 (right alone 23 times
+  against 14, p = 0.19), at 3.5 times the encoder's latency and 64 minutes of training
+  against 17. Not closed: the adapter covered the top 8 of 30 layers for 8 epochs and its
+  loss was still falling (0.99 at the end).
 - (d0) frozen 135M with a trained head: lost a comparison, to the 33M encoder with the
   same head (29 against 53) at 3.5 times its latency.
 - Untrained variants of 9.4 on real decisions: lost a comparison, to chance in the case of
