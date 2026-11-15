@@ -34,7 +34,29 @@ pub enum Shape {
     Shapeless(Vec<Ingredient>),
     /// One input per output in a furnace, `ticks` of cooking each.
     Smelt { input: Ingredient, ticks: u32 },
+    /// One bottle in, one bottle out at a brewing stand; one `reagent` brews up to
+    /// `BREW_BOTTLES` bottles at once.
+    Brew {
+        input: Ingredient,
+        reagent: Ingredient,
+    },
+    /// The three slots of a smithing table; all three are used up, one item comes out.
+    Smith {
+        template: Ingredient,
+        base: Ingredient,
+        addition: Ingredient,
+    },
 }
+
+pub const TABLE: &str = "crafting_table";
+pub const FURNACE: &str = "furnace";
+pub const BREWING_STAND: &str = "brewing_stand";
+pub const SMITHING_TABLE: &str = "smithing_table";
+/// Brewing stand fuel; one powder lasts `BREWS_PER_POWDER` batches.
+pub const BLAZE_POWDER: &str = "blaze_powder";
+pub const BREWS_PER_POWDER: u32 = 20;
+/// Bottles a brewing stand takes at once.
+pub const BREW_BOTTLES: u32 = 3;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Recipe {
@@ -56,7 +78,42 @@ impl Recipe {
         match &self.shape {
             Shape::Shaped { width, height, .. } => *width > 2 || *height > 2,
             Shape::Shapeless(v) => v.len() > 4,
-            Shape::Smelt { .. } => false,
+            _ => false,
+        }
+    }
+
+    /// The block the recipe is made at; `None` for the 2x2 grid of the inventory.
+    pub fn station(&self) -> Option<&'static str> {
+        match &self.shape {
+            Shape::Smelt { .. } => Some(FURNACE),
+            Shape::Brew { .. } => Some(BREWING_STAND),
+            Shape::Smith { .. } => Some(SMITHING_TABLE),
+            _ => self.needs_table().then_some(TABLE),
+        }
+    }
+
+    /// "craft", "smelt", "brew" or "smith".
+    pub fn verb(&self) -> &'static str {
+        match &self.shape {
+            Shape::Smelt { .. } => "smelt",
+            Shape::Brew { .. } => "brew",
+            Shape::Smith { .. } => "smith",
+            _ => "craft",
+        }
+    }
+
+    /// The units of each distinct ingredient `crafts` runs consume together. A brewing
+    /// reagent is shared by the bottles of one batch.
+    pub fn units(&self, crafts: u32) -> Vec<(&Ingredient, u32)> {
+        match &self.shape {
+            Shape::Brew { input, reagent } => {
+                vec![(input, crafts), (reagent, crafts.div_ceil(BREW_BOTTLES))]
+            }
+            _ => self
+                .inputs()
+                .into_iter()
+                .map(|(i, n)| (i, n * crafts))
+                .collect(),
         }
     }
 
@@ -66,6 +123,12 @@ impl Recipe {
             Shape::Shaped { cells, .. } => cells.iter().flatten().collect(),
             Shape::Shapeless(v) => v.iter().collect(),
             Shape::Smelt { input, .. } => vec![input],
+            Shape::Brew { input, reagent } => vec![input, reagent],
+            Shape::Smith {
+                template,
+                base,
+                addition,
+            } => vec![template, base, addition],
         };
         let mut out: Vec<(&Ingredient, u32)> = Vec::new();
         for ing in all {
@@ -89,7 +152,7 @@ impl Recipe {
                 })
                 .collect(),
             Shape::Shapeless(v) => v.iter().enumerate().collect(),
-            Shape::Smelt { .. } => Vec::new(),
+            _ => Vec::new(),
         }
     }
 }

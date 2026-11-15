@@ -36,7 +36,7 @@ fn recolour(r: &Recipe) -> bool {
 /// A one-input craft whose input can be crafted back from the result: storage blocks and
 /// nuggets in both directions.
 fn reversible(book: &RecipeBook, r: &Recipe) -> bool {
-    if r.is_smelt() {
+    if r.verb() != "craft" {
         return false;
     }
     let inputs = r.inputs();

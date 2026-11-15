@@ -11,8 +11,12 @@ fn clauses(n: &Need, out: &mut Vec<String>, get: &mut Vec<(String, u32)>) {
     match &n.via {
         Some(v) => {
             let from: Vec<String> = v.from.iter().map(|(l, k)| format!("{k} {l}")).collect();
-            let verb = if v.smelt { "smelt" } else { "craft" };
-            line.push_str(&format!(": {verb} {} from {}", v.makes, from.join(" and ")));
+            line.push_str(&format!(
+                ": {} {} from {}",
+                v.verb,
+                v.makes,
+                from.join(" and ")
+            ));
             out.push(line);
             for s in &v.subs {
                 clauses(s, out, get);

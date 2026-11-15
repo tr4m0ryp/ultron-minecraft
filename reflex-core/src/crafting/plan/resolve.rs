@@ -83,9 +83,9 @@ impl State {
     fn score(&self, r: &Recipe, wanted: u32) -> u32 {
         let crafts = wanted.div_ceil(r.count.max(1));
         let (mut held, mut total) = (0, 0);
-        for (ing, units) in r.inputs() {
-            held += self.held(ing).min(units * crafts);
-            total += units * crafts;
+        for (ing, want) in r.units(crafts) {
+            held += self.held(ing).min(want);
+            total += want;
         }
         (held * 1000).checked_div(total).unwrap_or(0)
     }
@@ -190,8 +190,7 @@ impl State {
         self.stack.push(r.result.clone());
         let mut subs = Vec::new();
         let mut from = Vec::new();
-        for (ing, units) in r.inputs() {
-            let want = units * crafts;
+        for (ing, want) in r.units(crafts) {
             from.push((name_set(book, &ing.0), want));
             subs.push(if in_hand {
                 let have = self.take(ing, want);
@@ -214,7 +213,7 @@ impl State {
         });
         self.give(&r.result, crafts * r.count - n);
         let via = Via {
-            smelt: r.is_smelt(),
+            verb: r.verb(),
             makes: crafts * r.count,
             from,
             subs,

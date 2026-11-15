@@ -16,7 +16,8 @@ pub struct Need {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Via {
-    pub smelt: bool,
+    /// "craft", "smelt", "brew" or "smith".
+    pub verb: &'static str,
     pub makes: u32,
     /// The inputs of all the crafts together, as (label, units).
     pub from: Vec<(String, u32)>,
@@ -47,7 +48,7 @@ impl Need {
 pub fn widen(book: &RecipeBook, ing: &Ingredient, mut v: Via) -> Via {
     let mut union: Vec<String> = Vec::new();
     for a in &ing.0 {
-        let Some(r) = book.recipes_for(a).iter().find(|r| !r.is_smelt()) else {
+        let Some(r) = book.recipes_for(a).iter().find(|r| r.verb() == "craft") else {
             return v;
         };
         let inputs = r.inputs();

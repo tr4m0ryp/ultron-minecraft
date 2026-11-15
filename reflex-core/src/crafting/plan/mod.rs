@@ -6,17 +6,20 @@ mod need;
 mod resolve;
 mod text;
 
-use super::book::{Recipe, RecipeBook};
+use super::book::{
+    Recipe, RecipeBook, BLAZE_POWDER, BREWING_STAND, BREWS_PER_POWDER, BREW_BOTTLES, FURNACE,
+    SMITHING_TABLE, TABLE,
+};
 use super::fuel;
 use resolve::{Mode, State};
 
 /// Make calls the search may spend on one plan before it gives up on further alternatives.
 pub const BUDGET: u32 = 20_000;
-pub const TABLE: &str = "crafting_table";
-pub const FURNACE: &str = "furnace";
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum PlanStep {
+    /// A grid craft, or `crafts` bottles at a brewing stand, or `crafts` items at a
+    /// smithing table: the recipe's shape says which.
     Craft {
         recipe: Recipe,
         crafts: u32,
@@ -43,13 +46,10 @@ impl PlanStep {
         }
     }
 
-    /// "craft 4 stick", "smelt 3 iron_ingot".
+    /// "craft 4 stick", "smelt 3 iron_ingot", "brew 1 awkward_potion".
     pub fn describe(&self) -> String {
-        let verb = match self {
-            PlanStep::Craft { .. } => "craft",
-            PlanStep::Smelt { .. } => "smelt",
-        };
-        format!("{verb} {} {}", self.makes(), self.recipe().result)
+        let r = self.recipe();
+        format!("{} {} {}", r.verb(), self.makes(), r.result)
     }
 }
 
@@ -58,6 +58,10 @@ impl PlanStep {
 pub struct Stations {
     pub table: bool,
     pub furnace: bool,
+    pub stand: bool,
+    pub smithing: bool,
+    /// The stand near is known to hold blaze fuel (this goal loaded it).
+    pub stand_fuelled: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -93,22 +97,37 @@ pub fn plan(
         };
         return Err(format!("no {how} makes {item}"));
     }
-    let mut stations: Vec<&str> = Vec::new();
+    // Things the plan turned out to need beside the item: stations not standing near, and
+    // blaze powder for an unfuelled stand. Each is taken from the inventory, or made, before
+    // the item itself, so the plan never spends them on something else.
+    let mut extras: Vec<(&str, u32)> = Vec::new();
     loop {
         let mut st = State::new(inv);
-        let mut nodes: Vec<need::Need> = stations
+        let mut nodes: Vec<need::Need> = extras
             .iter()
-            .map(|s| st.need_set(book, &super::Ingredient::one(s), 1, Mode::Any))
+            .map(|(s, n)| st.need_set(book, &super::Ingredient::one(s), *n, Mode::Any))
             .collect();
         let top = st.make(book, item, count.max(1), mode);
-        let table = st.steps.iter().any(|s| s.recipe().needs_table());
-        let furnace = st.steps.iter().any(|s| matches!(s, PlanStep::Smelt { .. }));
-        if furnace && !near.furnace && !stations.contains(&FURNACE) {
-            stations.push(FURNACE);
+        let at = |name: &str| st.steps.iter().any(|s| s.recipe().station() == Some(name));
+        let (table, furnace) = (at(TABLE), at(FURNACE));
+        let lacking = [
+            (FURNACE, near.furnace),
+            (BREWING_STAND, near.stand),
+            (SMITHING_TABLE, near.smithing),
+        ]
+        .into_iter()
+        .find(|(name, near)| at(name) && !near && !extras.iter().any(|(e, _)| e == name));
+        if let Some((name, _)) = lacking {
+            extras.push((name, 1));
             continue;
         }
-        if table && !near.table && !stations.contains(&TABLE) {
-            stations.insert(0, TABLE);
+        if table && !near.table && !extras.iter().any(|(e, _)| *e == TABLE) {
+            extras.insert(0, (TABLE, 1));
+            continue;
+        }
+        let batches: u32 = st.steps.iter().map(brew_batches).sum();
+        if batches > 0 && !near.stand_fuelled && !extras.iter().any(|(e, _)| *e == BLAZE_POWDER) {
+            extras.push((BLAZE_POWDER, batches.div_ceil(BREWS_PER_POWDER)));
             continue;
         }
         let short_fuel = add_fuel(&mut st);
@@ -122,6 +141,16 @@ pub fn plan(
         }
         nodes.extend(top.via.map(|v| v.subs).unwrap_or_default());
         return Err(text::shopping(verb, item, &nodes, short_fuel));
+    }
+}
+
+/// Batches a step runs at a brewing stand (0 for any other step).
+fn brew_batches(step: &PlanStep) -> u32 {
+    match step {
+        PlanStep::Craft { recipe, crafts } if recipe.station() == Some(BREWING_STAND) => {
+            crafts.div_ceil(BREW_BOTTLES)
+        }
+        _ => 0,
     }
 }
 

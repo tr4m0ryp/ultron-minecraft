@@ -21,7 +21,7 @@ pub fn layout(r: &Recipe, grid: usize, inv: &[(String, u32)], crafts: u32) -> Op
             (*width as usize) <= grid && (*height as usize) <= grid
         }
         Shape::Shapeless(v) => v.len() <= grid * grid,
-        Shape::Smelt { .. } => false,
+        _ => false,
     };
     if !fits {
         return None;
@@ -99,7 +99,7 @@ pub fn matches(r: &Recipe, grid: usize, items: &[Option<String>]) -> bool {
             let got: Vec<&String> = items.iter().flatten().collect();
             got.len() == ings.len() && pair(&got, &mut vec![false; ings.len()], ings)
         }
-        Shape::Smelt { .. } => false,
+        _ => false,
     }
 }
 
