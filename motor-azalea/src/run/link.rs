@@ -31,6 +31,12 @@ impl Link {
         match Bridge::mount(&path) {
             Ok((bridge, server)) => {
                 println!("BRIDGE socket={}", path.display());
+                if let Some(log) = brain_link::decisions::default_path() {
+                    match bridge.record_decisions(&log) {
+                        Ok(()) => println!("DECISIONS log={}", log.display()),
+                        Err(e) => eprintln!("decision log not opened at {}: {e}", log.display()),
+                    }
+                }
                 Some(Link {
                     bridge,
                     _server: server,
@@ -48,6 +54,7 @@ impl Link {
 struct Body<'a> {
     exec: &'a mut Executor,
     goals: &'a GoalHandle,
+    bot: &'a azalea::Client,
 }
 
 impl Host for Body<'_> {
@@ -63,6 +70,9 @@ impl Host for Body<'_> {
     fn goal_status(&self) -> Option<GoalStatus> {
         self.goals.status()
     }
+    fn inventory(&self) -> Vec<(String, u32)> {
+        crate::world::inventory_list(self.bot)
+    }
 }
 
 /// Exactly one upward path per tick: the bridge when mounted, else stdout. Returns chat
@@ -72,20 +82,33 @@ pub fn publish(
     exec: &mut Executor,
     goals: &GoalHandle,
     snap: &Snapshot,
+    bot: &azalea::Client,
 ) -> Vec<String> {
     let Some(link) = link else {
         io::publish(exec, snap.tick);
         return Vec::new();
     };
-    let mut body = Body { exec, goals };
-    link.bridge.pump_commit(
+    let mut body = Body { exec, goals, bot };
+    let logged = link.bridge.decision_cost().records;
+    let say = link.bridge.pump_commit(
         &mut body,
         snap,
         |e| println!("WAKE t={} {} {} {}", e.t, e.kind, e.subject, e.text),
         // A box marked or lifted by a request of this tick is in the ledger file before
         // the request is answered.
         |b| sync_protected(b.goals, &mut b.exec.knobs),
-    )
+    );
+    let cost = link.bridge.decision_cost();
+    if cost.records > logged {
+        // What the decision log cost this tick, for the trace.
+        println!(
+            "DECISION t={} n={} us={}",
+            snap.tick,
+            cost.records - logged,
+            cost.last.as_micros()
+        );
+    }
+    say
 }
 
 /// Mirrors the protected boxes into the ledger and writes it at once when they changed.

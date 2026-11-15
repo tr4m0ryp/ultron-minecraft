@@ -5,7 +5,8 @@
 # RUN defaults to <repo>/logs/live (gitignored); BIN selects target/<BIN> (default release),
 # MOTOR_BIN overrides the binary path; MOTOR_ONLY (comma-separated ids) limits the catalog.
 # ULTRON_LEDGER names the file of blocks the bot placed; it defaults to $RUN/<who>.placed,
-# never the play one (logs/play/placed.txt).
+# never the play one (logs/play/placed.txt). ULTRON_DECISIONS names the decision log the same
+# way: it defaults to $RUN/<who>.decisions.jsonl, never logs/play/decisions.jsonl.
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 RUN="${LIVE_RUN_DIR:-$REPO/logs/live}"
 mkdir -p "$RUN"
@@ -15,7 +16,8 @@ start)
   : > "$RUN/$who.in"
   cd "$REPO" || exit 1
   setsid bash -c "tail -f '$RUN/$who.in' | RUST_LOG=${RUST_LOG:-warn} MOTOR_TRACE=1 \
-    ULTRON_LEDGER='${ULTRON_LEDGER:-$RUN/$who.placed}' ${MOTOR_BIN:-target/${BIN:-release}/motor-azalea} 127.0.0.1:25565 $3 $4 > '$RUN/$who.log' 2>&1" \
+    ULTRON_LEDGER='${ULTRON_LEDGER:-$RUN/$who.placed}' \
+    ULTRON_DECISIONS='${ULTRON_DECISIONS:-$RUN/$who.decisions.jsonl}' ${MOTOR_BIN:-target/${BIN:-release}/motor-azalea} 127.0.0.1:25565 $3 $4 > '$RUN/$who.log' 2>&1" \
     < /dev/null > /dev/null 2>&1 &
   echo $! > "$RUN/$who.pid" ;;
 stop) kill -- -"$(cat "$RUN/$who.pid")" ;;

@@ -91,6 +91,7 @@ impl State {
                 &mut l.exec,
                 &l.goals,
                 &snap,
+                bot,
             ));
             (out, say)
         });

@@ -39,6 +39,11 @@ pub fn inventory_menu(bot: &Client) -> Option<azalea::inventory::Menu> {
         .map(|i| i.inventory_menu.clone())
 }
 
+/// Main inventory and hotbar by exact item name, counts summed per name.
+pub fn inventory_list(bot: &Client) -> Vec<(String, u32)> {
+    inventory::list(bot)
+}
+
 pub struct AzaleaWorld {
     bot: Client,
     book: Arc<RecipeBook>,
