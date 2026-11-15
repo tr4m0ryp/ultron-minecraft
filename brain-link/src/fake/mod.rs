@@ -19,6 +19,8 @@ pub struct FakeExecutor {
     pub legs_owner: Option<String>,
     /// Published by the stage's goal simulator; `None` in the plain fake.
     pub status: Option<GoalStatus>,
+    /// What `Host::inventory` reports (the decision log reads it).
+    pub inventory: Vec<(String, u32)>,
 }
 
 impl Default for FakeExecutor {
@@ -28,6 +30,7 @@ impl Default for FakeExecutor {
             upward: Upward::default(),
             legs_owner: None,
             status: None,
+            inventory: Vec::new(),
         }
     }
 }
@@ -44,5 +47,8 @@ impl Host for FakeExecutor {
     }
     fn goal_status(&self) -> Option<GoalStatus> {
         self.status.clone()
+    }
+    fn inventory(&self) -> Vec<(String, u32)> {
+        self.inventory.clone()
     }
 }
