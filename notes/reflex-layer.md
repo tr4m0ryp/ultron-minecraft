@@ -680,6 +680,46 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   places into a cell held by leaves or dirt, 3 collects with no drops (wool), 2 missing
   tools, 1 go_to stalled; none "unreachable" (the solo hour had 41 of 127). Stone: 110
   mined, 110 cobblestone picked up (solo hour: 81 and 11). It did not attempt a roof.
+- Crafting from the full recipe set (tools/live/staged/goals/crafting.py, fixed kits, no
+  table or furnace at the site, 5 trials per case, item counts read over RCON). The book is
+  read at bot start from the server jar on disk: 1275 recipes and 203 item tags, nothing of
+  it written to the repository. Stone pickaxe from 2 logs and 3 cobblestone 5/5 (one table
+  crafted and put down each time), iron pickaxe from 3 raw iron, 1 coal, 3 logs and 8
+  cobblestone 5/5 (table and furnace), chest 5/5, 3 doors 5/5, 4 torches 5/5 (2x2 grid, no
+  table), smelt 2 iron ingots 5/5; the impossible case (1 cobblestone) failed once with the
+  same shopping list word for word 5/5 ("Get 2 any log, 2 cobblestone/blackstone/
+  cobbled_deepslate"). 35 of 35, run twice (the merged build and the final one).
+- Placing into an occupied cell (tools/live/staged/goals/protect.py): leaves, dirt and grass
+  dug out of the cell first, 15 of 15; a block the player placed refused without `replace`
+  and replaced with it, 5 of 5.
+- Animal drops (tools/live/staged/goals/drops.py): `collect white_wool` with a sword kills a
+  sheep 5/5; with shears it shears and the sheep lives 5/5 (1 to 3 wool); `collect beef 2`
+  hunts cows 5/5 (2 to 4 beef); no sheep in range fails with the reason 5/5.
+- Protection of the player's own blocks (protect.py, protect_hut.py, protect_tool.py; a
+  5x5 dirt hut, 57 cells). Hut built by the body: go_to out 5/5, the no-goal escape drive
+  5/5, the same after a bot restart (ledger from disk) 5/5, 0 hut cells broken in 15; a
+  dirt wall the companion placed across a corridor stood 5/5 (go_to failed instead of
+  digging it). A hut built by RCON (not in the ledger) marked with the protect tool over the
+  real tool path: 0 cells broken 5/5, and 5/5 again with the bot restarted between protect
+  and go_to (boxes now persist in the ledger file); the unprotected control broke 2 cells
+  in 3 of 3. The restart case lost the box once in 5 when the bot was killed within a few
+  ms of the tool's acknowledgement (the file is written after the ack); with 1 s between
+  them 5/5.
+- Flight recorder (tools/live/staged/goals/descent.py). An unreachable go_to (bedrock shell)
+  failed and printed its dump 5/5 (10 to 33 TRACE lines). A body pulled back to its start
+  every tick: the first build dumped 1 of 5, because each unstuck nudge (every 40 ticks)
+  forced a re-plan and both the recorder's stall watch and the walker's scrape count
+  restarted on Planning; planning ticks now neither count nor reset, and it dumps 5 of 5
+  after 60 still ticks (4.1 s). Cost: 28.7 ns per tick to record, 3.9 us for a full
+  simulated tick with the recorder, 65 us to render a full ring.
+- 15-minute solo relay on the final build (empty inventory near spawn at sunrise, one
+  session, 16.8 minutes with the handover, 81 turns, 0.79 USD, 0.047 USD per minute): 24
+  goals, 23 done, 1 failed (mine diamond_ore: none within 32 blocks), 0 deaths. Tool
+  ladder: wooden pickaxe at tick 1449, stone pickaxe at 2604, iron pickaxe at 6091 (about 5
+  minutes), then an iron sword, a bucket and a full iron armour set; 10 crafts and 5 smelts
+  planned by the goals themselves, none failed. Idle: no goal 2.2 s per minute at night (6.2
+  minutes) and 3.7 by day (10.6), waiting with no goal 0.0. Against the 20-minute relay
+  above: 25 failures in 65 goals, 15 of them crafts.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 
