@@ -7,7 +7,8 @@ use azalea::{
     ecs::{entity::Entity, query::Without, world::World},
     entity::{
         metadata::{
-            AbstractAgeableBaby, AbstractLivingUsingItem, Health, IsIgnited, SwellDir, ZombieBaby,
+            AbstractAgeableBaby, AbstractLivingUsingItem, Health, IsIgnited, SheepSheared,
+            SwellDir, ZombieBaby,
         },
         EntityKindComponent, EntityUuid, LocalEntity, Physics, Position,
     },
@@ -16,7 +17,7 @@ use azalea::{
 };
 use reflex_core::{
     math::Vec3,
-    snapshot::{Companion, Entity as SnapEntity, EntityKind, EntityState},
+    snapshot::{Companion, Entity as SnapEntity, EntityClass, EntityKind, EntityState},
 };
 
 use super::{body::vec3, entity_kind::map_kind};
@@ -134,14 +135,20 @@ fn state_of(ecs: &World, e: Entity, kind: EntityKind, stationary: bool) -> Entit
         EntityKind::Zombie | EntityKind::Husk | EntityKind::Drowned => {
             st.baby = ecs.get::<ZombieBaby>(e).is_some_and(|b| **b);
         }
-        EntityKind::Villager | EntityKind::Passive | EntityKind::Wolf | EntityKind::Bee => {
+        EntityKind::Villager | EntityKind::Wolf | EntityKind::Bee => {
             st.baby = ecs.get::<AbstractAgeableBaby>(e).is_some_and(|b| **b);
+        }
+        k if k.class() == EntityClass::Passive => {
+            st.baby = ecs.get::<AbstractAgeableBaby>(e).is_some_and(|b| **b);
+            st.sheared = ecs.get::<SheepSheared>(e).is_some_and(|s| **s);
         }
         EntityKind::Arrow | EntityKind::Trident => {
             st.inert = stationary;
         }
         _ => {}
     }
+    // Health is metadata of living entities only; a mob at zero plays its death animation.
+    st.dying = ecs.get::<Health>(e).is_some_and(|h| **h <= 0.0);
     // holding_trident is not populated: equipment of remote entities is not exposed.
     st
 }

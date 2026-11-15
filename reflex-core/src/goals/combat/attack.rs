@@ -3,7 +3,7 @@ use crate::goals::ports::Navigator;
 use crate::goals::spec::AttackTarget;
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::Walker;
-use crate::snapshot::{Entity, EntityClass};
+use crate::snapshot::{Entity, EntityClass, EntityKind};
 
 pub const SIGHT: f64 = 24.0;
 /// Ticks a locked target may be out of view before the goal ends.
@@ -20,6 +20,8 @@ pub struct Attack {
     missing: u32,
     last_dist: f64,
     walker: Walker,
+    items_at_start: u32,
+    started: bool,
 }
 
 impl Attack {
@@ -31,6 +33,8 @@ impl Attack {
             missing: 0,
             last_dist: f64::INFINITY,
             walker: Walker::default(),
+            items_at_start: 0,
+            started: false,
         }
     }
 
@@ -43,14 +47,34 @@ impl Attack {
 
     fn find<'s>(&self, cx: &'s GoalCx) -> Option<&'s Entity> {
         let snap = cx.snap();
+        // A dying target (death animation, drops already out) counts as gone.
         if let Some(id) = self.locked {
-            return snap.entity(id);
+            return snap.entity(id).filter(|e| !e.state.dying);
         }
         match &self.target {
             AttackTarget::Id(id) => snap.entity(*id),
-            AttackTarget::Kind(k) => snap.nearby(SIGHT, |e| e.kind == *k).into_iter().next(),
+            AttackTarget::Kind(k) => snap
+                .nearby(SIGHT, |e| kind_fits(*k, e) && !e.state.dying)
+                .into_iter()
+                .next(),
         }
     }
+
+    /// What the kill put in the inventory (drops land under the body at melee range and
+    /// are picked up during the fight), so thought does not go looking for them.
+    fn loot(&self, cx: &GoalCx) -> String {
+        let got = cx.world.total_items().saturating_sub(self.items_at_start);
+        match got {
+            0 => String::new(),
+            1 => "; picked up 1 item".into(),
+            n => format!("; picked up {n} items"),
+        }
+    }
+}
+
+/// `passive` names every animal; a species names only itself.
+fn kind_fits(k: EntityKind, e: &Entity) -> bool {
+    e.kind == k || (k == EntityKind::Passive && e.kind.class() == EntityClass::Passive)
 }
 
 /// The companion and protected kinds are off limits unless the brain lifted the D11 mask.
@@ -63,6 +87,10 @@ pub fn masked(cx: &GoalCx, e: &Entity) -> bool {
 
 impl GoalTask for Attack {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
+        if !self.started {
+            self.started = true;
+            self.items_at_start = cx.world.total_items();
+        }
         let Some(e) = self.find(cx).cloned() else {
             if self.locked.is_none() {
                 return Step::Failed(format!("no {} in view", self.describe()));
@@ -71,14 +99,15 @@ impl GoalTask for Attack {
                 self.missing += 1;
             }
             if self.missing > GONE_TICKS {
+                let loot = self.loot(cx);
                 return if self.swings > 0 {
                     Step::Done(format!(
-                        "{} gone after {} hits",
+                        "{} gone after {} hits{loot}",
                         self.describe(),
                         self.swings
                     ))
                 } else if self.last_dist <= DIED_WITHIN {
-                    Step::Done(format!("{} is dead", self.describe()))
+                    Step::Done(format!("{} is dead{loot}", self.describe()))
                 } else {
                     Step::Failed(format!("lost sight of the {}", self.describe()))
                 };

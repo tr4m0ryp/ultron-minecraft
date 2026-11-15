@@ -24,6 +24,13 @@ pub enum EntityKind {
     Villager,
     Bee,
     ZombifiedPiglin,
+    /// Farm animals by species, for hunting and shearing; other animals are `Passive`.
+    Sheep,
+    /// Cows and mooshrooms (both drop beef and leather).
+    Cow,
+    Pig,
+    Chicken,
+    Rabbit,
     Passive,
     Other,
 }
@@ -49,7 +56,7 @@ impl EntityKind {
             Enderman | Player | Wolf | IronGolem | Villager | Bee | ZombifiedPiglin => {
                 EntityClass::Protected
             }
-            Passive => EntityClass::Passive,
+            Sheep | Cow | Pig | Chicken | Rabbit | Passive => EntityClass::Passive,
             Arrow | Trident | Fireball => EntityClass::Projectile,
             FallingBlock => EntityClass::FallingBlock,
             Item => EntityClass::Item,
@@ -105,6 +112,11 @@ impl EntityKind {
             Villager => "villager",
             Bee => "bee",
             ZombifiedPiglin => "zombified_piglin",
+            Sheep => "sheep",
+            Cow => "cow",
+            Pig => "pig",
+            Chicken => "chicken",
+            Rabbit => "rabbit",
             Passive => "passive",
             Other => "other",
         }
@@ -125,6 +137,10 @@ pub struct EntityState {
     /// Estimated creeper fuse progress in ticks, 0..=30: +1 per tick lit, -1 per tick not.
     pub swell: u8,
     pub baby: bool,
+    /// A sheep without wool (shorn, or grown back not yet).
+    pub sheared: bool,
+    /// Health at zero: the death animation plays, drops are already out.
+    pub dying: bool,
     pub holding_trident: bool,
     /// Projectile already stuck in a block or entity.
     pub inert: bool,

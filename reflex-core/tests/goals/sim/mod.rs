@@ -32,6 +32,12 @@ pub struct Sim {
     pub drop_offset: Option<Vec3>,
     pub hits_to_kill: u32,
     pub attacked: Vec<u32>,
+    /// Entities a `MainCmd::Interact` was sent at.
+    pub interacted: Vec<u32>,
+    /// Death drops by kind: (kind, item, count).
+    pub loot: Vec<(EntityKind, &'static str, u32)>,
+    /// When false, shears do nothing (a broken interact packet).
+    pub shears_work: bool,
     pub last: MotorOutput,
     dig: Option<(BlockPos, u32)>,
     eat_ticks: u32,
@@ -80,6 +86,9 @@ impl Sim {
             dig_ticks: 10,
             hits_to_kill: 3,
             attacked: Vec::new(),
+            interacted: Vec::new(),
+            loot: Vec::new(),
+            shears_work: true,
             last: MotorOutput::default(),
             dig: None,
             eat_ticks: 0,

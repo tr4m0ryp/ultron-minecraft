@@ -51,6 +51,8 @@ pub enum MainCmd {
     Use,
     StopUse,
     Attack(u32),
+    /// Use the held item on an entity (right click): shears on a sheep, a bucket on a cow.
+    Interact(u32),
     /// Place the held block against the given block, on the face nearest the player.
     PlaceOn(BlockPos),
     /// Place the held block into `cell` by clicking the face of `against` that touches it.

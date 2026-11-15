@@ -49,14 +49,14 @@ pub fn tool_list() -> Vec<Value> {
         tool("wait_event", "Block until something needs you (chat to you, goal reached or interrupted, danger, an armed response fired, a reflex overridden) or the timeout passes. This is your idle loop: call it whenever you have nothing to decide.".into(), json!({
             "timeout_s": {"type": "number", "minimum": 0, "maximum": 300, "default": 30},
         }), &[]),
-        tool("set_goal", format!("Replace your active goal; the old one is queued (up to 3) and resumes after. The body moves, mines and fights on its own. Goals: {}. follow/guard: the companion. go_to/place: pos. place with to as well fills every open cell of the box from pos to to (a wall, floor or roof, at most 64 blocks) in one goal. come_here: to the companion. mine/collect/craft/give: kind and count (give tosses to the companion). attack: kind (zombie) or #id. sleep_in_bed at night; eat_now. end drops the goal. Outcomes arrive as goal_done/goal_failed events; observe shows status and progress.", runnable.join(", ")), json!({
+        tool("set_goal", format!("Replace your active goal; the old one is queued (up to 3) and resumes after. The body moves, mines and fights on its own. Goals: {}. follow/guard: the companion. go_to/place: pos. place with to as well fills every open cell of the box from pos to to (a wall, floor or roof, at most 64 blocks) in one goal. come_here: to the companion. mine/collect/craft/give: kind and count (give tosses to the companion). attack: kind (zombie, sheep) or #id. sleep_in_bed at night; eat_now. end drops the goal. Outcomes arrive as goal_done/goal_failed events; observe shows status and progress.", runnable.join(", ")), json!({
             "goal": {"type": "string", "enum": goals},
             "params": {"type": "object", "additionalProperties": false, "properties": {
                 "companion": {"type": "string", "description": "player name, default your companion"},
                 "distance": {"type": "number", "exclusiveMinimum": 0},
                 "pos": xyz(),
                 "to": xyz(),
-                "kind": {"type": "string", "description": "block, item or entity id, e.g. iron_ore"},
+                "kind": {"type": "string", "description": "block, item or entity id, e.g. iron_ore. collect with no drops near hunts the animal (beef, porkchop, mutton, chicken, wool; shears in the inventory shear sheep)"},
                 "count": {"type": "integer", "minimum": 1},
             }},
             "priority": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},

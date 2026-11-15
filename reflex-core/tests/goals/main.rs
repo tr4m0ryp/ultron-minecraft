@@ -5,6 +5,7 @@ mod care;
 mod combat;
 mod escape;
 mod gather;
+mod hunt;
 mod items;
 mod runner;
 mod sim;

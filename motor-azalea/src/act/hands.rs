@@ -135,6 +135,14 @@ pub fn apply_main(
                 bot.attack(target);
             }
         }
+        // Azalea's entity interact sends the 26.3 packet layout (entity id, hand, location,
+        // sneak), twice as the vanilla client does; a sheep sheared by the first ignores the
+        // second.
+        MainCmd::Interact(id) => {
+            if let Ok(Some(target)) = bot.entity_id_by_minecraft_id(MinecraftEntityId(id as i32)) {
+                bot.entity_interact(target);
+            }
+        }
         // The face is the one under the crosshair when the gaze already targets the block,
         // otherwise Azalea falls back to the top face.
         MainCmd::PlaceOn(p) => bot.block_interact(azalea::BlockPos::new(p.x, p.y, p.z)),

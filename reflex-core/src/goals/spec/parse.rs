@@ -141,7 +141,7 @@ fn attack_target(w: &str) -> Result<AttackTarget, String> {
         .ok_or(format!("unknown entity kind {w:?}"))
 }
 
-const ALL_KINDS: [EntityKind; 24] = {
+const ALL_KINDS: [EntityKind; 29] = {
     use EntityKind::*;
     [
         Creeper,
@@ -166,6 +166,11 @@ const ALL_KINDS: [EntityKind; 24] = {
         Villager,
         Bee,
         ZombifiedPiglin,
+        Sheep,
+        Cow,
+        Pig,
+        Chicken,
+        Rabbit,
         Passive,
         Other,
     ]

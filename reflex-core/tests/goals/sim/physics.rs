@@ -4,7 +4,7 @@ use reflex_core::channels::{InvCmd, MainCmd};
 use reflex_core::goals::items::replaceable;
 use reflex_core::goals::ItemDrop;
 use reflex_core::math::look_vector;
-use reflex_core::snapshot::{BlockKind, ItemKind};
+use reflex_core::snapshot::{BlockKind, EntityKind, ItemKind};
 use reflex_core::{BlockPos, MotorOutput, Vec3};
 
 use super::Sim;
@@ -83,9 +83,14 @@ impl Sim {
                 let h = self.hits.entry(id).or_insert(0);
                 *h += 1;
                 if *h >= self.hits_to_kill {
+                    if let Some(e) = self.snap.entities.iter().find(|e| e.id == id) {
+                        let (kind, at) = (e.kind, e.pos);
+                        self.drop_loot(kind, at);
+                    }
                     self.snap.entities.retain(|e| e.id != id);
                 }
             }
+            Some(MainCmd::Interact(id)) => self.interact(id),
             Some(MainCmd::Use) => {
                 self.eat_ticks += 1;
                 self.snap.me.using_item = true;
@@ -105,10 +110,58 @@ impl Sim {
         }
     }
 
+    /// Death drops of a killed animal, at its feet, from the `loot` table.
+    fn drop_loot(&mut self, kind: EntityKind, at: Vec3) {
+        let mut w = self.world.state();
+        for (k, item, n) in self.loot.iter() {
+            if *k == kind {
+                let id = 700 + w.drops.len() as u32;
+                let (item, count) = (item.to_string(), *n);
+                w.drops.push(ItemDrop {
+                    entity_id: id,
+                    item,
+                    count,
+                    pos: at,
+                });
+            }
+        }
+    }
+
+    /// Shears held (the "shears" slot selected) on a woolly sheep in reach: it is shorn and
+    /// its wool pops out a block away.
+    fn interact(&mut self, id: u32) {
+        self.interacted.push(id);
+        let me = self.snap.me.pos;
+        let sel = self.snap.me.selected_slot;
+        let shears = self.world.state().slots.get("shears") == Some(&sel);
+        let Some(e) = self.snap.entities.iter_mut().find(|e| e.id == id) else {
+            return;
+        };
+        if !self.shears_work || !shears || e.kind != EntityKind::Sheep || e.state.sheared {
+            return;
+        }
+        if e.pos.dist(me) > 3.0 {
+            return;
+        }
+        e.state.sheared = true;
+        let at = e.pos + Vec3::new(1.0, 0.0, 0.0);
+        let mut w = self.world.state();
+        let n = w.drops.len() as u32;
+        w.drops.push(ItemDrop {
+            entity_id: 800 + n,
+            item: "white_wool".into(),
+            count: 2,
+            pos: at,
+        });
+    }
+
     fn place(&mut self, support: BlockPos) {
         let mut w = self.world.state();
         if w.blocks.get(&support).is_some_and(|n| n.ends_with("bed")) {
-            w.sleeping = true;
+            w.bed_clicks += 1;
+            if self.snap.is_night {
+                w.sleeping = true;
+            }
             return;
         }
         let on_top = self.place_on_top.then(|| support.above());

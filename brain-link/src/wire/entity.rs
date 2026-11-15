@@ -2,7 +2,7 @@
 
 use reflex_core::snapshot::EntityKind;
 
-pub const ALL_KINDS: [EntityKind; 24] = {
+pub const ALL_KINDS: [EntityKind; 29] = {
     use EntityKind::*;
     [
         Creeper,
@@ -27,6 +27,11 @@ pub const ALL_KINDS: [EntityKind; 24] = {
         Villager,
         Bee,
         ZombifiedPiglin,
+        Sheep,
+        Cow,
+        Pig,
+        Chicken,
+        Rabbit,
         Passive,
         Other,
     ]
@@ -40,7 +45,8 @@ fn exhaustive(k: EntityKind) {
     match k {
         Creeper | Zombie | Husk | Drowned | Skeleton | Stray | Bogged | Spider | CaveSpider
         | Enderman | Witch | Arrow | Trident | Fireball | FallingBlock | Item | Player | Wolf
-        | IronGolem | Villager | Bee | ZombifiedPiglin | Passive | Other => {}
+        | IronGolem | Villager | Bee | ZombifiedPiglin | Sheep | Cow | Pig | Chicken | Rabbit
+        | Passive | Other => {}
     }
 }
 

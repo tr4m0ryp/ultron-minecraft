@@ -41,8 +41,13 @@ impl GoalTask for SleepInBed {
         if cx.world.sleeping() {
             return Step::Done("asleep in bed".into());
         }
-        if !cx.snap().is_night {
-            return Step::Failed("can only sleep at night".into());
+        // By day a player still walks over and clicks the bed: that sets the spawn point.
+        let day = !cx.snap().is_night;
+        if day && self.clicks > 0 && self.wait == 0 {
+            return Step::Failed(
+                "can only sleep at night; clicked the bed by day, which sets the spawn point"
+                    .into(),
+            );
         }
         let bed = match self.bed {
             Some(b) => b,

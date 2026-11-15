@@ -6,7 +6,7 @@ fn every_entity_label_parses_back() {
     for k in ALL_KINDS {
         assert_eq!(parse_entity(k.label()), Ok(k));
     }
-    assert_eq!(entity_labels().len(), 24);
+    assert_eq!(entity_labels().len(), 29);
     assert!(parse_entity("Cave Spider").is_ok());
 }
 

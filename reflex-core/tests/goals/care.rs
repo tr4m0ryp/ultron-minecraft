@@ -21,11 +21,14 @@ fn sleep_walks_to_the_bed_at_night() {
 
 #[test]
 fn sleep_refuses_by_day_without_bed_and_waits_out_monsters() {
+    // By day the body still walks over and clicks the bed once (that sets the spawn point).
     let mut s = Sim::new();
     s.block(BlockPos::new(7, 64, -3), "red_bed");
     s.goal("sleep", true);
-    assert!(s.run_until(10, |s| s.has_event("goal_failed")));
-    assert!(s.goal_text("goal_failed").contains("night"));
+    assert!(s.run_until(200, |s| s.has_event("goal_failed")));
+    assert!(s.goal_text("goal_failed").contains("only sleep at night"));
+    assert_eq!(s.world.state().bed_clicks, 1);
+    assert!(!s.world.state().sleeping);
 
     let mut s = Sim::new();
     s.snap.is_night = true;
