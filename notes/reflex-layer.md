@@ -1014,13 +1014,13 @@ pair to a label, n = 468 per row (156 cases, 3 repetitions), behind bench/decide
 
 - Conditions: no compiler ran during any latency row. The load target (under 0.5) was met in
   none: the 1-minute load read 1.7 to 5.2, the tail of the training jobs, and other
-  processes used 0.8 of a core, as in 9.1. The row marked "!" (the encoder pass alone) ran
-  with 1.4 cores of foreign load. The b rows were timed against 2081 stored rows. The d rows
-  are the adapter prompt (84 tokens, nothing cached) through llama.cpp on the base weights:
-  an adapter merged into the weights changes no shapes, so the cost is the same; d's
-  accuracy comes from the training framework. The 1.5B row was timed while my own training
-  jobs used 5 cores, so its latency is an upper bound; its clean figure for a suffix of this
-  length is 2804 / 2975 ms (9.4).
+  processes used 0.8 of a core, as in 9.1. Rows marked "!" are upper bounds: the encoder
+  pass alone ran with 1.4 cores of foreign load, and the 1.5B row was timed while my own
+  training jobs used 5 cores (its clean figure for a suffix of this length is 2804 / 2975
+  ms, 9.4). The b rows were timed against 2081 stored rows. The d rows are the adapter
+  prompt (84 tokens, nothing cached) through llama.cpp on the base weights: an adapter
+  merged into the weights changes no shapes, so the cost is the same; d's accuracy comes
+  from the training framework.
 - Two launches died with an illegal-instruction signal before computing anything (a timing
   probe and the first d0 run), as one did in 9.1; both ran on the second try. Cause unknown.
 - The 3-fold cross-check (whole sessions, 470 decisions): a1 158, a2 179, b5 168, c1 203,
@@ -1093,8 +1093,8 @@ training session out) and applied unchanged.
 Verdict against the bar (median under 500 ms; on held-out cases clearly above the
 non-neural baseline, with accuracy that can be acted on):
 
-- The non-neural half of the bar is met by one arm (a4 against c1, both views). The half
-  that matters is not met by any.
+- The comparison half of the bar (clearly above the non-neural baseline) is met by one arm,
+  a4, on both views. The accuracy half is met by none.
 - Latency: passes for every trained arm. 0.9 ms for the feature classifier, 69 to 105 ms
   for the encoder arms, 239 ms for the 135M model with the short adapter prompt.
 - Accuracy: does not pass for any arm. The best is right in 61 of 108 decisions on a new day
@@ -1104,12 +1104,11 @@ non-neural baseline, with accuracy that can be acted on):
   model trained on these 470 decisions, on this hardware or on a faster one.
 - (a) encoder with a trained head. a1 and a2 (frozen encoder): lost a comparison, to the
   bar and to the feature classifier on both cross-checks (151 and 159 on leave one session
-  out against 184; 158 and 179 on the 3 folds against 203). a4, the
-  encoder trained end to end, works as a predictor of the goal name and is the best arm on
-  both views (61 of 108, 234 of 470, clearly above c1 on both). It lost the comparison to
-  the bar: it matches Thought in every second decision, and at 95 % precision it takes 3 of
-  470 decisions on the folds (0.6 %; above a confidence of 0.9 it takes 51, of which 78 %
-  match).
+  out against 184; 158 and 179 on the 3 folds against 203). a4, the encoder trained end to
+  end, works as a predictor of the goal name and is the best arm on both views (61 of 108,
+  234 of 470, clearly above c1 on both). It lost the comparison to the bar: it matches
+  Thought in every second decision, and at 95 % precision it takes 3 of 470 decisions on
+  the folds (0.6 %; above a confidence of 0.9 it takes 51, of which 78 % match).
 - (b) encoder nearest neighbour over the training set: lost a comparison, to the bar and to
   c1 on the cross-checks (131 and 168 against 184); level with a1 on test_real (50 and 55
   against 53).
@@ -1134,14 +1133,14 @@ non-neural baseline, with accuracy that can be acted on):
 - Wake filter: works, as a rule and without a model. "goal_blocked means wait" was right in
   46 of 52 recorded cases (35 of 41, then 11 of 11). It belongs in the body's event
   reporting, not in this layer: such an event need not wake Thought at all.
-- Nothing is proven closed. Every negative above is a lost comparison on 470 decisions from
-  two days of solo play.
+- Nothing else is proven closed. Every other negative above is a lost comparison on 470
+  decisions from two days of solo play.
 
 Why: once the model is trained, this machine is no longer the limit, since a 33M encoder
-with a head decides in 69 ms. The limit is what the state contains. After the same event
-and the same last decision Thought went different ways (after a finished craft: craft 20,
-mine 13, place 5, wait 4 of 42 cases), because the next step comes from its plan and its
-inventory, and neither is in the one-line state. A model trained on these pairs learns to
+with a head decides in 69 ms. The limit is what the state contains. After the same kind of
+event Thought went different ways (after a finished craft: craft 20, mine 13, place 5,
+wait 4 of 42 cases), because the next step comes from its plan and its inventory, and
+neither is in the one-line state. A model trained on these pairs learns to
 be a weaker Thought at the job Thought exists for. It does not learn the fast judgement
 between reflex and thought this layer was meant for, because Thought was never asked for
 that judgement in the recorded play.
