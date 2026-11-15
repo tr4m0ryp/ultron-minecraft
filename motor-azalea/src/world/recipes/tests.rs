@@ -19,12 +19,34 @@ fn vanilla_book_plans_the_staged_cases() {
         eprintln!("skipped: no server jar at {}", path.display());
         return;
     }
-    let (book, tags, _) = super::load(&path).expect("jar reads");
+    let (book, tags, skipped) = super::load(&path).expect("jar reads");
     assert!(
         book.len() > 1000 && tags > 200,
         "{} recipes, {tags} tags",
         book.len()
     );
+    // Only kinds `parse` names as left out on purpose are skipped: nothing the grid or the
+    // furnace could have made went missing by accident.
+    for kind in skipped.keys() {
+        let special = kind.starts_with("crafting_special_");
+        let known = [
+            "stonecutting",
+            "blasting",
+            "smoking",
+            "campfire_cooking",
+            "brewing",
+            "smithing_transform",
+            "smithing_trim",
+            "crafting_dye",
+            // Map cloning only: its result is whatever map went in.
+            "crafting_transmute",
+            "crafting_decorated_pot",
+            "crafting_imbue",
+        ];
+        assert!(special || known.contains(&kind.as_str()), "skipped {kind}");
+    }
+    assert!(skipped.get("crafting_transmute").is_none_or(|n| *n <= 1));
+    assert!(!book.recipes_for("black_shulker_box").is_empty());
     let none = Stations::default();
     let cases: [Case; 7] = [
         ("stone_pickaxe", 1, &[("oak_log", 2), ("cobblestone", 3)]),

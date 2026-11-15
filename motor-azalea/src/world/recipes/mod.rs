@@ -7,7 +7,7 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
@@ -45,10 +45,15 @@ fn load_logged() -> RecipeBook {
     let path = jar_path();
     match load(&path) {
         Ok((book, tags, skipped)) => {
+            let total: usize = skipped.values().sum();
+            let mut kinds: Vec<_> = skipped.iter().collect();
+            kinds.sort_by_key(|(k, n)| (std::cmp::Reverse(**n), (*k).clone()));
+            let kinds: Vec<String> = kinds.iter().map(|(k, n)| format!("{k} {n}")).collect();
             eprintln!(
-                "RECIPES loaded {} recipes and {tags} item tags from {} ({skipped} entries skipped)",
+                "RECIPES loaded {} recipes and {tags} item tags from {} ({total} entries skipped: {})",
                 book.len(),
-                path.display()
+                path.display(),
+                kinds.join(", ")
             );
             book
         }
@@ -62,14 +67,18 @@ fn load_logged() -> RecipeBook {
     }
 }
 
-/// The book, the number of item tags, and the recipe entries skipped (other types, or not
-/// JSON).
-pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, usize), String> {
+/// Recipe entries left out of the book, counted by kind (the recipe type, or the folder of
+/// a nested entry such as `brewing`). `parse` says why each kind is left out.
+pub type Skipped = BTreeMap<String, usize>;
+
+/// The book, the number of item tags, and the recipe entries skipped.
+pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, Skipped), String> {
     let file = File::open(path).map_err(|e| e.to_string())?;
     let mut zip = zip::ZipArchive::new(BufReader::new(file)).map_err(|e| e.to_string())?;
     let mut raw_tags: HashMap<String, Vec<String>> = HashMap::new();
     let mut raw_recipes: Vec<(String, Value)> = Vec::new();
-    let mut skipped = 0;
+    let mut skipped = Skipped::new();
+    let mut skip = |kind: &str| *skipped.entry(kind.to_string()).or_default() += 1;
     for i in 0..zip.len() {
         let mut f = zip.by_index(i).map_err(|e| e.to_string())?;
         let name = f.name().to_string();
@@ -79,7 +88,9 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, usize), String
             _ => continue,
         };
         let Some(id) = dir.strip_suffix(".json").filter(|id| !id.contains('/')) else {
-            skipped += usize::from(!is_tag && !dir.is_empty() && !dir.ends_with('/'));
+            if !is_tag && !dir.is_empty() && !dir.ends_with('/') {
+                skip(dir.split('/').next().unwrap_or("unreadable"));
+            }
             continue;
         };
         let mut text = String::new();
@@ -96,7 +107,8 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, usize), String
                 raw_tags.insert(id.to_string(), names.map(String::from).collect());
             }
             (Some(v), false) => raw_recipes.push((id.to_string(), v)),
-            (None, _) => skipped += 1,
+            (None, false) => skip("unreadable"),
+            (None, true) => {}
         }
     }
     let tags: Tags = raw_tags
@@ -107,7 +119,7 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, usize), String
     for (id, v) in &raw_recipes {
         match parse::recipe(id, v, &tags) {
             Some(r) => book.add(r),
-            None => skipped += 1,
+            None => skip(bare(v["type"].as_str().unwrap_or("unreadable"))),
         }
     }
     for (name, items) in &tags {

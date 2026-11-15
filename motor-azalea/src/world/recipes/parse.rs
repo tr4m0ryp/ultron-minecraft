@@ -1,7 +1,19 @@
-//! One data-pack recipe file into the planner's `Recipe`: shaped and shapeless crafting
-//! and smelting, with tag and list ingredients expanded into concrete items. Other types
-//! (blasting, smoking, campfire, stonecutting, smithing, special and dynamic crafting) are
-//! skipped.
+//! One data-pack recipe file into the planner's `Recipe`: shaped and shapeless crafting,
+//! transmuting (dyeing a shulker box or a bundle, two items in the grid) and smelting, with
+//! tag and list ingredients expanded into concrete items.
+//!
+//! Skipped, by kind (counts for 26.3, 735 in all):
+//! - stonecutting (351), blasting (25), smoking (9), campfire_cooking (9): another station
+//!   for a result the grid or the furnace already makes. Every cooked result has a smelting
+//!   recipe; every cut one a crafting recipe, except cobblestone and cobbled deepslate,
+//!   which are mined.
+//! - brewing (279), smithing_transform (12), smithing_trim (18): a brewing stand or a
+//!   smithing table, which the hands have no menu for yet, and Nether materials.
+//! - crafting_dye (6), banner duplicate (16), map cloning (1, a transmute with no named
+//!   result), shield decoration, map extending, book cloning, repair, firework star, star
+//!   fade and rocket, decorated pot, tipped arrow (9): the result depends on colour,
+//!   pattern, damage or contents, which item names do not carry. The plain rocket and the
+//!   plain pot are ordinary recipes and are read.
 
 use std::collections::HashMap;
 
@@ -93,6 +105,10 @@ pub fn recipe(id: &str, v: &Value, tags: &Tags) -> Option<Recipe> {
             let ings: Option<Vec<Ingredient>> = list.iter().map(|e| ingredient(e, tags)).collect();
             Shape::Shapeless(ings?)
         }
+        "crafting_transmute" => Shape::Shapeless(vec![
+            ingredient(&v["input"], tags)?,
+            ingredient(&v["material"], tags)?,
+        ]),
         "smelting" => Shape::Smelt {
             input: ingredient(&v["ingredient"], tags)?,
             ticks: v["cookingtime"].as_u64().unwrap_or(200) as u32,
@@ -146,6 +162,15 @@ mod tests {
         let blast = json!({"type": "minecraft:blasting", "ingredient": "minecraft:raw_iron",
             "result": {"id": "minecraft:iron_ingot"}});
         assert!(recipe("b", &blast, &tags).is_none());
+        tags.insert(
+            "shulker_boxes".into(),
+            vec!["shulker_box".into(), "black_shulker_box".into()],
+        );
+        let dyed = json!({"type": "minecraft:crafting_transmute",
+            "input": "#minecraft:shulker_boxes", "material": "minecraft:black_dye",
+            "result": {"id": "minecraft:black_shulker_box"}});
+        let r = recipe("black_shulker_box", &dyed, &tags).expect("transmute");
+        assert_eq!((r.inputs().len(), r.needs_table()), (2, false));
         let unknown = json!({"type": "minecraft:crafting_shaped", "pattern": ["#"],
             "key": {"#": "#minecraft:nope"}, "result": {"id": "minecraft:x"}});
         assert!(recipe("u", &unknown, &tags).is_none());
