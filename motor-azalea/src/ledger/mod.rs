@@ -24,7 +24,8 @@ use companion::CompanionWatch;
 pub const LEDGER_ENV: &str = "ULTRON_LEDGER";
 const DEFAULT_PATH: &str = "logs/play/placed.txt";
 
-/// Ticks between audits of remembered cells near the body, and between file writes.
+/// Ticks between audits of remembered cells near the body (a forgotten cell is written
+/// then; a placed one in the tick it is confirmed).
 const AUDIT_EVERY: u64 = 20;
 const AUDIT_RADIUS: i32 = 24;
 /// Ticks a click may take before the server's answer is given up on.
@@ -55,6 +56,12 @@ fn block_at(bot: &Client, p: BlockPos) -> Option<String> {
     let w = world.read();
     w.get_block_state(azalea::BlockPos::new(p.x, p.y, p.z))
         .map(block_name)
+}
+
+fn flush(ledger: &Ledger) {
+    if let Err(e) = ledger.flush() {
+        eprintln!("ledger not written: {e}");
+    }
 }
 
 /// What the tick loop does for the ledger each tick.
@@ -89,6 +96,12 @@ impl Watch {
                 _ => true,
             }
         });
+        // Written in the tick the server confirms it, not at the next audit: a bot killed
+        // in between (up to 20 ticks) forgot the block and was free to dig it later. The
+        // line is printed after the write, so it means "on disk".
+        if !confirmed.is_empty() {
+            flush(ledger);
+        }
         for (c, name) in &confirmed {
             println!("LEDGER own {} {} {} {name} t={now}", c.x, c.y, c.z);
         }
@@ -97,9 +110,7 @@ impl Watch {
         if now.is_multiple_of(AUDIT_EVERY) {
             let feet = snap.me.pos.block();
             ledger.audit(feet, AUDIT_RADIUS, |p| block_at(bot, p));
-            if let Err(e) = ledger.flush() {
-                eprintln!("ledger not written: {e}");
-            }
+            flush(ledger);
         }
     }
 }
