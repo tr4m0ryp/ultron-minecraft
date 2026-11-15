@@ -79,7 +79,11 @@ impl State {
             });
             let mut say = l.inbox.drain(&mut l.exec);
             l.exec.knobs.kept = l.goals.ledger().keep();
-            l.goals.ledger().sync_regions(&mut l.exec.knobs.protected);
+            if l.goals.ledger().sync_regions(&mut l.exec.knobs.protected) {
+                if let Err(e) = l.goals.ledger().flush() {
+                    eprintln!("ledger not written: {e}");
+                }
+            }
             let out = l.exec.tick(&snap);
             l.ledger_watch.tick(bot, l.goals.ledger(), &snap, &out);
             crate::nav::set_max_drop(l.exec.knobs.gains.safe_drop());

@@ -7,7 +7,9 @@ use super::{Ledger, Region};
 impl Ledger {
     /// Mirrors the knobs' protected boxes. The first call restores the remembered boxes into
     /// `live` (keeping any marked before it); later calls record every change of `live`.
-    pub fn sync_regions(&self, live: &mut Vec<Region>) {
+    /// Returns whether the ledger's copy changed, so the caller can write it at once (live,
+    /// a box cleared just before a restart came back from the older file).
+    pub fn sync_regions(&self, live: &mut Vec<Region>) -> bool {
         let mut i = self.0.borrow_mut();
         if !i.regions_restored {
             i.regions_restored = true;
@@ -17,10 +19,12 @@ impl Ledger {
                 }
             }
         }
-        if i.regions != *live {
-            i.regions = live.clone();
-            i.dirty = true;
+        if i.regions == *live {
+            return false;
         }
+        i.regions = live.clone();
+        i.dirty = true;
+        true
     }
 
     /// The protected boxes the ledger holds, for tests and reports.
