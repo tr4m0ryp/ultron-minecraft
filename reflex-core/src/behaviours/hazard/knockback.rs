@@ -33,6 +33,11 @@ impl Behaviour for KnockbackRecovery {
             return None;
         }
         if me.on_ground {
+            // Sneaking at an edge is deliberate (bridging a gap), and a sneaking body backs
+            // off from the edge by itself.
+            if me.sneaking {
+                return None;
+            }
             if !unsafe_drop(&ctx.snap.blocks, me.pos.block()) {
                 return None;
             }
