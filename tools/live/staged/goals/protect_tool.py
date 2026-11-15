@@ -3,8 +3,9 @@ behind it). A sealed 5x5 dirt hut is built by RCON around the bot, so none of it
 in the bot's ledger of blocks it placed; only the tool can keep them.
 
 Cases: protect_tool (mark the hut box with `protect`, then `go_to` a point outside: no hut
-cell may break; the goal may fail or the body may tunnel under the floor), unprotected
-(control: the same trial without `protect`, where the route digs through the wall).
+cell may break; the goal may fail or the body may tunnel under the floor), protect_restart
+(the same, with the bot restarted between `protect` and `go_to`: the box must come back
+from the ledger file), unprotected (control: no `protect`; the route digs through a wall).
 Each trial lifts the box again with `protect clear`.
 
 Usage: python3 protect_tool.py [-n trials] [case ...]   (needs the bot's bridge socket free)
@@ -29,7 +30,7 @@ def connect():
     return m
 
 
-def trial(m, protect):
+def trial(m, protect, restart=False):
     reset_site()
     hut_by_rcon()
     before = missing()
@@ -39,7 +40,13 @@ def trial(m, protect):
         box = {"min": [HX0, Y + 1, HZ0], "max": [HX1, ROOF, HZ1]}
         ack, err, _ = m.tool("protect", box)
         if err:
-            return dict(ok=False, protect_ack=ack)
+            return m, dict(ok=False, protect_ack=ack)
+    if restart:
+        m.p.terminate()
+        stop()
+        start()
+        m = connect()
+        prep_inside()
     t0 = time.time()
     n = task("go_to %s %s %s" % EXIT)
     kind, text, _ = outcome(n, 120, "go_to")
@@ -47,7 +54,7 @@ def trial(m, protect):
     broken = newly_broken(before)
     cleared, _, _ = m.tool("protect", {"clear": [HX0, Y + 1, HZ0]})
     ok = not before and (broken == 0 if protect else broken > 0)
-    return dict(ok=ok, hut_broken=broken, protect_ack=ack, cleared=cleared, outcome=kind,
+    return m, dict(ok=ok, hut_broken=broken, protect_ack=ack, cleared=cleared, outcome=kind,
                 text=text, secs=round(time.time() - t0, 1), pos=p)
 
 
@@ -56,7 +63,7 @@ def main():
     ap.add_argument("-n", type=int, default=5)
     ap.add_argument("cases", nargs="*")
     a = ap.parse_args()
-    names = a.cases or ["protect_tool", "unprotected"]
+    names = a.cases or ["protect_tool", "protect_restart", "unprotected"]
     build_site()
     start()
     m = connect()
@@ -64,7 +71,7 @@ def main():
         for name in names:
             wins = 0
             for i in range(a.n):
-                r = trial(m, name == "protect_tool")
+                m, r = trial(m, name != "unprotected", name == "protect_restart")
                 wins += r["ok"]
                 print(json.dumps(dict(r, case=name, trial=i + 1)), flush=True)
             print(json.dumps(dict(summary=name, ok=wins, of=a.n)), flush=True)
