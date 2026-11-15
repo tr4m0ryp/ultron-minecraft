@@ -4,6 +4,7 @@
 //! the hut was refused with "stand higher" and nothing acted on it.
 
 use super::super::surfaces::{face_visible, opens_on_click, replaceable};
+use super::footprint::{extra_cell, Extra};
 use crate::goals::task::GoalCx;
 use crate::math::{BlockPos, Vec3};
 
@@ -13,6 +14,11 @@ pub const REACH: f64 = 4.4;
 const MAX_PILLAR: u32 = 3;
 /// Extra cost per scaffold block, in blocks of walking.
 const PILLAR_COST: f64 = 4.0;
+/// How much a planned bed facing must lean to one side (about 34 degrees off the axis at
+/// most), so the body landing off the spot's centre still faces the same side.
+const PLAN_MARGIN: f64 = 1.5;
+/// At the click the actual eye decides; only an exact diagonal is refused.
+pub const CLICK_MARGIN: f64 = 1.0;
 
 const FACES: [(i32, i32, i32); 6] = [
     (0, -1, 0),
@@ -52,12 +58,25 @@ pub fn supports(cx: &GoalCx, cell: BlockPos) -> Vec<BlockPos> {
         .collect()
 }
 
-/// A support whose face an eye at `eye` sees, within reach.
-pub fn visible_support(eye: Vec3, cell: BlockPos, supports: &[BlockPos]) -> Option<BlockPos> {
+/// A support whose face an eye at `eye` sees, within reach, with room for all of `block`
+/// when it takes two cells (`margin`: see `footprint::facing`).
+pub fn visible_support(
+    cx: &GoalCx,
+    block: &str,
+    eye: Vec3,
+    cell: BlockPos,
+    supports: &[BlockPos],
+    margin: f64,
+) -> Option<BlockPos> {
     supports
         .iter()
         .copied()
         .filter(|&s| face_visible(eye, s, cell) && eye.dist(face_point(cell, s)) <= REACH)
+        .filter(|&s| match extra_cell(block, eye, cell, s, margin) {
+            Extra::Nothing => true,
+            Extra::Cell(p) => free(cx, p),
+            Extra::Unclear => false,
+        })
         .min_by(|&a, &b| {
             let d = |s| eye.dist(face_point(cell, s));
             d(a).total_cmp(&d(b))
@@ -80,7 +99,13 @@ fn free(cx: &GoalCx, p: BlockPos) -> bool {
 
 /// The best spot to place into `cell`, never with the body or a pillar in `cell` or in any
 /// of `keep_clear` (cells still to fill).
-pub fn find(cx: &GoalCx, cell: BlockPos, keep_clear: &[BlockPos], scaffold: u32) -> Option<Spot> {
+pub fn find(
+    cx: &GoalCx,
+    block: &str,
+    cell: BlockPos,
+    keep_clear: &[BlockPos],
+    scaffold: u32,
+) -> Option<Spot> {
     let sup = supports(cx, cell);
     if sup.is_empty() {
         return None;
@@ -96,7 +121,7 @@ pub fn find(cx: &GoalCx, cell: BlockPos, keep_clear: &[BlockPos], scaffold: u32)
                 if body.contains(&cell) || body.iter().any(|b| keep_clear.contains(b)) {
                     continue;
                 }
-                if visible_support(eye_at(feet), cell, &sup).is_none() {
+                if visible_support(cx, block, eye_at(feet), cell, &sup, PLAN_MARGIN).is_none() {
                     continue;
                 }
                 if !body.iter().all(|&b| free(cx, b)) {

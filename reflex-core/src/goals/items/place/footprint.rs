@@ -99,7 +99,7 @@ mod tests {
             Extra::Unclear
         );
         // Slightly more east than south: a planner wants a clear margin, the click rounds.
-        let e = eye(3.9, 4.6);
+        let e = eye(4.3, 4.6);
         assert_eq!(extra_cell("white_bed", e, cell, floor, 1.5), Extra::Unclear);
         assert_eq!(
             extra_cell("white_bed", e, cell, floor, 1.0),

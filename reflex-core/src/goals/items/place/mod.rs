@@ -5,6 +5,7 @@
 
 mod cleanup;
 mod clear;
+mod footprint;
 mod stand;
 
 pub use cleanup::Cleanup;
@@ -20,7 +21,8 @@ use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::route::SCAFFOLD;
 use crate::goals::travel::{Walk, Walker};
 use crate::math::BlockPos;
-use stand::{eye_at, face_point, supports, visible_support};
+use footprint::{two_cells, AIM_SETTLE};
+use stand::{eye_at, face_point, supports, visible_support, CLICK_MARGIN};
 
 /// Ticks between placement attempts, so the server's answer arrives before a retry.
 const RETRY_GAP: u32 = 5;
@@ -34,6 +36,8 @@ pub struct Place {
     walker: Walker,
     attempts: u32,
     wait: u32,
+    /// Ticks the current aim has been held (two-cell blocks click only once it settles).
+    aimed: u32,
     spot: Option<Spot>,
     spots_tried: u32,
     /// Cells a fill still has to place: never stand in them or pillar through them.
@@ -60,6 +64,7 @@ impl Place {
             walker: Walker::default(),
             attempts: 0,
             wait: 0,
+            aimed: 0,
             spot: None,
             spots_tried: 0,
             keep_clear,
@@ -108,7 +113,7 @@ impl Place {
                 return Step::Failed(format!("no spot found that sees a face at {}", self.at()));
             }
             let held = Self::scaffold_held(cx);
-            self.spot = stand::find(cx, self.pos, &self.keep_clear, held);
+            self.spot = stand::find(cx, &self.block, self.pos, &self.keep_clear, held);
             self.spots_tried += 1;
             if self.spot.is_none() {
                 return Step::Failed(format!(
@@ -187,7 +192,9 @@ impl GoalTask for Place {
             return Step::Bid(Plan::new("goal_place", Commands::default().legs(legs)));
         }
         let eye = if me.on_ground { me.eye() } else { eye_at(feet) };
-        let Some(support) = visible_support(eye, self.pos, &sup) else {
+        let Some(support) = visible_support(cx, &self.block, eye, self.pos, &sup, CLICK_MARGIN)
+        else {
+            self.aimed = 0;
             return self.position(cx);
         };
         self.walker.stop(cx);
@@ -200,6 +207,13 @@ impl GoalTask for Place {
         if self.wait > 0 {
             if !cx.preempted {
                 self.wait -= 1;
+            }
+            return Step::Bid(Plan::new("goal_place", aim));
+        }
+        // A bed's head follows the yaw the server holds at the click: turn first.
+        if two_cells(&self.block) && self.aimed < AIM_SETTLE {
+            if !cx.preempted {
+                self.aimed += 1;
             }
             return Step::Bid(Plan::new("goal_place", aim));
         }
