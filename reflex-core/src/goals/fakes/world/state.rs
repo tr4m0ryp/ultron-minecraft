@@ -3,8 +3,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::crafting::{Recipe, RecipeBook};
 use super::stations::Stand;
+use crate::crafting::{Recipe, RecipeBook};
 use crate::goals::ports::{
     kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed,
 };

@@ -88,11 +88,10 @@ impl FakeWorldState {
         };
         let result = |bottle: &str| {
             self.book.all().find_map(|r| match &r.shape {
-                Shape::Brew { input, reagent: with }
-                    if input.accepts(bottle) && with.accepts(&reagent) =>
-                {
-                    Some(r.result.clone())
-                }
+                Shape::Brew {
+                    input,
+                    reagent: with,
+                } if input.accepts(bottle) && with.accepts(&reagent) => Some(r.result.clone()),
                 _ => None,
             })
         };

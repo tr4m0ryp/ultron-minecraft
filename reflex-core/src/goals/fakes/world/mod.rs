@@ -3,8 +3,10 @@
 
 mod menus;
 mod state;
+mod stations;
 
 pub use state::FakeWorldState;
+pub use stations::Stand;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -12,7 +14,7 @@ use std::sync::Arc;
 
 use crate::crafting::{Recipe, RecipeBook};
 use crate::goals::ports::{
-    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed, World,
+    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed, World,
 };
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{Slot, Snapshot};
