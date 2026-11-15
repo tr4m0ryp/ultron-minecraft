@@ -112,6 +112,17 @@ impl Place {
         std::mem::take(&mut self.walker.placed)
     }
 
+    /// Scaffold this placement's walks have put down so far.
+    pub fn scaffold(&self) -> &[BlockPos] {
+        &self.walker.placed
+    }
+
+    /// Hands `b` over to the caller when it is this placement's scaffold.
+    pub fn release_scaffold(&mut self, b: BlockPos) -> Option<BlockPos> {
+        let i = self.walker.placed.iter().position(|p| *p == b)?;
+        Some(self.walker.placed.remove(i))
+    }
+
     fn at(&self) -> String {
         format!("{} {} {}", self.pos.x, self.pos.y, self.pos.z)
     }

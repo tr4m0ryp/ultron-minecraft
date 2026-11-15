@@ -3,6 +3,8 @@
 //! one model call each, which roughly doubled the stretch's cost per minute. A wall, floor
 //! or roof is now one goal.
 
+mod stray;
+
 use super::place::{clearance, Cleanup, Clearance, Place};
 use super::surfaces::replaceable;
 use crate::goals::ports::{kind_matches, Navigator};
@@ -153,6 +155,15 @@ impl GoalTask for Fill {
             }
         }
         let place = self.current.as_mut().expect("set above");
+        // A pillar the body climbed out on, now under the cells to fill: down it comes
+        // while it can still be reached (see `stray`).
+        let mut scaffold = self.cleanup.pending().to_vec();
+        scaffold.extend_from_slice(place.scaffold());
+        if let Some(b) = stray::reachable(cx, &self.cells, &scaffold) {
+            self.cleanup.add(place.release_scaffold(b));
+            return Step::Bid(self.cleanup.dig(cx, b));
+        }
+        self.cleanup.tally(cx);
         let step = place.step(cx);
         if !matches!(step, Step::Bid(_) | Step::Idle) {
             // A scaffold block a route put into one of the fill's own cells is part of the

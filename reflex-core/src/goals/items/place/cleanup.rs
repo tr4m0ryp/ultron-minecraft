@@ -41,6 +41,14 @@ impl Cleanup {
         self.walker.reset();
     }
 
+    /// Counts the listed blocks that are gone already (dug ahead of the cleanup by `dig`).
+    pub fn tally(&mut self, cx: &GoalCx) {
+        let before = self.left.len();
+        self.left
+            .retain(|b| cx.world.block_at(*b).is_some_and(|k| !replaceable(&k)));
+        self.removed += (before - self.left.len()) as u32;
+    }
+
     /// One tick of cleanup; `None` once every scaffold block is gone or given up.
     pub fn step(&mut self, cx: &mut GoalCx) -> Option<Plan> {
         loop {
@@ -81,18 +89,25 @@ impl Cleanup {
             };
         }
         self.walker.stop(cx);
+        Some(self.dig(cx, b))
+    }
+
+    /// The plan that digs scaffold block `b` from where the body stands.
+    pub fn dig(&mut self, cx: &mut GoalCx, b: BlockPos) -> Plan {
+        let me = cx.snap().me.clone();
+        let centre = b.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
         // Taking its own scaffold down is explicit: the ledger lets go of it first.
         cx.ledger.forget(b);
         let name = cx.world.block_at(b).unwrap_or_default();
         if let ToolNeed::Have(slot) = cx.world.tool_for(&name, cx.snap()) {
             if let Some(c) = equip(&me, slot) {
-                return Some(Plan::new("goal_equip", c));
+                return Plan::new("goal_equip", c);
             }
         }
         let c = Commands::default()
             .legs(LegsCmd::stop())
             .look_at(centre)
             .main(MainCmd::Dig(b));
-        Some(Plan::new("goal_place_cleanup", c))
+        Plan::new("goal_place_cleanup", c)
     }
 }
