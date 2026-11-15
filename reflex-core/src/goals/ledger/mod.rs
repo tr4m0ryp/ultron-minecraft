@@ -5,9 +5,11 @@
 //! put up. Remembering the placement is automatic instead.
 //!
 //! A cell is forgotten when it is seen broken or changed (`audit`), so the ledger follows
-//! the world. It persists in a text file (`persist`) so a restart keeps it.
+//! the world. It persists in a text file (`persist`) so a restart keeps it, together with
+//! the boxes thought marked with the protect tool (`regions`).
 
 mod persist;
+mod regions;
 #[cfg(test)]
 mod tests;
 
@@ -17,6 +19,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use crate::goals::travel::route::Region;
 use crate::math::BlockPos;
 
 /// The body refuses to dig within this many blocks (each axis) of a block the companion
@@ -70,6 +73,9 @@ struct Inner {
     /// Blocks the companion was seen placing.
     companion: HashMap<BlockPos, String>,
     keep: Option<Keep>,
+    /// Boxes marked with the protect tool, mirrored from the knobs (`sync_regions`).
+    regions: Vec<Region>,
+    regions_restored: bool,
     dirty: bool,
     path: Option<PathBuf>,
 }
@@ -91,7 +97,7 @@ impl Ledger {
         {
             let mut guard = l.0.borrow_mut();
             let i = &mut *guard;
-            persist::load(&path, &mut i.own, &mut i.companion);
+            persist::load(&path, &mut i.own, &mut i.companion, &mut i.regions);
             i.path = Some(path);
         }
         l
@@ -234,7 +240,7 @@ impl Ledger {
         if !i.dirty {
             return Ok(());
         }
-        persist::save(&path, &i.own, &i.companion)?;
+        persist::save(&path, &i.own, &i.companion, &i.regions)?;
         i.dirty = false;
         Ok(())
     }

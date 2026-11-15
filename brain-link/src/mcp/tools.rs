@@ -79,7 +79,7 @@ pub fn tool_list() -> Vec<Value> {
             "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 1},
             "ttl_s": {"type": "number", "exclusiveMinimum": 0, "description": "omit for no expiry"},
         }), &["reflex"]),
-        tool("protect", "Mark a box the body must never break while it digs its way around (your base, the companion's builds, a farm), with min and max corners. Builds made of planks, cobblestone, glass and the like are never dug anyway; blocks you place yourself are remembered and never dug by routes or escapes (across restarts), and so is the area within two blocks of blocks you see the companion place; protect the rest: natural-block builds you did not place, the companion's older builds, anything precious. clear: lift protection from every box containing that point.".into(), json!({
+        tool("protect", "Mark a box the body must never break while it digs its way around (your base, the companion's builds, a farm), with min and max corners. Builds made of planks, cobblestone, glass and the like are never dug anyway; blocks you place yourself are remembered and never dug by routes or escapes (across restarts), and so is the area within two blocks of blocks you see the companion place; protect the rest: natural-block builds you did not place, the companion's older builds, anything precious. Boxes stay protected across restarts until cleared. clear: lift protection from every box containing that point.".into(), json!({
             "min": xyz(), "max": xyz(), "clear": xyz(),
         }), &[]),
         tool("arm", "Prepare an if-then response the body runs instantly without asking you. Arm ahead of predictable danger, e.g. creeper near companion: place_block_between creeper.".into(), json!({
