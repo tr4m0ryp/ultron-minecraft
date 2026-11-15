@@ -3,7 +3,8 @@ blocks above a target 12 blocks away, no tools in hand, the edge guard R5 watchi
 Cases: ramp (a 1-wide staircase down a 9-high cliff), terraces (3-block drops, 4 wide),
 narrow (3-block drops on 1-wide steps), drop3 (one 3-block drop), hut_closed and hut_hole (the goal inside a plank hut), play_canopy
 (the play-run terrain copied from the world), sealed (an unreachable goal: expects a failure
-plus a TRACE dump, so its trials count as ok when the goal fails).
+plus a TRACE dump, so its trials count as ok when the goal fails), stuck (a walk pulled back
+to its start every tick: expects a no-progress TRACE dump).
 
 Usage: python3 descent.py <binary|-> <trials> [case ...]
 Site-relative (X0, Z0, Y from kit); the site is restored to plain floor afterwards.
@@ -86,8 +87,33 @@ def play_canopy():
     return go((27, 10, 13), (28, 1, 26), 150)
 
 
+def stuck():
+    """A walk that goes nowhere: the server pulls the body back to its start every tick (as
+    a server correcting a body's moves does), so it walks without getting anywhere and the
+    navigator never stalls; the recorder's no-progress watch must dump within 30 s. (A zero
+    movement speed attribute does not hold it: the body ignores it; slowness 10 makes it
+    walk backwards.)"""
+    at = (X0 + 4.5, Y + 1, Z0 + 20.5)
+    prep(at=at)
+    n0 = len(log_lines())
+    t0 = time.time()
+    send(f"task go_to {X0 + 30.5} {Y + 1} {Z0 + 20.5}")
+    dump, k = None, 0
+    while time.time() - t0 < 30 and not dump:
+        rc(f"tp {NAME} {at[0]} {at[1]} {at[2]}")
+        time.sleep(0.05)
+        k += 1
+        if k % 20 == 0:
+            dump = next((l for l in trace_lines(n0) if "no progress" in l), None)
+    secs = round(time.time() - t0, 1)
+    send("goal-end")
+    return dict(ok=bool(dump), outcome="dumped" if dump else "no_dump", secs=secs,
+                trace_lines=len(trace_lines(n0)), dump_reason=dump)
+
+
 CASES = dict(ramp=ramp, terraces=terraces, narrow=narrow, drop3=drop3, hut_closed=hut_closed,
-             hut_hole=hut_hole, play_canopy=play_canopy, sealed=sealed)
+             hut_hole=hut_hole, play_canopy=play_canopy, sealed=sealed,
+             stuck=stuck)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(1))
