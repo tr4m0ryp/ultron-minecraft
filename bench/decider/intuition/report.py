@@ -78,6 +78,13 @@ def main():
             b = cl["arms"][other]
             print("a1 vs", other, mcnemar(a["test_real"]["pred"], b["test_real"]["pred"], gold),
                   "loso", a["loso"]["k"], "vs", b["loso"]["k"])
+            for name in ("encoder-ft-real", "lm135-lora-real"):
+                if load(name):
+                    print(name, "vs", other, mcnemar(load(name)["test_real"]["pred"], b["test_real"]["pred"], gold))
+        if hb and load("encoder-ft-real"):
+            h = hb["arms"]["c3 habit table | real | label"]["test_real"]["pred"]
+            print("encoder-ft-real vs habit table", mcnemar(load("encoder-ft-real")["test_real"]["pred"], h, gold))
+            print("a1 vs habit table", mcnemar(a["test_real"]["pred"], h, gold))
     wf = load("wake-filter")
     if wf:
         print(f"\nwake filter, test_real ({wf['waits']['test_real']} waits in 108)\n| arm | threshold from training day | "
