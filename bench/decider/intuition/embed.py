@@ -25,6 +25,8 @@ class Encoder:
         return len(self.tok(s, truncation=True, max_length=256)["input_ids"])
 
     def many(self, pairs):
+        if self.path is None:               # no cache at all: every call pays the forward pass (latency runs)
+            return np.stack([self.one(text(p)) for p in pairs])
         out, new = [], 0
         for p in pairs:
             s = text(p)
