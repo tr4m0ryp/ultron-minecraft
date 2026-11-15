@@ -69,7 +69,7 @@ def pairs(path, session):
             detail = label
         out.append({"session": session, "i": len(out), "event": event, "snapshot": snap, "mode": mode,
                     "history": hist[-3:], "label": label, "detail": detail, "observed": obs_in_turn,
-                    "chat": bool(re.search(r"\bchat\b|<[^>]+> ", event))})
+                    "chat": bool(re.search(r"chat: <[^>]+>", event))})
         hist.append(detail)
 
     for name, inp, res in cs:
@@ -86,7 +86,20 @@ def pairs(path, session):
             turn.append((name, inp))
             if name == "set_mode":
                 mode = inp.get("mode", mode)
-    return out          # the turn after the last wait_event is the hand-over, not a decision
+    return anonymise(out)  # the turn after the last wait_event is the hand-over, not a decision
+
+
+def anonymise(ps):
+    """Replace the companion's player name by 'Mate' everywhere, so no handle reaches a model or a file."""
+    names = set()
+    for p in ps:
+        names.update(re.findall(r"companion (\S+) [\d.]+m", p["snapshot"]))
+        names.update(n for n in re.findall(r"chat: <([^>]+)>", p["event"]) if n)
+    names.discard("not")
+    for p in ps:
+        for n in names:
+            p["event"], p["snapshot"] = p["event"].replace(n, "Mate"), p["snapshot"].replace(n, "Mate")
+    return ps
 
 
 def main():
