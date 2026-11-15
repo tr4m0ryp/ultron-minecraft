@@ -15,6 +15,9 @@ pub enum ItemKind {
     Food {
         nutrition: u8,
         saturation: f32,
+        /// Raw meat, fish or potato: a furnace makes it a better meal, so the reflexes
+        /// keep it for cooking and eat it as it is only in an emergency.
+        cookable: bool,
     },
     /// A full solid block the bot may spend freely (dirt, cobblestone, netherrack).
     ThrowawayBlock,

@@ -62,6 +62,17 @@ fn kind_of(stack: &AzStack) -> ItemKind {
         return ItemKind::Food {
             nutrition: food.nutrition.clamp(0, 255) as u8,
             saturation: food.saturation,
+            cookable: matches!(
+                item,
+                Az::Beef
+                    | Az::Porkchop
+                    | Az::Mutton
+                    | Az::Chicken
+                    | Az::Rabbit
+                    | Az::Cod
+                    | Az::Salmon
+                    | Az::Potato
+            ),
         };
     }
     ItemKind::Other

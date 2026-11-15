@@ -65,6 +65,7 @@ pub fn bread() -> ItemKind {
     ItemKind::Food {
         nutrition: 5,
         saturation: 6.0,
+        cookable: false,
     }
 }
 
