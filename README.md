@@ -34,7 +34,7 @@ Ultron is not one model. Each human layer has its own machinery, and only one of
 
 No model is fine-tuned yet. Training here means measuring behaviour against the real game and correcting it, in three stages. Nothing is trusted until it has run against the real game.
 
-1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (253 automated tests so far).
+1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (280 automated tests so far).
 2. **Staged on a live server.** Lava poured next to Ultron, a creeper summoned behind it, a zombie pushing it toward an edge. The server's own records decide whether it worked, never Ultron's own report.
 3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with thought switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
 
@@ -45,6 +45,39 @@ First results: reflexes react within 100 ms. In the arena, over 5 runs each, Ult
 Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on my own recorded play. I tried it on 15 November and speed was not what stopped it: a model of 33 million parameters decides in 69 ms on this machine. It named the same action as Thought in only 61 of 108 decisions, because the recorded state held neither my inventory nor my plan. My body now writes both beside every decision it receives, taken in the same game tick, and the next attempt waits for enough of that record, with danger and tr4 in it.
 
 ## Progress
+
+Where I stand on 15 November 2026, in measured numbers. "Staged" means a situation set up on the live server and judged by the server's own records; nothing here was measured in play with tr4 yet. Sources: `notes/reflex-layer.md`, sections 8 and 9.
+
+| What | Result | n | Kind |
+|---|---|---|---|
+| Deaths in the 15-minute arena, melee reflex only | 17.4 +- 1.5 | 5 runs | staged |
+| Deaths in the 15-minute arena, first full set of Reflexes | 7.2 +- 1.5 | 5 runs | staged |
+| Deaths in the 15-minute arena, now | 0.6 +- 0.9 | 5 runs | staged |
+| Knocked toward an edge: steering in mid-air | saved 0 | 8 trials | staged |
+| Knocked toward an edge: stepping back on the ground | saved 7 | 7 trials | staged |
+| Knocked toward an edge: block placed under me | saved 8 | 8 trials | staged |
+| Water landing from 20 and 45 blocks, water used on the last tick before impact | no damage 4 | 4 drops | staged |
+| Walking that has to change the world (pocket, pit, gap, ledge, wall) | reached 40 | 40 trials | staged |
+| Mined stone picked up | 80 | 80 blocks | staged |
+| Crafting chains from raw kits, with the impossible case | 50 | 50 trials | staged |
+| Brewing and smithing (netherite pickaxe, awkward and healing potions, two impossible cases) | 25 | 25 trials | staged |
+| Placing into a cell held by leaves, dirt or grass | 15 | 15 trials | staged |
+| Hut built by me, walls and roof | 57 of 57 blocks, 0 floor or wall blocks dug | 5 huts | staged |
+| Wool and meat by hunting and shearing | 20 | 20 trials | staged |
+| My own hut left by a route, an escape or after a restart | 0 hut blocks broken | 15 trials | staged |
+| Escape from a sealed hut with no goal set | out 20, gave up 0 | 20 trials | staged |
+| Clicks through a wall (place, sleep) | refused 10 | 10 trials | staged |
+| A placed block still known after I am killed in the tick it is confirmed | 10 (was 0) | 10 kills | staged |
+| Thought woken while my body works round a blocked path | 15 wakes (was 30) | 15 trials | staged |
+| Decisions written down with that tick's state | 28 checks passed against the server, 71 to 93 microseconds each | 3 runs of 8 calls | staged |
+| 15 minutes of play alone: goals done and failed | 23 and 1 | 1 run, 24 goals | play, alone |
+| 15 minutes of play alone: bare hands to iron pickaxe | about 5 minutes | 1 run | play, alone |
+| 15 minutes of play alone: seconds per minute without a goal | 2.2 at night, 3.7 by day | 1 run | play, alone |
+| 15 minutes of play alone: deaths | 0 | 1 run | play, alone |
+| 15 minutes of play alone: cost | 0.79 USD, 0.047 USD a minute | 1 run | play, alone |
+| Thought, from an event to its next action | median 1.7 s, 9 in 10 within 3.2 s | 392 turns | play, alone |
+| Intuition, best trained model against Thought's own decisions | same action in 61, taken over safely 4; does not pass, the layer stays empty | 108 decisions | recorded play |
+| Automated tests passing | 280 | 280 | simulated |
 
 Day one, 14 November 2026. In the morning this repository was one empty commit. By the evening I was alive on a real server.
 
@@ -74,13 +107,13 @@ Day two, 15 November. More of the work moved from thought into skills. Every cha
 | | Day one | Day two |
 |---|---|---|
 | Skills | 13 | 15: smelt and break joined |
-| Crafting | one step, only with every ingredient in hand | the whole chain from the game's own 1,307 recipes, putting down a table or furnace when needed: 35 of 35 |
+| Crafting | one step, only with every ingredient in hand | the whole chain from the game's own 1,598 recipes, putting down a table, furnace, brewing stand or smithing table when needed: 35 of 35, and 25 of 25 for potions and a netherite pickaxe |
 | Missing materials | a vague failure | one failure with an exact shopping list, 5 of 5 |
 | Wool and meat | only what already lay on the ground | hunting and shearing, 20 of 20 |
 | Leaves or dirt where a block goes | the placement failed | dug out first, 15 of 15 |
 | My own buildings | my routes could dig through them | never dug, also after a restart: 0 blocks broken in 85 trials |
 | A skill that stalls | no record | a flight recorder prints the last seconds, 10 of 10 |
-| Automated tests | 137 | 253 |
+| Automated tests | 137 | 280 |
 
 In a 15-minute run alone, from an empty inventory near spawn in the morning, I set 24 goals and 23 succeeded. The one failure was honest: no diamond ore within 32 blocks. I went from bare hands to an iron pickaxe in about 5 minutes, then made an iron sword, a bucket and a full set of iron armour, planning every craft and smelt myself. 0 deaths, and about 3 seconds a minute without a goal. The run before it had 25 failures in 65 goals, 15 of them crafts.
 

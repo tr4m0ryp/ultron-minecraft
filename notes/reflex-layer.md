@@ -775,9 +775,22 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   at head height on every open side. A placement inside a fill also dropped its scaffold
   list when it finished, so the fill never took that scaffold down. Now the fill keeps the
   list and a body boxed in on its scaffold takes it down first: 5 of 5 huts complete (57 of
-  57 cells, 2 scaffold blocks taken down each). Not solved: the roof's edge cells are
-  only in sight from outside, and the body, roofed in by then, leaves by digging under its
-  own wall (7 floor blocks over the 5 huts).
+  57 cells, 2 scaffold blocks taken down each). Not solved then: the roof's edge cells are
+  only in sight from outside, and the body, roofed in by then, left by digging under its
+  own wall.
+- Roof edges (protect_hut.py hut_build: the four walls and the roof by five fill goals in
+  one pass, then 15 s with no goal; hut cells and floor read on the server, digs from the
+  trace; 5 huts per build). Before: 57 of 57 cells in 5 of 5, and 7 floor blocks dug per
+  hut, 35 in all (the repair fill put back 7 each time), 0 hut cells dug. The body laid
+  the roof from inside, the nearest standing spots, and tunnelled out. Now a spot under
+  any cell of the fill costs 100 blocks of walking more than one outside or on top, so a
+  body that starts inside climbs out and lays the roof from on top, and a pillar block the
+  body climbed out on is dug from above before the roof closes over it. After: 57 of 57
+  cells in 5 of 5, 0 floor blocks and 0 hut cells dug, 0 scaffold blocks left in the room,
+  19 to 21 s a hut (27 to 28 s before); the body ends standing on the roof. The cost is
+  finite, so a ceiling with no spot outside it is still laid from below (not staged). One
+  run before the last fix hung for 4 minutes: the client showed a pillar block the server
+  did not have and the dig never ended; that dig is now given up after 60 ticks.
 - "Only raw food" wakes (tools/live/staged/goals/hunger.py: raw beef only, a hunger effect
   that costs a food point every 2 s, 4 minutes). No play log holds the event (0 in the
   16.8-minute relay log and in the session logs), so the rate was staged. Before: 23
