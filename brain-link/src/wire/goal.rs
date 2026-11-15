@@ -27,7 +27,7 @@ pub enum GoalName {
 }
 
 impl GoalName {
-    pub const ALL: [GoalName; 15] = [
+    pub const ALL: [GoalName; 16] = [
         GoalName::End,
         GoalName::Follow,
         GoalName::GoTo,
