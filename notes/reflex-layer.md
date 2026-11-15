@@ -723,7 +723,166 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 
-## 9. References
+## 9. Intuition layer: decision-model benchmark (bench/decider)
+
+The Intuition layer sits between the reflexes (50 ms tick) and Thought (seconds): a small
+local model that picks the next action from a one-line game state. Bar for "usable": median
+under 500 ms per decision and accuracy clearly above the trivial baselines. Machine: Xeon
+E5-1410 v2, 4 cores / 8 threads, AVX without AVX2, no GPU. Run of 2026-11-15, replacing the
+first run of 2026-11-14 that was taken while builds were compiling.
+
+### 9.1 Conditions
+
+- Every timed run sits behind bench/decider/idle.py: it refuses to start with a compiler
+  running and records the load, then samples the CPU used by other processes during the run.
+  No compiler ran during any kept run (58 runs).
+- The load-average target (under 0.5) was met in 0 of 58 runs. The desktop keeps about 0.8
+  of a core busy (a chat client renderer at 0.4, browsers, other sessions); the 1-minute
+  load read 1.5 to 5.5, part of it the previous benchmark run decaying. The game server took
+  0 to 1 % of one core. Runs where other processes averaged more than 1.0 core were redone;
+  rows still above that are marked "!".
+- One Laya launch in six died with an illegal-instruction signal at start-up, before any
+  timing. Not reproduced in five further launches; cause unknown.
+
+### 9.2 Trivial baselines
+
+| cases | n | uniform chance | always first option | majority per kind | keyword rule |
+|---|---|---|---|---|---|
+| original, every 3rd (the first run's set) | 20 | 6.75 | 13 | 7 | n/a |
+| original, all | 60 | 20.75 | 40 | 18 | n/a |
+| goals (new) | 65 | 5 | 5 | 5 | 63 |
+
+- The original cases list the right answer first in 21 of 25 choice cases, so "always the
+  first option" scores 13 of 20. Every option-order-sensitive result below uses a fixed
+  per-case shuffle for that reason.
+- The goal cases (bench/decider/cases_goals.jsonl) are 65 states over the 13 real goals, 5
+  each, one fixed question. The keyword rule (bench/decider/trivial.py) was written by the
+  author of those cases after writing them: an upper bound for a rule, not an independent
+  result. It shows that these cases, mostly driven by a chat line, are easy for a rule.
+
+### 9.3 Baseline rerun (same settings as the first run: every 3rd case, 20 calls)
+
+| model | threads | reps | p50 ms, mean (min to max) | p90 ms (range) | correct | first run p50 ms |
+|---|---|---|---|---|---|---|
+| Laya 421M | 8 | 3 | 1796 (1785 to 1816) | 1920 to 2216 | 8/20, 8/20, 8/20 | 1889 |
+| Kev 0.8B | 4 | 3 | 2441 (2412 to 2490) | 2747 to 2777 | 8/20, 8/20, 8/20 | 3636 |
+| Jeff router | 8 | 3 | 5929 (5809 to 6028) | 6192 to 6858 | 2/4, 2/4, 2/4 (n=3 calls) | 38255 |
+
+- The compiling builds had inflated Jeff 6x and Kev 1.5x; Laya was unaffected. The verdict
+  did not change: slowest-to-fastest 5.9 s to 1.8 s, 3.6x to 12x over the bar.
+- Accuracy is identical in every repetition and identical between Kev and Laya by kind
+  (choice 4/9, yes/no 3/6, score 0/3, rank 1/2): 8/20 against 6.75 by chance and 7 by
+  majority. Not above the floor.
+- Why 8/20: Laya answers "no" to every yes/no case (probability 0.10 to 0.17) and the middle
+  level to every score case, but its raw values rank the cases correctly. With one yes/no
+  threshold (0.168) and one score cut (0.911) fitted on the 40 cases outside the test set it
+  scores 12/20. The shipped checkpoint warns about invalid temperatures; the fault is
+  calibration, not ranking.
+- Threads: Laya 2238 / 1422 / 1796 ms at 2 / 4 / 8 threads; Kev 3654 / 2441 / 2461. Four
+  (the physical cores) is best; the first run's default of 8 cost Laya 26 %.
+
+### 9.4 Variants (open small models through llama.cpp, bench/decider/logit_run.py)
+
+Cold = whole prompt evaluated, about 149 tokens. Cached = question and options held in the
+KV cache, only the state suffix evaluated (about 86 tokens). 4 threads, n = 60 timings per
+row unless stated. Accuracy by argmax over the option labels, original 20 cases, shuffled.
+
+| variant | weights | correct /20 | cold p50 / p90 ms | cached p50 / p90 ms |
+|---|---|---|---|---|
+| SmolLM2 135M | 4-bit | 6 | 744 / 861 | 423 / 513 |
+| SmolLM2 135M | 5-bit | 6 | 861 / 974 | 490 / 552 |
+| SmolLM2 135M | 8-bit | 6 | 572 / 686 | 332 / 375 |
+| SmolLM2 135M | 16-bit float | 6 | 433 / 498 | 257 / 284 |
+| SmolLM2 135M, 2 threads | 16-bit float | 6 | 812 / 915 | 469 / 520 |
+| SmolLM2 135M, 8 threads | 16-bit float | 6 | 588 / 808 | 402 / 509 |
+| SmolLM2 360M | 4-bit | 5 | 2080 / 2390 | 1185 / 1323 |
+| SmolLM2 360M | 5-bit | 5 | 2354 / 2750 | 1333 / 1546 |
+| SmolLM2 360M | 8-bit | 5 | 1525 / 1741 | 908 / 1020 |
+| SmolLM2 360M | 16-bit float | 5 | 1106 / 1295 | 648 / 728 |
+| Qwen2.5 0.5B | 4-bit | 5 | 1976 / 2339 | 1201 / 1379 |
+| Qwen2.5 0.5B | 5-bit | 7 | 2284 / 2634 | 1384 / 1516 |
+| Qwen2.5 0.5B | 8-bit | 6 | 1563 / 1777 | 928 / 1064 |
+| Qwen2.5 0.5B | 16-bit float | 7 | 1132 / 1297 | 677 / 766 |
+| Qwen2.5 0.5B, 2 threads | 16-bit float | 7 | 2139 / 2456 | 1262 / 1429 |
+| Qwen2.5 0.5B, 8 threads | 16-bit float | 7 | 1458 / 1612 | 921 / 1082 |
+| Gemma 3 270M | 16-bit float | 6 | 384 / 432 | 231 / 261 |
+| Qwen3 0.6B | 8-bit | 5 | 2282 / 2702 ! | 1344 / 1638 ! |
+| Qwen2.5 1.5B (n=20) | 4-bit | 9 | 3677 / 4256 | 2318 / 2458 |
+| 8 solved examples in the cached prefix, 135M | 16-bit float | 9 | n/a | 436 / 485 |
+| same, only volatile state fields evaluated (37 tokens) | 16-bit float | 9 | n/a | 189 / 229 |
+| same, Qwen2.5 0.5B (36 tokens) | 16-bit float | 9 | n/a | 395 / 481 |
+| sentence encoder 33M (bge-small), zero-shot cosine | float32 | 7 | 72 / 98 | n/a |
+
+- Generated text against argmax (4-bit rows): writing the answer as text and parsing it
+  gave 0/20 (135M), 3/20 (360M), 5/20 (0.5B) at 749 / 2184 / 2126 ms; argmax over the same
+  prompt gave 6, 5, 5 at 744 / 2080 / 1976 ms. Argmax saves 1 to 7 % of the time and always
+  returns a valid option; it does not make a model that does not know the answer know it.
+- On all 60 original cases: 135M 18, 360M 13 (!), 0.5B 27 (!), 1.5B 26, encoder 29, against
+  20.75 by chance. LFM2 350M did not run (decode error in this build of the library).
+- Subtracting the logits of a content-free state (calibration) moved the 20-case scores by
+  -2 to +3: noise at this n.
+
+Goal cases (65, one fixed question, 13 solved examples in the cached prefix, score = first
+token of the goal name, calibrated; "volatile" evaluates only HP, hunger, nearby, companion
+and chat, 43 tokens, which holds when nothing else changed since the last decision):
+
+| variant | correct /65 | p50 / p90 ms | n |
+|---|---|---|---|
+| 135M, no examples, letters | 6 | 324 / 360 | 65 |
+| 135M, examples, full state suffix | 37 | 519 / 608 | 65 |
+| 135M, examples, volatile suffix | 33 | 245 / 309 | 195 |
+| 360M, examples, full state suffix | 41 | 1136 / 1347 | 65 |
+| 360M, examples, volatile suffix | 45 | 534 / 663 | 195 |
+| 0.5B, examples, full state suffix | 36 | 1017 / 1139 | 65 |
+| 0.5B, examples, volatile suffix | 36 | 485 / 581 | 195 |
+| 1.5B 4-bit, examples, full state suffix | 54 | 2804 / 2975 | 65 |
+| 1.5B 4-bit, examples, volatile suffix | 52 | 1445 / 1784 | 195 |
+| sentence encoder, nearest of the 13 examples | 30 | 74 / 96 | 195 |
+| sentence encoder, zero-shot cosine | 18 | 74 / 96 | 195 |
+| keyword rule (author-written) | 63 | under 1 | 65 |
+
+### 9.5 Verdict against the bar, per variant
+
+- Original 20 cases: no variant passes. Latency passes for 135M and 270M models (cached
+  231 to 257 ms, cold 384 to 433 ms) and for the encoder (72 ms); accuracy never clears the
+  floor (best 9/20 against 6.75 by chance and 7 by majority). 20 cases is small: the 95 %
+  interval of 9/20 is 23 to 68 %.
+- Goal cases: two variants are under 500 ms and far above chance and majority (5/65): the
+  135M model with cached examples and a volatile suffix (33/65 at 245 ms, p90 309 ms) and
+  the encoder with nearest example (30/65 at 74 ms). Both are wrong on about half the cases
+  and far below the keyword rule (63/65). Not adopted. The layer stays empty.
+- (a) Quantized weights: lost a comparison. On this CPU 4-bit is 1.7x to 1.8x slower than
+  16-bit float and 5-bit is the slowest format; accuracy is the same within 2 cases. Premise:
+  AVX without AVX2, where the integer kernels have no wide path. Reopen on any AVX2 CPU or
+  GPU, where the order normally reverses.
+- (b) Argmax scoring: works as a mechanism (one pass, always a valid option), worth 1 to 7 %
+  latency. It was never the bottleneck: prompt evaluation is.
+- (c) Prefix caching: works. 1.7x on the original layout (149 to 86 tokens evaluated), 2.1x
+  more with volatile-ordered state fields (86 to 37). It also makes solved examples free per
+  decision, and those are what moved accuracy (135M on goals: 6/65 to 37/65).
+- (d) Threads: works, use 4. 2 threads cost 1.9x, 8 threads 1.3x to 1.4x.
+- (e) Smallest sizes: latency passes at 135M to 270M and at the 33M encoder; accuracy lost
+  the comparison to the floor on the original cases.
+- Kev, Laya, Jeff as shipped: lost a comparison, to the bar (2.8x to 12x too slow at their
+  best thread count) and to the floor (8/20). Not proven closed: Laya ranks correctly and
+  reaches 12/20 with fitted thresholds; a smaller or exported Laya was never tested.
+- What would have to be true: accuracy grows with size on the goal cases (33, 45, 54 of 65
+  at 135M, 360M, 1.5B) while 500 ms on this CPU buys 135M. The 1.5B model needs 2.9x to
+  5.6x more speed, which is an AVX2 or GPU machine, or the small model needs training on
+  Ultron's own decisions instead of 13 examples.
+
+### 9.6 Open
+
+- Fine-tune or probe-train the 135M model or the 33M encoder on recorded Thought decisions
+  (never tested; the habit compiler of 4.7 would supply the data).
+- Laya with fitted thresholds on more than 20 cases, a base-size Laya checkpoint, and an
+  exported integer build of it (never tested).
+- Goal cases without a chat line, where a keyword rule has nothing to read. The current 65
+  flatter the rule.
+- Rows marked "!" ran with more than 1.0 core of foreign load and are upper bounds.
+- The strict idle target (load under 0.5) needs the desktop session closed.
+
+## 10. References
 
 Neuroscience and psychology
 - [B91] Brown et al. 1991, New observations on the normal auditory startle reflex in man, Brain 114:1891. https://scilit.com/publications/14fcaaca435603b42b8cfcb68c539497
