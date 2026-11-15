@@ -1,7 +1,7 @@
 """Benchmark a System-One style decider on bench/decider/cases.jsonl (60 Minecraft cases).
 
   python run.py --backend von --label von --out results/von.json
-  python run.py --backend http --url http://127.0.0.1:8009 --model kev-latest --label kev-0.8b --pid <server pid>
+  python run.py --backend http --load-kw '{"url": "http://127.0.0.1:8009", "model": "kev-latest"}' --label kev-0.8b --pid <server pid>
 Measures: accuracy, p50/p95 per single-question call (>=200 after warm-up), 5-questions-in-one-call latency, RSS.
 """
 import argparse, json, os, resource, statistics, sys, time
