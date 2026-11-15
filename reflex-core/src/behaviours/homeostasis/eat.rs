@@ -14,15 +14,27 @@ pub fn meal_is_safe(snap: &crate::snapshot::Snapshot) -> bool {
 const FOOD_SLOT: Slot = 7;
 
 /// Best food slot. Ranks by saturation when hurt (regeneration needs food >= 18), else by
-/// nutrition. Golden apples only when `golden` is set.
+/// nutrition. Golden apples only when `golden` is set. Raw food counts: an explicit meal
+/// or an emergency eats what there is.
 pub fn best_food(me: &SelfState, golden: bool) -> Option<Slot> {
+    pick_food(me, golden, true)
+}
+
+/// Best food that is ready to eat: raw meat, fish and potatoes stay for the furnace (a
+/// cooked steak feeds 8, a raw one 3), as a player keeps them while merely peckish.
+pub fn best_ready_food(me: &SelfState) -> Option<Slot> {
+    pick_food(me, false, false)
+}
+
+fn pick_food(me: &SelfState, golden: bool, raw: bool) -> Option<Slot> {
     let score = |k: ItemKind| -> Option<f32> {
         match k {
             ItemKind::GoldenApple if golden => Some(100.0),
             ItemKind::Food {
                 nutrition,
                 saturation,
-            } if !golden => Some(if me.health < 20.0 {
+                cookable,
+            } if !golden && (raw || !cookable) => Some(if me.health < 20.0 {
                 saturation
             } else {
                 nutrition as f32
@@ -61,12 +73,18 @@ pub fn eat_commands(me: &SelfState, slot: Slot) -> Commands {
 
 /// Total servings of ordinary food carried.
 pub fn food_servings(me: &SelfState) -> u32 {
-    let count = |s: &crate::snapshot::ItemStack| {
-        if matches!(s.kind, ItemKind::Food { .. }) {
-            s.count as u32
-        } else {
-            0
-        }
+    servings(me, |_| true)
+}
+
+/// Servings of raw food that a furnace would make a better meal of.
+pub fn raw_servings(me: &SelfState) -> u32 {
+    servings(me, |cookable| cookable)
+}
+
+fn servings(me: &SelfState, keep: impl Fn(bool) -> bool) -> u32 {
+    let count = |s: &crate::snapshot::ItemStack| match s.kind {
+        ItemKind::Food { cookable, .. } if keep(cookable) => s.count as u32,
+        _ => 0,
     };
     me.hotbar.iter().flatten().map(count).sum::<u32>()
         + me.inventory.iter().map(|(_, s)| count(s)).sum::<u32>()
