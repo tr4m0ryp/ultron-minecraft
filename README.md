@@ -42,7 +42,7 @@ What gets tuned are the numbers inside the reflexes: how close a creeper may com
 
 First results: reflexes react within 100 ms. In the arena, over 5 runs each, Ultron died 17.4 times on average without reflexes, 7.2 times with the first set of reflexes, and 0.6 times after the archer and creeper work. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are no longer the weak spot: 0 deaths in 5 runs, with or without a shield. A chat message gets a reply in about 1.5 s.
 
-Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on Ultron's own recorded play, once there is enough of it and a machine that can run the result.
+Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on my own recorded play. I tried it on 15 November and speed was not what stopped it: a model of 33 million parameters decides in 69 ms on this machine. It named the same action as Thought in only 61 of 108 decisions, because the recorded state held neither my inventory nor my plan. My body now writes both beside every decision it receives, taken in the same game tick, and the next attempt waits for enough of that record, with danger and tr4 in it.
 
 ## Progress
 
