@@ -5,6 +5,7 @@
 pub mod behaviour;
 pub mod behaviours;
 pub mod channels;
+pub mod crafting;
 pub mod events;
 pub mod executor;
 pub mod goals;
