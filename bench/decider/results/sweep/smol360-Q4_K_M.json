@@ -1,0 +1,68 @@
+{
+ "label": "smol360-Q4_K_M",
+ "model": "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+ "cases": "cases.jsonl",
+ "n_cases": 20,
+ "threads": 4,
+ "reps": 3,
+ "shuffled": true,
+ "label_by": "letter",
+ "shots": 0,
+ "volatile": false,
+ "wrong": [
+  "c01:eat",
+  "c04:build",
+  "c07:eat",
+  "c13:dig_down",
+  "c16:fight",
+  "c22:ignore",
+  "c25:mine",
+  "c28:no",
+  "c31:yes",
+  "c34:yes",
+  "c40:no",
+  "c46:2",
+  "c49:2",
+  "c52:1",
+  "c55:axe"
+ ],
+ "correct_argmax": 5,
+ "correct_calib": 8,
+ "correct_generate": 3,
+ "deterministic": true,
+ "prompt_tokens_mean": 149.1,
+ "suffix_tokens_mean": 85.8,
+ "cold_ms": {
+  "p50": 1974.4,
+  "p90": 2320.3,
+  "mean": 2047.4,
+  "n": 60
+ },
+ "cached_ms": {
+  "p50": 1146.6,
+  "p90": 1308.7,
+  "mean": 1183.1,
+  "n": 60
+ },
+ "generate_ms": {
+  "p50": 2133.7,
+  "p90": 2521.0,
+  "mean": 2349.8,
+  "n": 60
+ },
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.87,
+  "busy_cores": 6.06,
+  "java_cpu_pct": 0.0,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 1.14,
+  "foreign_cores_max": 5.82,
+  "compilers_seen": [],
+  "samples": 163
+ }
+}
