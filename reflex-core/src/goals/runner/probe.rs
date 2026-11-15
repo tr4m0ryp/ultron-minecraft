@@ -132,6 +132,10 @@ impl StallWatch {
             self.reset();
             return None;
         }
+        if matches!(g.nav, NavCode::Planning | NavCode::Idle) {
+            // A re-plan (after a reflex took the legs, say) neither counts nor resets.
+            return None;
+        }
         if !g.moving {
             // A reflex holding the legs for a tick does not end the episode; a goal that
             // holds, digs, plans or has arrived does.
@@ -166,5 +170,59 @@ impl StallWatch {
         }
         self.last_dump = Some(tick);
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tick(nav: NavCode, moving: bool) -> GoalTick {
+        GoalTick {
+            goal_id: 7,
+            label: "go_to",
+            moving,
+            nav,
+            ..GoalTick::default()
+        }
+    }
+
+    #[test]
+    fn re_plans_between_walking_ticks_do_not_hide_a_stall() {
+        // Live: pulled back every tick, the body re-planned after each unstuck nudge
+        // (every 40 ticks); the count restarted each time and no dump ever came.
+        let mut w = StallWatch::default();
+        let here = Vec3::new(0.5, 64.0, 0.5);
+        let mut fired = None;
+        for t in 0..200u32 {
+            let g = if t % 40 < 3 {
+                tick(NavCode::Planning, false)
+            } else {
+                tick(NavCode::Moving, true)
+            };
+            if let Some(why) = w.observe(&g, here) {
+                fired.get_or_insert((t, why));
+            }
+        }
+        let (t, why) = fired.expect("a stall across re-plans dumps");
+        assert!(t < 80, "within the first window plus re-plans: {t}");
+        assert!(why.contains("no progress"), "{why}");
+    }
+
+    #[test]
+    fn real_progress_or_a_hold_resets_the_count() {
+        let mut w = StallWatch::default();
+        for t in 0..200u32 {
+            let pos = Vec3::new(0.5 + f64::from(t) * 0.1, 64.0, 0.5);
+            assert!(w.observe(&tick(NavCode::Moving, true), pos).is_none());
+        }
+        for _ in 0..50 {
+            w.observe(&tick(NavCode::Moving, true), Vec3::new(0.5, 64.0, 0.5));
+        }
+        w.observe(&tick(NavCode::Arrived, false), Vec3::new(0.5, 64.0, 0.5));
+        for _ in 0..50 {
+            let g = tick(NavCode::Moving, true);
+            assert!(w.observe(&g, Vec3::new(0.5, 64.0, 0.5)).is_none());
+        }
     }
 }

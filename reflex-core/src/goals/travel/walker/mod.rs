@@ -96,6 +96,8 @@ impl Walker {
         if self.target != Some(target) || self.paused {
             if self.paused {
                 self.replans += 1;
+            } else {
+                self.scrape.reset();
             }
             let snap = cx.ctx.snap;
             cx.nav.protect(&cx.ctx.knobs.protected);
@@ -138,8 +140,9 @@ impl Walker {
                 Walk::Arrived
             }
             NavStatus::Failed(f) => self.fail(cx, f),
+            // A re-plan keeps the no-progress count: live, a body pulled back every tick
+            // re-planned after each unstuck nudge (every 40 ticks) and never stalled.
             status => {
-                self.scrape.reset();
                 self.planning += 1;
                 if self.planning > PLANNING_LIMIT {
                     return self.fail(cx, NavFailure::Stalled);
