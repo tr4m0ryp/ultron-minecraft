@@ -212,13 +212,20 @@ fn second_executor_cannot_steal_a_live_socket() {
 fn protect_marks_and_lifts_regions() {
     let rig = Rig::start();
     let mut c = rig.client();
-    let a = ack(&mut c, json!({"op":"protect","min":[0,60,0],"max":[10,70,10]}));
+    let a = ack(
+        &mut c,
+        json!({"op":"protect","min":[0,60,0],"max":[10,70,10]}),
+    );
     assert!(a.done.contains("1 region"), "{}", a.done);
     let marked = rig.with(|w| w.exec.knobs.protected.clone());
     assert_eq!(marked.len(), 1);
     assert!(marked[0].contains(reflex_core::BlockPos::new(5, 65, 5)));
     assert!(call(&mut c, json!({"op":"protect","min":[0,0,0]})).is_err());
-    assert!(call(&mut c, json!({"op":"protect","min":[0,-64,0],"max":[999,300,999]})).is_err());
+    assert!(call(
+        &mut c,
+        json!({"op":"protect","min":[0,-64,0],"max":[999,300,999]})
+    )
+    .is_err());
     let a = ack(&mut c, json!({"op":"protect","clear":[5,65,5]}));
     assert!(a.done.contains("lifted 1"), "{}", a.done);
     assert!(rig.with(|w| w.exec.knobs.protected.is_empty()));
