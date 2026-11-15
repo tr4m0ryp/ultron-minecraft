@@ -2,7 +2,7 @@
 
 use super::ledger::Ledger;
 use super::ports::{FurnaceJob, Navigator, World};
-use super::runner::Reporter;
+use super::runner::{Block, Reporter};
 use crate::behaviour::Ctx;
 use crate::channels::{Commands, LegsCmd, MainCmd};
 use crate::crafting::Recipe;
@@ -131,9 +131,16 @@ impl GoalCx<'_> {
     pub fn note(&mut self, text: impl Into<String>) {
         self.rep.note(self.ctx, text.into());
     }
-    /// The goal cannot advance right now; reported once per reason until it clears.
+    /// The goal cannot advance right now and the body is working around it (a re-plan, a
+    /// skipped block): a digest line, and a wake only when the spell outlasts
+    /// `BLOCK_WAKE_TICKS`.
     pub fn blocked(&mut self, reason: impl Into<String>) {
-        self.rep.blocked(self.ctx, reason.into());
+        self.rep.blocked(self.ctx, reason.into(), Block::Handled);
+    }
+    /// The goal cannot advance and nothing the body does will change that (nobody to
+    /// follow, monsters round the bed): wakes thought, once per reason until it clears.
+    pub fn stuck(&mut self, reason: impl Into<String>) {
+        self.rep.blocked(self.ctx, reason.into(), Block::Stuck);
     }
 }
 

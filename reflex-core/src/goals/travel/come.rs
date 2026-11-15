@@ -33,7 +33,7 @@ impl GoalTask for ComeHere {
             if self.lost > LOST_LIMIT {
                 return Step::Failed("companion not visible".into());
             }
-            cx.blocked("companion not visible");
+            cx.stuck("companion not visible");
             return Step::Idle;
         };
         self.lost = 0;

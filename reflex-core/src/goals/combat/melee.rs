@@ -25,7 +25,7 @@ pub fn engage(cx: &mut GoalCx, walker: &mut Walker, target: &Entity) -> (Plan, b
             Walk::Moving(p) => (p, false),
             Walk::Arrived => (Plan::hold("goal_chase"), false),
             Walk::Failed(f) => {
-                cx.blocked(format!("cannot reach the {}: {f:?}", target.kind.label()));
+                cx.stuck(format!("cannot reach the {}: {f:?}", target.kind.label()));
                 (Plan::hold("goal_chase"), false)
             }
         };

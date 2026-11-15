@@ -70,3 +70,32 @@ fn status_events_do_not_flood() {
     let blocked = s.events("goal_blocked").len();
     assert_eq!(blocked, 1, "one report for a persistent reason");
 }
+
+#[test]
+fn a_block_the_body_works_around_is_a_digest_line_not_a_wake() {
+    use reflex_core::events::EventClass;
+    let mut s = Sim::new();
+    s.nav
+        .state()
+        .unreachable
+        .push(reflex_core::BlockPos::new(12, 64, 8));
+    s.goal("go_to 12 64 8", true);
+    assert!(s.run_until(100, |s| s.has_event("goal_failed")));
+    let blocked = s.events("goal_blocked");
+    assert_eq!(blocked.len(), 1);
+    assert_eq!(blocked[0].class, EventClass::Digest, "{:?}", blocked[0]);
+    assert_eq!(s.events("goal_failed")[0].class, EventClass::Wake);
+}
+
+#[test]
+fn a_block_only_thought_can_clear_wakes_at_once() {
+    use reflex_core::events::EventClass;
+    let mut s = Sim::new();
+    s.companion_at(4.5, 0.5);
+    s.goal("follow", false);
+    s.snap.companion = None;
+    assert!(s.run_until(20, |s| s.has_event("goal_blocked")));
+    let e = &s.events("goal_blocked")[0];
+    assert_eq!(e.class, EventClass::Wake);
+    assert!(e.text.contains("not visible"), "{}", e.text);
+}

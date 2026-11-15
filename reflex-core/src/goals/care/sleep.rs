@@ -163,7 +163,7 @@ impl GoalTask for SleepInBed {
             .legs(LegsCmd::stop())
             .look_at(top(half) - Vec3::new(0.0, 0.2, 0.0));
         if cx.snap().nearest_hostile(MONSTER_RADIUS).is_some() {
-            cx.blocked("monsters nearby");
+            cx.stuck("monsters nearby");
             return Step::Bid(Plan::new("goal_sleep", face));
         }
         if self.wait > 0 {

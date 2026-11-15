@@ -1,12 +1,14 @@
 //! The goal behaviour: one P5 bidder (id `GOAL`) that parses the brain's goal spec into a
 //! resumable state machine, steps it each tick, and reports its status upward.
 
+mod blocked;
 mod escape;
 mod handle;
 mod probe;
 mod report;
 mod status;
 
+pub use blocked::{Block, BLOCK_WAKE_TICKS, SPELL_GAP_TICKS};
 pub use escape::ENCLOSED_TICKS;
 pub use handle::GoalHandle;
 pub use report::{Reporter, REPEAT_GAP_TICKS};

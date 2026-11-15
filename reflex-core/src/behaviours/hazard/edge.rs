@@ -4,6 +4,8 @@ use crate::events::EventClass;
 use crate::predict::{expected_step, fall_damage};
 use crate::snapshot::BlockKind;
 
+use super::edge_hold::{Hold, EDGE_HOLD_WAKE_TICKS};
+
 /// What lies under the next footstep the plan would take. A landing of `Unknown` means the
 /// sensed column ended; `depth` is then a lower bound.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -77,6 +79,7 @@ fn halt(plan: &mut Commands) {
 #[derive(Default)]
 pub struct EdgeGuard {
     reported_goal: Option<u64>,
+    hold: Hold,
 }
 
 impl Behaviour for EdgeGuard {
@@ -115,6 +118,19 @@ impl Behaviour for EdgeGuard {
                 ctx.report(EventClass::Digest, "goal_blocked_by_edge", "R5")
                     .text(g.spec.clone()),
             );
+        }
+        if let Some(g) = ctx.knobs.goal.as_ref() {
+            if self.hold.observe(g.id, ctx.snap.tick) {
+                ctx.emit(
+                    ctx.report(EventClass::Wake, "goal_blocked_by_edge", "R5")
+                        .text(format!(
+                            "#{} held at an edge for {} s: {}",
+                            g.id,
+                            EDGE_HOLD_WAKE_TICKS / 20,
+                            g.spec
+                        )),
+                );
+            }
         }
         let priority = if lethal { Priority::P0 } else { Priority::P1 };
         Some(Veto {

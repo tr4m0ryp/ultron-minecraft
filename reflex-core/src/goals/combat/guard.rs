@@ -60,7 +60,7 @@ impl GoalTask for Guard {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
         let Some((id, pos, _)) = resolve_person(cx, &self.who) else {
             self.walker.stop(cx);
-            cx.blocked(format!("{} not visible", person_label(&self.who)));
+            cx.stuck(format!("{} not visible", person_label(&self.who)));
             return Step::Idle;
         };
         if let Some(e) = self.threat(cx, id, pos) {
@@ -88,7 +88,7 @@ impl GoalTask for Guard {
             Walk::Moving(p) => Step::Bid(p),
             Walk::Arrived => Step::Idle,
             Walk::Failed(f) => {
-                cx.blocked(format!("cannot reach {}: {f:?}", person_label(&self.who)));
+                cx.stuck(format!("cannot reach {}: {f:?}", person_label(&self.who)));
                 Step::Idle
             }
         }

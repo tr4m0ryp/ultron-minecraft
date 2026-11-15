@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::blocked::{Block, BlockWatch};
 use super::status::{GoalState, GoalStatus};
 use crate::behaviour::Ctx;
 use crate::events::EventClass;
@@ -9,7 +10,8 @@ pub const REPEAT_GAP_TICKS: u64 = 200;
 
 /// Per-goal status reporting without flooding: started once, progress at quarter
 /// milestones, each blocked reason once until it clears (and not again within the gap),
-/// done or failed once. Event text carries the goal id so identical outcomes of separate
+/// done or failed once. A block wakes thought only when it is stuck or outlasts
+/// `BLOCK_WAKE_TICKS` (see `blocked`); otherwise it is a digest line. Event text carries the goal id so identical outcomes of separate
 /// goals are not mistaken for repeats.
 #[derive(Debug)]
 pub struct Reporter {
@@ -18,6 +20,7 @@ pub struct Reporter {
     milestone: u32,
     blocked: Option<String>,
     blocked_this_tick: bool,
+    watch: BlockWatch,
     last_sent: HashMap<String, u64>,
     progress: Option<(u32, u32)>,
     note: Option<String>,
@@ -32,6 +35,7 @@ impl Reporter {
             milestone: 0,
             blocked: None,
             blocked_this_tick: false,
+            watch: BlockWatch::default(),
             last_sent: HashMap::new(),
             progress: None,
             note: None,
@@ -80,6 +84,7 @@ impl Reporter {
         let m = done * 4 / total;
         if m > self.milestone {
             self.milestone = m;
+            self.watch.progressed();
             self.send(ctx, EventClass::Digest, "goal_progress", &text);
         }
     }
@@ -102,14 +107,24 @@ impl Reporter {
         }
     }
 
-    pub fn blocked(&mut self, ctx: &Ctx, reason: String) {
+    pub fn blocked(&mut self, ctx: &Ctx, reason: String, how: Block) {
         self.blocked_this_tick = true;
+        let now = ctx.snap.tick;
+        if how == Block::Handled {
+            if let Some(secs) = self.watch.observe(now) {
+                let text = format!("{reason}; blocked for {secs} s");
+                self.send(ctx, EventClass::Wake, "goal_blocked", &text);
+            }
+        }
         if self.blocked.as_deref() == Some(reason.as_str()) {
             return;
         }
-        let key = format!("blocked|{reason}");
-        if self.due(&key, ctx.snap.tick) {
-            self.send(ctx, EventClass::Wake, "goal_blocked", &reason);
+        if self.due(&format!("blocked|{reason}"), now) {
+            let class = match how {
+                Block::Stuck => EventClass::Wake,
+                Block::Handled => EventClass::Digest,
+            };
+            self.send(ctx, class, "goal_blocked", &reason);
         }
         self.blocked = Some(reason);
     }

@@ -55,7 +55,7 @@ impl GoalTask for Follow {
     fn step(&mut self, cx: &mut GoalCx) -> Step {
         let Some((id, pos, _)) = resolve_person(cx, &self.who) else {
             self.walker.stop(cx);
-            cx.blocked(format!("{} not visible", person_label(&self.who)));
+            cx.stuck(format!("{} not visible", person_label(&self.who)));
             return Step::Idle;
         };
         let d = cx.me_pos().dist(pos);
@@ -79,7 +79,7 @@ impl GoalTask for Follow {
             }
             Walk::Moving(plan) => Step::Bid(plan),
             Walk::Failed(f) => {
-                cx.blocked(format!("cannot reach {}: {f:?}", person_label(&self.who)));
+                cx.stuck(format!("cannot reach {}: {f:?}", person_label(&self.who)));
                 Step::Idle
             }
         }

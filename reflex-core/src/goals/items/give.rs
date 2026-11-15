@@ -73,7 +73,7 @@ impl GoalTask for Give {
             if self.lost > LOST_LIMIT {
                 return Step::Failed(format!("{} not visible", person_label(&self.who)));
             }
-            cx.blocked(format!("{} not visible", person_label(&self.who)));
+            cx.stuck(format!("{} not visible", person_label(&self.who)));
             return Step::Idle;
         };
         self.lost = 0;

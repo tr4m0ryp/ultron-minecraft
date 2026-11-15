@@ -3,6 +3,7 @@
 mod air;
 mod contact;
 mod edge;
+mod edge_hold;
 mod extinguish;
 mod fall_arrest;
 mod falling;
