@@ -4,6 +4,8 @@ mod common;
 
 use common::*;
 use reflex_core::behaviours::homeostasis::Hunger;
+use reflex_core::channels::MainCmd;
+use reflex_core::snapshot::ItemKind;
 use reflex_core::EventClass;
 
 #[test]
@@ -45,4 +47,51 @@ fn hungry_with_no_food_wakes_thought_once_and_again_at_emergency() {
         ev.iter().any(|e| e.kind == "hungry_no_food"),
         "food ran out again"
     );
+}
+
+fn raw_beef() -> ItemKind {
+    ItemKind::Food {
+        nutrition: 3,
+        saturation: 1.8,
+        cookable: true,
+    }
+}
+
+#[test]
+fn raw_meat_waits_for_the_furnace_until_the_emergency() {
+    // Live: the reflex ate the raw beef a `smelt cooked_beef 3` was set to cook.
+    let mut s = flat();
+    let mut h = Hunger::default();
+    give(&mut s, 2, raw_beef(), 3);
+    s.me.food = 10;
+    let (bid, ev) = eval(&mut h, &s, &knobs());
+    assert!(bid.is_none(), "peckish: the beef is kept for cooking");
+    let e = ev
+        .iter()
+        .find(|e| e.kind == "hungry_raw_food")
+        .expect("thought is told");
+    assert_eq!(e.class, EventClass::Wake);
+    assert!(e.text.contains("smelt cooked_beef 3"), "{}", e.text);
+    assert!(!ev.iter().any(|e| e.kind == "hungry_no_food"));
+    let (_, ev) = eval(&mut h, &s, &knobs());
+    assert!(!ev.iter().any(|e| e.kind == "hungry_raw_food"), "once");
+
+    s.me.food = 6;
+    let (bid, ev) = eval(&mut h, &s, &knobs());
+    assert!(bid.is_some(), "emergency: eats it raw");
+    assert!(!ev.iter().any(|e| e.kind == "hungry_raw_food"));
+}
+
+#[test]
+fn ready_food_is_eaten_before_raw_and_raw_is_kept() {
+    let mut s = flat();
+    let mut h = Hunger::default();
+    give(&mut s, 2, raw_beef(), 3);
+    give(&mut s, 7, bread(), 1);
+    s.me.selected_slot = 7;
+    s.me.food = 10;
+    let (bid, ev) = eval(&mut h, &s, &knobs());
+    let bid = bid.expect("eats the bread");
+    assert_eq!(bid.cmds.main, Some(MainCmd::Use), "the bread in the held slot");
+    assert!(!ev.iter().any(|e| e.kind.starts_with("hungry_")));
 }
