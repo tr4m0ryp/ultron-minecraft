@@ -81,7 +81,8 @@ fn counts_follow_yields_and_reuse_surplus() {
     let chest = ok(&[("oak_log", 3)], "chest", 1, NONE);
     let planks = chest.steps.iter().filter(|s| s.recipe().result == "oak_planks");
     assert_eq!(planks.map(PlanStep::makes).sum::<u32>(), 12);
-    assert!(err(&[("oak_log", 2)], "chest", 1, NONE).contains("need 1 any log, have 0"));
+    let short = err(&[("oak_log", 2)], "chest", 1, NONE);
+    assert!(short.contains("need 2 any log, have 1"), "{short}");
 }
 
 #[test]
@@ -151,8 +152,11 @@ fn smelting_adds_a_furnace_a_table_and_fuel() {
         panic!("no smelt step");
     };
     assert_eq!((*count, fuel.clone()), (3, vec![("coal".to_string(), 1)]));
-    let e = err(&[("raw_iron", 3), ("oak_log", 1)], "iron_pickaxe", 1, BOTH);
-    assert!(e.contains("need fuel for"), "logs feed the sticks, not the fire: {e}");
+    let e = err(&[("raw_iron", 3), ("stick", 2)], "iron_pickaxe", 1, BOTH);
+    assert!(
+        e.ends_with("need fuel for 3 more smelts: 1 coal or 2 logs or planks. Get 1 coal."),
+        "{e}"
+    );
     let logs = ok(&[("raw_iron", 3), ("oak_log", 3), ("stick", 2)], "iron_pickaxe", 1, BOTH);
     let Some(PlanStep::Smelt { fuel, .. }) = logs.steps.first() else {
         panic!("smelt first");
