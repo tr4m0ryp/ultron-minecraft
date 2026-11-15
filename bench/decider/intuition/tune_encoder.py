@@ -1,6 +1,7 @@
 """Arm (a4): the 33M sentence encoder trained end to end on the pairs, a linear head on its CLS vector.
 
-  python tune_encoder.py --set real --epochs 10 --out ../results/trained/encoder-ft-real.json
+  python tune_encoder.py --set real --epochs 6 --out ../results/trained/encoder-ft-real.json
+  python tune_encoder.py --folds 3 --epochs 6 --out ../results/trained/encoder-ft-folds3.json
 """
 import argparse, json, os, random, sys, time
 import torch
