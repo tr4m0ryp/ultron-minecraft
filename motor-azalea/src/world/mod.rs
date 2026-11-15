@@ -1,26 +1,28 @@
 //! `reflex_core::goals::World` on Azalea's world, registry and inventory.
 //!
-//! UNTESTED LIVE: every path here compiles against the pinned Azalea revision but has not
-//! run on a server. Riskiest, in order: crafting clicks (`craft`), tossing (`inventory`),
-//! the sleeping flag (`entities`), the nearest-block search cost on large empty areas
-//! (`blocks`), and the tool tiers (`tools`).
+//! Recipes come from the server jar's data pack (`recipes`), read once at bot start.
 
 mod blocks;
+mod clicks;
 mod craft;
 mod entities;
+mod furnace;
 mod inventory;
 pub(crate) mod names;
 mod recipes;
 mod tools;
 
+use std::sync::Arc;
+
 use azalea::Client;
 use reflex_core::{
-    goals::{ItemDrop, MenuStatus, Recipe, ToolNeed, World},
+    crafting::{Recipe, RecipeBook},
+    goals::{FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed, World},
     math::{BlockPos, Vec3},
     snapshot::{Slot, Snapshot},
 };
 
-pub use recipes::lookup as recipe_shape;
+pub use recipes::{book as recipe_book, load as load_recipes, JAR_ENV};
 
 /// Scaffold blocks (the route planner's throwaway kinds) held in the inventory.
 pub fn scaffold_count(bot: &Client) -> u32 {
@@ -39,14 +41,18 @@ pub fn inventory_menu(bot: &Client) -> Option<azalea::inventory::Menu> {
 
 pub struct AzaleaWorld {
     bot: Client,
+    book: Arc<RecipeBook>,
     crafter: craft::Crafter,
+    furnace: furnace::Furnacer,
 }
 
 impl AzaleaWorld {
     pub fn new(bot: Client) -> Self {
         Self {
             bot,
+            book: recipes::book(),
             crafter: craft::Crafter::default(),
+            furnace: furnace::Furnacer::default(),
         }
     }
 }
@@ -74,6 +80,10 @@ impl World for AzaleaWorld {
         inventory::count(&self.bot, item)
     }
 
+    fn inventory(&self) -> Vec<(String, u32)> {
+        inventory::list(&self.bot)
+    }
+
     fn total_items(&self) -> u32 {
         inventory::total(&self.bot)
     }
@@ -86,8 +96,8 @@ impl World for AzaleaWorld {
         inventory::free(&self.bot)
     }
 
-    fn recipe(&self, item: &str) -> Option<Recipe> {
-        recipes::lookup(item).map(|s| s.recipe())
+    fn recipe_book(&self) -> Arc<RecipeBook> {
+        self.book.clone()
     }
 
     fn item_drops(&self, item: Option<&str>, around: Vec3, radius: f64) -> Vec<ItemDrop> {
@@ -103,12 +113,24 @@ impl World for AzaleaWorld {
         reflex_core::goals::travel::route::open_sky(&t, feet)
     }
 
-    fn start_craft(&mut self, item: &str, crafts: u32, table: Option<BlockPos>) {
-        self.crafter.start(&self.bot, item, crafts, table);
+    fn start_craft(&mut self, recipe: &Recipe, crafts: u32, table: Option<BlockPos>) {
+        self.crafter.start(&self.bot, recipe, crafts, table);
     }
 
     fn craft_status(&mut self) -> MenuStatus {
         self.crafter.status(&self.bot)
+    }
+
+    fn start_furnace(&mut self, pos: BlockPos, job: &FurnaceJob) {
+        self.furnace.start(&self.bot, pos, job);
+    }
+
+    fn furnace_status(&mut self) -> MenuStatus {
+        self.furnace.status(&self.bot)
+    }
+
+    fn furnace_seen(&self) -> Option<FurnaceSlots> {
+        self.furnace.seen.clone()
     }
 
     fn toss(&mut self, item: &str, count: u32) -> u32 {

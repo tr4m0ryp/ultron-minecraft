@@ -1,5 +1,6 @@
 //! Short names for sets of items in text meant for thought: "oak_log", "coal/charcoal",
-//! "any plank" (a tag that covers the set), "any wool" (one family).
+//! "any plank" (the widest tag inside the set, the shortest name on a tie: "planks" over
+//! "wooden_tool_materials"), "any wool" (one family).
 
 use super::book::RecipeBook;
 
@@ -22,7 +23,7 @@ pub fn name_set(book: &RecipeBook, items: &[String]) -> String {
                 .iter()
                 .filter(|(_, t)| !t.is_empty() && t.iter().all(|i| many.contains(i)))
                 .filter(|(_, t)| t.len() * 4 >= many.len() * 3)
-                .max_by_key(|(_, t)| t.len());
+                .max_by_key(|(name, t)| (t.len(), std::cmp::Reverse(name.len())));
             if let Some((tag, _)) = covering {
                 return format!("any {}", singular(tag));
             }

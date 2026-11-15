@@ -1,19 +1,17 @@
 //! Crafting by inventory clicks: the 2x2 grid of the player inventory, or a crafting table
-//! opened by right-clicking it. Verified live on 26.3: planks and sticks in the 2x2 grid, a
-//! wooden pickaxe at a table.
+//! opened by right-clicking it. The planner's recipe carries tag ingredients; `layout`
+//! picks one concrete held kind per cell, and the laid grid is checked against the recipe
+//! (shaped patterns also match mirrored) before the result is taken.
 
 use azalea::{
     entity::inventory::Inventory,
-    inventory::{
-        operations::{PickupClick, QuickMoveClick},
-        Menu,
-    },
+    inventory::{operations::QuickMoveClick, Menu},
     Client,
 };
+use reflex_core::crafting::{layout, matches, Recipe};
 use reflex_core::{goals::MenuStatus, math::BlockPos};
 
-use super::names::item_matches;
-use super::recipes::{lookup, Shaped};
+use super::clicks::{self, put};
 
 /// Polls (ticks) to wait for the crafting table menu to open.
 const OPEN_TIMEOUT: u32 = 40;
@@ -27,13 +25,14 @@ const SETTLE_POLLS: u32 = 10;
 enum Job {
     Idle,
     Opening {
-        recipe: Shaped,
+        recipe: Recipe,
         crafts: u32,
         polls: u32,
     },
     Settling {
         result: Result<(), String>,
         polls: u32,
+        table: bool,
     },
     Finished(MenuStatus),
 }
@@ -62,13 +61,17 @@ fn table_open(bot: &Client) -> bool {
 }
 
 impl Crafter {
-    pub fn start(&mut self, bot: &Client, item: &str, crafts: u32, table: Option<BlockPos>) {
-        let Some(recipe) = lookup(item) else {
-            self.job = Job::Finished(MenuStatus::Failed(format!("no recipe for {item}")));
-            return;
-        };
+    pub fn start(&mut self, bot: &Client, recipe: &Recipe, crafts: u32, table: Option<BlockPos>) {
+        let recipe = recipe.clone();
         self.job = match table {
-            None => outcome(run(bot, &recipe, crafts, 2)),
+            // The 2x2 grid settles too: the result's slot update arrives a few ticks later,
+            // and a goal that re-plans before it lands plans from a stale inventory (live: 4
+            // torches crafted, then "cannot craft torch" from the coal already spent).
+            None => Job::Settling {
+                result: run(bot, &recipe, crafts, 2),
+                polls: 0,
+                table: false,
+            },
             Some(p) => {
                 bot.block_interact(azalea::BlockPos::new(p.x, p.y, p.z));
                 Job::Opening {
@@ -91,7 +94,11 @@ impl Crafter {
             } => {
                 if table_open(bot) {
                     let result = run(bot, recipe, *crafts, 3);
-                    self.job = Job::Settling { result, polls: 0 };
+                    self.job = Job::Settling {
+                        result,
+                        polls: 0,
+                        table: true,
+                    };
                     return MenuStatus::Busy;
                 }
                 *polls += 1;
@@ -102,13 +109,17 @@ impl Crafter {
                 }
                 MenuStatus::Busy
             }
-            Job::Settling { result, polls } => {
+            Job::Settling {
+                result,
+                polls,
+                table,
+            } => {
                 *polls += 1;
                 if *polls < SETTLE_POLLS {
                     return MenuStatus::Busy;
                 }
-                if let Ok(h) = bot.get_inventory() {
-                    h.close();
+                if *table {
+                    clicks::close(bot);
                 }
                 self.job = outcome(result.clone());
                 MenuStatus::Busy
@@ -117,60 +128,38 @@ impl Crafter {
     }
 }
 
-/// Lays the recipe out `crafts` deep in a `grid`-wide crafting grid (result slot 0, grid
-/// from slot 1 row-major), shift-clicks the result, and returns any leftovers.
-fn run(bot: &Client, r: &Shaped, crafts: u32, grid: usize) -> Result<(), String> {
-    if r.width() > grid || r.height() > grid {
+/// Lays the recipe out in a `grid`-wide crafting grid (result slot 0, grid from slot 1
+/// row-major) as deep as the held kinds allow, shift-clicks the result, and returns any
+/// leftovers.
+fn run(bot: &Client, r: &Recipe, crafts: u32, grid: usize) -> Result<(), String> {
+    if r.needs_table() && grid < 3 {
         return Err("needs a crafting table".into());
     }
     let handle = bot.get_inventory().map_err(|e| e.to_string())?;
     if grid == 2 && handle.id() != 0 {
         return Err("another container is open".into());
     }
-    for (row, line) in r.rows.iter().enumerate() {
-        for (col, c) in line.chars().enumerate() {
-            let Some(ing) = r.ingredient(c) else {
-                continue;
-            };
-            let slot = (1 + row * grid + col) as u16;
-            let mut placed = 0;
-            while placed < crafts {
-                let menu = handle
-                    .menu()
-                    .map_err(|e| e.to_string())?
-                    .ok_or("menu closed")?;
-                let src = menu
-                    .player_slots_range()
-                    .find(|&i| menu.slot(i).is_some_and(|s| item_matches(ing, s)))
-                    .ok_or(format!("ran out of {ing}"))?;
-                let have = menu.slot(src).map_or(0, |s| s.count().max(0) as u32);
-                let put = have.min(crafts - placed);
-                handle.click(PickupClick::Left {
-                    slot: Some(src as u16),
-                });
-                for _ in 0..put {
-                    handle.click(PickupClick::Right { slot: Some(slot) });
-                }
-                if have > put {
-                    handle.click(PickupClick::Left {
-                        slot: Some(src as u16),
-                    });
-                }
-                placed += put;
-            }
-        }
+    let held = clicks::held(&clicks::menu(&handle)?);
+    let lay = layout(r, grid, &held, crafts).ok_or(format!("not enough held for {}", r.result))?;
+    for (cell, item) in &lay.cells {
+        put(&handle, item, lay.crafts, 1 + *cell as u16)?;
     }
-    handle.click(QuickMoveClick::Left { slot: 0 });
+    let m = clicks::menu(&handle)?;
+    let laid: Vec<Option<String>> = (1..=grid * grid)
+        .map(|i| clicks::slot(&m, i).map(|(n, _)| n))
+        .collect();
+    let fits = matches(r, grid, &laid);
+    if fits {
+        handle.click(QuickMoveClick::Left { slot: 0 });
+    }
     for g in 1..=(grid * grid) as u16 {
-        let left = handle
-            .menu()
-            .ok()
-            .flatten()
-            .and_then(|m| m.slot(g as usize).map(|s| !s.is_empty()))
-            .unwrap_or(false);
+        let left = clicks::menu(&handle).is_ok_and(|m| clicks::slot(&m, g as usize).is_some());
         if left {
             handle.click(QuickMoveClick::Left { slot: g });
         }
     }
-    Ok(())
+    match fits {
+        true => Ok(()),
+        false => Err(format!("the laid grid did not match the {} recipe", r.id)),
+    }
 }

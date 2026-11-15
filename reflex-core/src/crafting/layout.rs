@@ -17,14 +17,18 @@ pub struct Layout {
 /// two birch planks still make a table, one deep). `None` when not even one craft fits.
 pub fn layout(r: &Recipe, grid: usize, inv: &[(String, u32)], crafts: u32) -> Option<Layout> {
     let fits = match &r.shape {
-        Shape::Shaped { width, height, .. } => (*width as usize) <= grid && (*height as usize) <= grid,
+        Shape::Shaped { width, height, .. } => {
+            (*width as usize) <= grid && (*height as usize) <= grid
+        }
         Shape::Shapeless(v) => v.len() <= grid * grid,
         Shape::Smelt { .. } => false,
     };
     if !fits {
         return None;
     }
-    (1..=crafts.max(1)).rev().find_map(|n| assign(r, grid, inv, n))
+    (1..=crafts.max(1))
+        .rev()
+        .find_map(|n| assign(r, grid, inv, n))
 }
 
 fn assign(r: &Recipe, grid: usize, inv: &[(String, u32)], n: u32) -> Option<Layout> {
@@ -63,7 +67,10 @@ pub fn matches(r: &Recipe, grid: usize, items: &[Option<String>]) -> bool {
             cells,
         } => {
             let used: Vec<usize> = (0..items.len()).filter(|i| items[*i].is_some()).collect();
-            let (Some(r0), Some(r1)) = (used.iter().map(|i| i / grid).min(), used.iter().map(|i| i / grid).max()) else {
+            let (Some(r0), Some(r1)) = (
+                used.iter().map(|i| i / grid).min(),
+                used.iter().map(|i| i / grid).max(),
+            ) else {
                 return false;
             };
             let c0 = used.iter().map(|i| i % grid).min().unwrap_or(0);

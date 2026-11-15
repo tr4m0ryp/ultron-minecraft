@@ -3,6 +3,7 @@
 
 mod care;
 mod combat;
+mod craft;
 mod escape;
 mod gather;
 mod hunt;

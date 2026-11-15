@@ -6,8 +6,8 @@ mod dig_out;
 mod equip;
 mod fill;
 mod give;
-mod place;
-mod surfaces;
+pub(crate) mod place;
+pub(crate) mod surfaces;
 
 pub use break_at::BreakAt;
 pub use craft::{Craft, CRAFT_TIMEOUT_TICKS, TABLE_RADIUS};

@@ -54,7 +54,9 @@ fn reversible(book: &RecipeBook, r: &Recipe) -> bool {
 /// A smelt that melts crafted goods back down (iron tools into nuggets).
 fn recycle(book: &RecipeBook, r: &Recipe) -> bool {
     match &r.shape {
-        Shape::Smelt { input, .. } => input.0.len() > 1 && input.0.iter().all(|i| book.has_recipe(i)),
+        Shape::Smelt { input, .. } => {
+            input.0.len() > 1 && input.0.iter().all(|i| book.has_recipe(i))
+        }
         _ => false,
     }
 }

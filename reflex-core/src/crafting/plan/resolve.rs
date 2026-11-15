@@ -2,6 +2,7 @@
 //! recipes tried best-first (the share of their inputs already held), alternatives within a
 //! tag tried until one works, and on failure the closest attempt kept for the shopping list.
 
+use super::need::{widen, Need, Via};
 use super::{PlanStep, BUDGET};
 use crate::crafting::book::{Ingredient, Recipe, RecipeBook};
 use crate::crafting::label::name_set;
@@ -19,43 +20,6 @@ pub enum Mode {
 impl Mode {
     pub fn allows(self, r: &Recipe) -> bool {
         self == Mode::Any || r.is_smelt()
-    }
-}
-
-/// One line of the tree: `need` of `label`, `have` taken from the inventory, and how the
-/// rest was (or would be) made.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Need {
-    pub label: String,
-    pub need: u32,
-    pub have: u32,
-    pub via: Option<Via>,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Via {
-    pub smelt: bool,
-    pub makes: u32,
-    /// The inputs of all the crafts together, as (label, units).
-    pub from: Vec<(String, u32)>,
-    pub subs: Vec<Need>,
-}
-
-impl Need {
-    fn leaf(label: String, need: u32, have: u32) -> Self {
-        Self {
-            label,
-            need,
-            have,
-            via: None,
-        }
-    }
-
-    pub fn missing(&self) -> u32 {
-        match &self.via {
-            Some(v) => v.subs.iter().map(Need::missing).sum(),
-            None => self.need.saturating_sub(self.have),
-        }
     }
 }
 
@@ -152,7 +116,12 @@ impl State {
             let node = trial.make(book, a, rest, mode);
             if node.missing() == 0 {
                 *self = trial;
-                return Need { label, need: n, have, via: node.via };
+                return Need {
+                    label,
+                    need: n,
+                    have,
+                    via: node.via,
+                };
             }
             primary.get_or_insert((trial, node));
         }
@@ -162,7 +131,12 @@ impl State {
             Some((trial, node)) if !raw => {
                 *self = trial;
                 let via = node.via.map(|v| widen(book, ing, v));
-                Need { label, need: n, have, via }
+                Need {
+                    label,
+                    need: n,
+                    have,
+                    via,
+                }
             }
             _ => Need::leaf(label, n, have),
         }
@@ -172,7 +146,11 @@ impl State {
     /// miss when none works.
     pub fn make(&mut self, book: &RecipeBook, item: &str, n: u32, mode: Mode) -> Need {
         self.budget = self.budget.saturating_sub(1);
-        let mut rs: Vec<&Recipe> = book.recipes_for(item).iter().filter(|r| mode.allows(r)).collect();
+        let mut rs: Vec<&Recipe> = book
+            .recipes_for(item)
+            .iter()
+            .filter(|r| mode.allows(r))
+            .collect();
         let keys: Vec<u32> = rs.iter().map(|r| self.score(r, n)).collect();
         let mut order: Vec<usize> = (0..rs.len()).collect();
         order.sort_by_key(|i| std::cmp::Reverse(keys[*i]));
@@ -204,7 +182,11 @@ impl State {
     fn apply(&mut self, book: &RecipeBook, r: &Recipe, n: u32) -> Need {
         let crafts = n.div_ceil(r.count.max(1));
         let in_hand = book.in_hand_only(r);
-        let sub_mode = if r.is_smelt() { Mode::SmeltOnly } else { Mode::Any };
+        let sub_mode = if r.is_smelt() {
+            Mode::SmeltOnly
+        } else {
+            Mode::Any
+        };
         self.stack.push(r.result.clone());
         let mut subs = Vec::new();
         let mut from = Vec::new();
@@ -237,33 +219,11 @@ impl State {
             from,
             subs,
         };
-        Need { label: r.result.clone(), need: n, have: 0, via: Some(via) }
-    }
-}
-
-/// When every alternative of a set is made the same way from one input (any plank from its
-/// own logs), the shopping list names the union of those inputs ("any log"), not the first
-/// alternative's ("oak_log").
-fn widen(book: &RecipeBook, ing: &Ingredient, mut v: Via) -> Via {
-    let mut union: Vec<String> = Vec::new();
-    for a in &ing.0 {
-        let Some(r) = book.recipes_for(a).iter().find(|r| !r.is_smelt()) else {
-            return v;
-        };
-        let inputs = r.inputs();
-        let [(only, _)] = inputs.as_slice() else {
-            return v;
-        };
-        for i in &only.0 {
-            if !union.contains(i) {
-                union.push(i.clone());
-            }
+        Need {
+            label: r.result.clone(),
+            need: n,
+            have: 0,
+            via: Some(via),
         }
     }
-    if let ([(label, _)], [sub]) = (v.from.as_mut_slice(), v.subs.as_mut_slice()) {
-        let wide = name_set(book, &union);
-        *label = wide.clone();
-        sub.label = wide;
-    }
-    v
 }

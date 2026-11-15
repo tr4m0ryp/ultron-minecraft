@@ -61,6 +61,13 @@ fn parses_every_goal_form() {
         }
     );
     assert_eq!(
+        p("smelt iron_ingot 3"),
+        GoalSpec::Smelt {
+            item: "iron_ingot".into(),
+            count: 3
+        }
+    );
+    assert_eq!(
         p("give bread 2"),
         GoalSpec::Give {
             who: Person::Companion,

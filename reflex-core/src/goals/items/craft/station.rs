@@ -32,7 +32,7 @@ fn spot(cx: &GoalCx, tried: &[BlockPos]) -> Option<BlockPos> {
     let feet = cx.me_pos().block();
     let open = |p: BlockPos| cx.world.block_at(p).is_some_and(|n| replaceable(&n));
     let solid = |p: BlockPos| cx.world.block_at(p).is_some_and(|n| !replaceable(&n));
-    for r in [2, 1, 3] {
+    for r in [2i32, 1, 3] {
         for dy in [0, -1, 1] {
             for dx in -r..=r {
                 for dz in -r..=r {
@@ -51,6 +51,8 @@ fn spot(cx: &GoalCx, tried: &[BlockPos]) -> Option<BlockPos> {
     None
 }
 
+// One value per tick, never stored; boxing the plan would buy nothing.
+#[allow(clippy::large_enum_variant)]
 pub enum Placed {
     Bid(Plan),
     Done(BlockPos),

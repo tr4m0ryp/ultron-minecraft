@@ -1,7 +1,7 @@
 //! The shopping list: one line naming every missing link of the chain, depth first, then
 //! the raw materials to fetch.
 
-use super::resolve::Need;
+use super::need::Need;
 
 fn clauses(n: &Need, out: &mut Vec<String>, get: &mut Vec<(String, u32)>) {
     if n.missing() == 0 {
@@ -45,5 +45,9 @@ pub fn shopping(verb: &str, item: &str, nodes: &[Need], short_fuel: u32) -> Stri
         get.push(("coal".into(), coal));
     }
     let get: Vec<String> = get.iter().map(|(l, k)| format!("{k} {l}")).collect();
-    format!("cannot {verb} {item}: {}. Get {}.", out.join("; "), get.join(", "))
+    format!(
+        "cannot {verb} {item}: {}. Get {}.",
+        out.join("; "),
+        get.join(", ")
+    )
 }

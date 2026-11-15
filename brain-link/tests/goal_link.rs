@@ -37,6 +37,7 @@ fn every_goal_maps_to_a_spec_the_goal_layer_parses() {
         (GoalName::Attack, params(Some("zombie"), None, None)),
         (GoalName::Guard, params(None, None, None)),
         (GoalName::Craft, params(Some("wooden_pickaxe"), None, None)),
+        (GoalName::Smelt, params(Some("iron_ingot"), None, Some(3))),
         (GoalName::Give, params(Some("oak_planks"), None, Some(4))),
         (
             GoalName::Place,

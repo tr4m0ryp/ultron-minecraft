@@ -24,7 +24,12 @@ fn err(items: &[(&str, u32)], item: &str, n: u32, near: Stations) -> String {
 
 #[test]
 fn stone_pickaxe_from_logs_crafts_its_own_table_first() {
-    let p = ok(&[("oak_log", 2), ("cobblestone", 3)], "stone_pickaxe", 1, NONE);
+    let p = ok(
+        &[("oak_log", 2), ("cobblestone", 3)],
+        "stone_pickaxe",
+        1,
+        NONE,
+    );
     assert_eq!(
         steps(&p),
         [
@@ -36,7 +41,12 @@ fn stone_pickaxe_from_logs_crafts_its_own_table_first() {
         ]
     );
     assert!(p.needs_table && !p.needs_furnace);
-    let near = ok(&[("oak_log", 2), ("cobblestone", 3)], "stone_pickaxe", 1, BOTH);
+    let near = ok(
+        &[("oak_log", 2), ("cobblestone", 3)],
+        "stone_pickaxe",
+        1,
+        BOTH,
+    );
     assert_eq!(near.steps.len(), 3, "a table in reach is not crafted");
 }
 
@@ -50,7 +60,11 @@ fn alternatives_follow_the_inventory() {
     let held = ok(&[("spruce_planks", 2), ("oak_log", 5)], "stick", 4, NONE);
     assert_eq!(steps(&held), ["craft 4 stick"], "held planks before logs");
     let wood = ok(&[("oak_wood", 1)], "oak_planks", 4, NONE);
-    assert_eq!(steps(&wood), ["craft 4 oak_planks"], "oak_wood is in #oak_logs");
+    assert_eq!(
+        steps(&wood),
+        ["craft 4 oak_planks"],
+        "oak_wood is in #oak_logs"
+    );
 }
 
 #[test]
@@ -79,7 +93,10 @@ fn counts_follow_yields_and_reuse_surplus() {
     );
     // The chest takes 8 planks, the table 4: three logs, one plank craft each.
     let chest = ok(&[("oak_log", 3)], "chest", 1, NONE);
-    let planks = chest.steps.iter().filter(|s| s.recipe().result == "oak_planks");
+    let planks = chest
+        .steps
+        .iter()
+        .filter(|s| s.recipe().result == "oak_planks");
     assert_eq!(planks.map(PlanStep::makes).sum::<u32>(), 12);
     let short = err(&[("oak_log", 2)], "chest", 1, NONE);
     assert!(short.contains("need 2 any log, have 1"), "{short}");
@@ -107,7 +124,11 @@ fn recolouring_is_not_chained() {
          need 12 string, have 0. Get 12 string."
     );
     let dyed = ok(&[("white_dye", 1), ("red_wool", 1)], "white_wool", 1, NONE);
-    assert_eq!(steps(&dyed), ["craft 1 white_wool"], "dyeing from hand is fine");
+    assert_eq!(
+        steps(&dyed),
+        ["craft 1 white_wool"],
+        "dyeing from hand is fine"
+    );
 }
 
 #[test]
@@ -157,12 +178,22 @@ fn smelting_adds_a_furnace_a_table_and_fuel() {
         e.ends_with("need fuel for 3 more smelts: 1 coal or 2 logs or planks. Get 1 coal."),
         "{e}"
     );
-    let logs = ok(&[("raw_iron", 3), ("oak_log", 3), ("stick", 2)], "iron_pickaxe", 1, BOTH);
+    let logs = ok(
+        &[("raw_iron", 3), ("oak_log", 3), ("stick", 2)],
+        "iron_pickaxe",
+        1,
+        BOTH,
+    );
     let Some(PlanStep::Smelt { fuel, .. }) = logs.steps.first() else {
         panic!("smelt first");
     };
     assert_eq!(fuel, &vec![("oak_log".to_string(), 2)]);
-    let no_cobble = err(&[("raw_iron", 3), ("coal", 1), ("stick", 2)], "iron_pickaxe", 1, NONE);
+    let no_cobble = err(
+        &[("raw_iron", 3), ("coal", 1), ("stick", 2)],
+        "iron_pickaxe",
+        1,
+        NONE,
+    );
     assert!(no_cobble.contains("need 1 furnace, have 0"), "{no_cobble}");
 }
 
@@ -170,11 +201,21 @@ fn smelting_adds_a_furnace_a_table_and_fuel() {
 fn smelt_only_restricts_the_last_step() {
     let b = book();
     let near = BOTH;
-    let p = plan(&b, &inv(&[("iron_block", 1), ("raw_iron", 2), ("coal", 1)]), "iron_ingot", 2, near, true);
+    let p = plan(
+        &b,
+        &inv(&[("iron_block", 1), ("raw_iron", 2), ("coal", 1)]),
+        "iron_ingot",
+        2,
+        near,
+        true,
+    );
     let p = p.expect("smelts raw iron");
     assert_eq!(steps(&p), ["smelt 2 iron_ingot"]);
     let e = plan(&b, &inv(&[("iron_block", 1)]), "iron_ingot", 1, near, true).unwrap_err();
-    assert!(e.starts_with("cannot smelt iron_ingot: need 1 raw_iron, have 0"), "{e}");
+    assert!(
+        e.starts_with("cannot smelt iron_ingot: need 1 raw_iron, have 0"),
+        "{e}"
+    );
     let none = plan(&b, &[], "stick", 1, near, true).unwrap_err();
     assert_eq!(none, "no smelting recipe makes stick");
 }

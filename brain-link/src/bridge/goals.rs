@@ -83,6 +83,7 @@ pub fn layer_spec(
         GoalName::Attack => (format!("attack {}", kind()), None, true),
         GoalName::Guard => (format!("guard {who}"), None, false),
         GoalName::Craft => (format!("craft {} {count}", kind()), None, true),
+        GoalName::Smelt => (format!("smelt {} {count}", kind()), None, true),
         GoalName::Give => (format!("give {who} {} {count}", kind()), None, false),
         GoalName::Place => {
             let v = pos.ok_or("goal place needs param 'pos'")?;

@@ -17,6 +17,7 @@ pub enum GoalName {
     Attack,
     Guard,
     Craft,
+    Smelt,
     Give,
     Place,
     /// Break the one block at `pos`: the explicit removal, even of a block the body placed.
@@ -37,6 +38,7 @@ impl GoalName {
         GoalName::Attack,
         GoalName::Guard,
         GoalName::Craft,
+        GoalName::Smelt,
         GoalName::Give,
         GoalName::Place,
         GoalName::Break,
@@ -56,6 +58,7 @@ impl GoalName {
             GoalName::Attack => "attack",
             GoalName::Guard => "guard",
             GoalName::Craft => "craft",
+            GoalName::Smelt => "smelt",
             GoalName::Give => "give",
             GoalName::Place => "place",
             GoalName::Break => "break",
@@ -67,8 +70,13 @@ impl GoalName {
     /// Parameters a goal cannot do without.
     pub fn required(self) -> &'static [&'static str] {
         match self {
+<<<<<<< ours
             GoalName::GoTo | GoalName::Break => &["pos"],
             GoalName::Mine | GoalName::Collect | GoalName::Craft => &["kind"],
+=======
+            GoalName::GoTo => &["pos"],
+            GoalName::Mine | GoalName::Collect | GoalName::Craft | GoalName::Smelt => &["kind"],
+>>>>>>> theirs
             GoalName::Place => &["kind", "pos"],
             GoalName::Attack => &["kind"],
             GoalName::Give => &["kind"],

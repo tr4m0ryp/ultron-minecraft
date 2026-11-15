@@ -3,7 +3,6 @@
 
 use crate::crafting::{Ingredient, Recipe, RecipeBook, Shape};
 
-
 pub fn tag(items: &[&str]) -> Ingredient {
     Ingredient::of(items)
 }
@@ -56,10 +55,21 @@ pub fn inv(items: &[(&str, u32)]) -> Vec<(String, u32)> {
 }
 
 pub fn book() -> RecipeBook {
-    let planks = tag(&["oak_planks", "birch_planks", "spruce_planks", "bamboo_planks"]);
+    let planks = tag(&[
+        "oak_planks",
+        "birch_planks",
+        "spruce_planks",
+        "bamboo_planks",
+    ]);
     let oak_logs = tag(&["oak_log", "oak_wood"]);
     let birch_logs = tag(&["birch_log", "birch_wood"]);
-    let logs = tag(&["oak_log", "oak_wood", "birch_log", "birch_wood", "spruce_log"]);
+    let logs = tag(&[
+        "oak_log",
+        "oak_wood",
+        "birch_log",
+        "birch_wood",
+        "spruce_log",
+    ]);
     let stone = tag(&["cobblestone", "blackstone", "cobbled_deepslate"]);
     let one = Ingredient::one;
     let mut b = RecipeBook::default();
@@ -82,27 +92,93 @@ pub fn book() -> RecipeBook {
         shaped("oak_wood", 3, &["##", "##"], &[('#', one("oak_log"))]),
         shaped("birch_wood", 3, &["##", "##"], &[('#', one("birch_log"))]),
         shaped("stick", 4, &["#", "#"], &[p('#')]),
-        shaped("stick_from_bamboo_item", 1, &["#", "#"], &[('#', one("bamboo"))]),
+        shaped(
+            "stick_from_bamboo_item",
+            1,
+            &["#", "#"],
+            &[('#', one("bamboo"))],
+        ),
         shaped("crafting_table", 1, &["##", "##"], &[p('#')]),
         shaped("chest", 1, &["###", "# #", "###"], &[p('#')]),
-        shaped("oak_door", 3, &["##", "##", "##"], &[('#', one("oak_planks"))]),
-        shaped("furnace", 1, &["###", "# #", "###"], &[('#', stone.clone())]),
-        shaped("stone_pickaxe", 1, &["XXX", " # ", " # "], &[('X', stone.clone()), s('#')]),
-        shaped("iron_pickaxe", 1, &["XXX", " # ", " # "], &[('X', one("iron_ingot")), s('#')]),
-        shaped("iron_sword", 1, &["X", "X", "#"], &[('X', one("iron_ingot")), s('#')]),
+        shaped(
+            "oak_door",
+            3,
+            &["##", "##", "##"],
+            &[('#', one("oak_planks"))],
+        ),
+        shaped(
+            "furnace",
+            1,
+            &["###", "# #", "###"],
+            &[('#', stone.clone())],
+        ),
+        shaped(
+            "stone_pickaxe",
+            1,
+            &["XXX", " # ", " # "],
+            &[('X', stone.clone()), s('#')],
+        ),
+        shaped(
+            "iron_pickaxe",
+            1,
+            &["XXX", " # ", " # "],
+            &[('X', one("iron_ingot")), s('#')],
+        ),
+        shaped(
+            "iron_sword",
+            1,
+            &["X", "X", "#"],
+            &[('X', one("iron_ingot")), s('#')],
+        ),
         shaped("wooden_axe", 1, &["XX", "X#", " #"], &[p('X'), s('#')]),
         smelt("iron_ingot_from_smelting_raw_iron", one("raw_iron")),
-        smelt("iron_nugget_from_smelting", tag(&["iron_pickaxe", "iron_sword"])),
+        smelt(
+            "iron_nugget_from_smelting",
+            tag(&["iron_pickaxe", "iron_sword"]),
+        ),
         smelt("charcoal", logs.clone()),
-        shaped("iron_block", 1, &["###", "###", "###"], &[('#', one("iron_ingot"))]),
+        shaped(
+            "iron_block",
+            1,
+            &["###", "###", "###"],
+            &[('#', one("iron_ingot"))],
+        ),
         shapeless("iron_ingot_from_iron_block", 9, vec![one("iron_block")]),
-        shaped("iron_ingot_from_nuggets", 1, &["###", "###", "###"], &[('#', one("iron_nugget"))]),
+        shaped(
+            "iron_ingot_from_nuggets",
+            1,
+            &["###", "###", "###"],
+            &[('#', one("iron_nugget"))],
+        ),
         shapeless("iron_nugget", 9, vec![one("iron_ingot")]),
-        shaped("torch", 4, &["X", "#"], &[('X', tag(&["coal", "charcoal"])), s('#')]),
-        shaped("white_wool_from_string", 1, &["##", "##"], &[('#', one("string"))]),
-        shapeless("dye_white_wool", 1, vec![one("white_dye"), tag(&["red_wool", "blue_wool"])]),
-        shapeless("dye_red_wool", 1, vec![one("red_dye"), tag(&["white_wool", "blue_wool"])]),
-        shaped("white_bed", 1, &["###", "XXX"], &[('#', one("white_wool")), p('X')]),
+        shaped(
+            "torch",
+            4,
+            &["X", "#"],
+            &[('X', tag(&["coal", "charcoal"])), s('#')],
+        ),
+        shaped(
+            "white_wool_from_string",
+            1,
+            &["##", "##"],
+            &[('#', one("string"))],
+        ),
+        shapeless(
+            "dye_white_wool",
+            1,
+            vec![one("white_dye"), tag(&["red_wool", "blue_wool"])],
+        ),
+        shapeless(
+            "dye_red_wool",
+            1,
+            vec![one("red_dye"), tag(&["white_wool", "blue_wool"])],
+        ),
+        shaped(
+            "white_bed",
+            1,
+            &["###", "XXX"],
+            &[('#', one("white_wool")), p('X')],
+        ),
         shaped("bread", 1, &["###"], &[('#', one("wheat"))]),
     ] {
         b.add(r);

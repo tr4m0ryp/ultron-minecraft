@@ -1,11 +1,23 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+//! The world port in memory: named blocks, a name-counted inventory, a recipe book, and
+//! crafting and furnace menus that land after a few status polls.
 
-use crate::goals::ports::{kind_matches, ItemDrop, MenuStatus, Recipe, ToolNeed, World};
+mod menus;
+mod state;
+
+pub use state::FakeWorldState;
+
+use std::cell::RefCell;
+use std::rc::Rc;
+use std::sync::Arc;
+
+use crate::crafting::{Recipe, RecipeBook};
+use crate::goals::ports::{
+    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed, World,
+};
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{Slot, Snapshot};
 
+<<<<<<< ours
 /// Named blocks and a name-counted inventory. Blocks not listed read as "air".
 #[derive(Debug, Default)]
 pub struct FakeWorldState {
@@ -68,6 +80,8 @@ impl FakeWorldState {
     }
 }
 
+=======
+>>>>>>> theirs
 #[derive(Clone, Debug, Default)]
 pub struct FakeWorld(pub Rc<RefCell<FakeWorldState>>);
 
@@ -127,6 +141,18 @@ impl World for FakeWorld {
             .sum()
     }
 
+    fn inventory(&self) -> Vec<(String, u32)> {
+        let s = self.0.borrow();
+        let mut out: Vec<(String, u32)> = Vec::new();
+        for (n, c) in s.inventory.iter().filter(|(_, c)| *c > 0) {
+            match out.iter_mut().find(|(k, _)| k == n) {
+                Some((_, k)) => *k += c,
+                None => out.push((n.clone(), *c)),
+            }
+        }
+        out
+    }
+
     fn total_items(&self) -> u32 {
         self.0.borrow().inventory.iter().map(|(_, c)| c).sum()
     }
@@ -145,8 +171,8 @@ impl World for FakeWorld {
         self.0.borrow().free_slots
     }
 
-    fn recipe(&self, item: &str) -> Option<Recipe> {
-        self.0.borrow().recipes.get(item).cloned()
+    fn recipe_book(&self) -> Arc<RecipeBook> {
+        self.0.borrow().book.clone()
     }
 
     fn item_drops(&self, item: Option<&str>, around: Vec3, radius: f64) -> Vec<ItemDrop> {
@@ -168,27 +194,27 @@ impl World for FakeWorld {
         !self.0.borrow().no_sky
     }
 
-    fn start_craft(&mut self, item: &str, crafts: u32, _table: Option<BlockPos>) {
-        let mut s = self.0.borrow_mut();
-        if let Some(e) = s.craft_error.take() {
-            s.status = Some(MenuStatus::Failed(e));
-            return;
-        }
-        let ticks = s.craft_ticks;
-        s.craft = Some((item.to_string(), crafts, ticks));
-        s.status = Some(MenuStatus::Busy);
+    fn start_craft(&mut self, recipe: &Recipe, crafts: u32, _table: Option<BlockPos>) {
+        self.0.borrow_mut().start_craft(recipe, crafts);
     }
 
     fn craft_status(&mut self) -> MenuStatus {
+        self.0.borrow_mut().craft_status()
+    }
+
+    fn start_furnace(&mut self, pos: BlockPos, job: &FurnaceJob) {
         let mut s = self.0.borrow_mut();
-        if let Some((item, crafts, left)) = s.craft.take() {
-            if left == 0 {
-                s.land_craft(&item, crafts);
-            } else {
-                s.craft = Some((item, crafts, left - 1));
-            }
-        }
-        s.status.clone().unwrap_or(MenuStatus::Idle)
+        let ticks = s.craft_ticks;
+        s.furnace_job = Some((pos, job.clone(), ticks));
+        s.furnace_status = Some(MenuStatus::Busy);
+    }
+
+    fn furnace_status(&mut self) -> MenuStatus {
+        self.0.borrow_mut().furnace_status()
+    }
+
+    fn furnace_seen(&self) -> Option<FurnaceSlots> {
+        self.0.borrow().furnace_seen.clone()
     }
 
     fn toss(&mut self, item: &str, count: u32) -> u32 {

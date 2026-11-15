@@ -2,6 +2,7 @@
 //! returns the ordered craft and smelt steps, or one shopping list naming exactly what is
 //! missing. Pure logic over a `RecipeBook`; the goal re-plans after every executed step.
 
+mod need;
 mod resolve;
 mod text;
 
@@ -78,16 +79,24 @@ pub fn plan(
     near: Stations,
     smelt_only: bool,
 ) -> Result<CraftPlan, String> {
-    let mode = if smelt_only { Mode::SmeltOnly } else { Mode::Any };
+    let mode = if smelt_only {
+        Mode::SmeltOnly
+    } else {
+        Mode::Any
+    };
     let verb = if smelt_only { "smelt" } else { "craft" };
     if !book.recipes_for(item).iter().any(|r| mode.allows(r)) {
-        let how = if smelt_only { "smelting recipe" } else { "recipe" };
+        let how = if smelt_only {
+            "smelting recipe"
+        } else {
+            "recipe"
+        };
         return Err(format!("no {how} makes {item}"));
     }
     let mut stations: Vec<&str> = Vec::new();
     loop {
         let mut st = State::new(inv);
-        let mut nodes: Vec<resolve::Need> = stations
+        let mut nodes: Vec<need::Need> = stations
             .iter()
             .map(|s| st.need_set(book, &super::Ingredient::one(s), 1, Mode::Any))
             .collect();

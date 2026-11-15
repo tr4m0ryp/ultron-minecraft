@@ -154,6 +154,7 @@ fn label_of(spec: &str) -> &'static str {
         "attack",
         "guard",
         "craft",
+        "smelt",
         "give",
         "place",
         "break",
@@ -167,7 +168,7 @@ fn label_of(spec: &str) -> &'static str {
 /// The last integer word of a counted spec (`mine iron_ore 3`, `give companion bread 2`).
 fn count_of(spec: &str) -> u32 {
     match label_of(spec) {
-        "mine" | "collect" | "craft" | "give" => spec
+        "mine" | "collect" | "craft" | "smelt" | "give" => spec
             .split_whitespace()
             .last()
             .and_then(|w| w.parse().ok())

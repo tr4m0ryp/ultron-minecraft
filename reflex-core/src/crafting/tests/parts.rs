@@ -60,7 +60,11 @@ fn matching_accepts_mirrored_and_shifted_patterns() {
     let dye = recipe("dye_white_wool");
     let laid = grid(&[Some("red_wool"), None, None, Some("white_dye")]);
     assert!(matches(&dye, 2, &laid));
-    assert!(!matches(&dye, 2, &grid(&[Some("red_wool"), Some("red_wool")])));
+    assert!(!matches(
+        &dye,
+        2,
+        &grid(&[Some("red_wool"), Some("red_wool")])
+    ));
 }
 
 #[test]
@@ -69,7 +73,12 @@ fn sets_are_named_by_a_covering_tag_or_family() {
     let s = |v: &[&str]| v.iter().map(|x| x.to_string()).collect::<Vec<_>>();
     assert_eq!(name_set(&b, &s(&["stick"])), "stick");
     assert_eq!(name_set(&b, &s(&["coal", "charcoal"])), "coal/charcoal");
-    let planks = s(&["oak_planks", "birch_planks", "spruce_planks", "bamboo_planks"]);
+    let planks = s(&[
+        "oak_planks",
+        "birch_planks",
+        "spruce_planks",
+        "bamboo_planks",
+    ]);
     assert_eq!(name_set(&b, &planks), "any plank");
     let wool = s(&["red_wool", "blue_wool", "green_wool", "black_wool"]);
     assert_eq!(name_set(&b, &wool), "any wool");
@@ -107,7 +116,10 @@ fn fuel_burns_coal_first_and_counts_quarters() {
     let held = inv(&[("oak_planks", 10), ("coal", 1), ("stick", 4)]);
     assert_eq!(choose_fuel(&held, 3), (vec![("coal".to_string(), 1)], 0));
     let wood = inv(&[("oak_planks", 10), ("stick", 4)]);
-    assert_eq!(choose_fuel(&wood, 3), (vec![("oak_planks".to_string(), 2)], 0));
+    assert_eq!(
+        choose_fuel(&wood, 3),
+        (vec![("oak_planks".to_string(), 2)], 0)
+    );
     let sticks = inv(&[("stick", 3)]);
     assert_eq!(choose_fuel(&sticks, 2), (vec![("stick".to_string(), 3)], 2));
     assert_eq!(choose_fuel(&inv(&[("crimson_planks", 9)]), 1).1, 4);

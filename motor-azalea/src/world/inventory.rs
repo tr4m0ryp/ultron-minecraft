@@ -35,6 +35,24 @@ pub fn count(bot: &Client, kind: &str) -> u32 {
     .unwrap_or(0)
 }
 
+/// Exact item names in the main inventory and hotbar, counts summed per name.
+pub fn list(bot: &Client) -> Vec<(String, u32)> {
+    with_menu(bot, |m| {
+        let mut out: Vec<(String, u32)> = Vec::new();
+        for s in PLAYER_SLOTS.filter_map(|i| m.slot(i)) {
+            let Some(n) = super::names::item_name(s) else {
+                continue;
+            };
+            match out.iter_mut().find(|(k, _)| k == n) {
+                Some((_, c)) => *c += s.count().max(0) as u32,
+                None => out.push((n.to_string(), s.count().max(0) as u32)),
+            }
+        }
+        out
+    })
+    .unwrap_or_default()
+}
+
 pub fn total(bot: &Client) -> u32 {
     with_menu(bot, |m| {
         PLAYER_SLOTS

@@ -2,7 +2,7 @@
 Each case starts from a fixed inventory, sets one `craft` goal and verifies the result over
 RCON: the item count in the server inventory and every crafting table or furnace the bot put
 down (counted and removed with `fill ... replace`). The impossible case must fail once with
-the exact shopping list.
+the exact shopping list. The smelt case runs the `smelt` goal, furnace crafted from the kit.
 
 Usage: crafting.py [--trials N] [--binary PATH] [case ...]
 Prints one JSON line per trial and a summary line per case.
@@ -31,6 +31,10 @@ CASES = {
               "bread", 2, 90),
     "torches": ("craft torch 4", [("hotbar.1", "coal", 1), ("hotbar.2", "oak_log", 1)],
                 "torch", 4, 60),
+    "smelt": ("smelt iron_ingot 2",
+              [("hotbar.1", "raw_iron", 2), ("hotbar.2", "coal", 1),
+               ("hotbar.3", "oak_log", 1), ("hotbar.4", "cobblestone", 8)],
+              "iron_ingot", 2, 120),
     "impossible": ("craft stone_pickaxe 1", [("hotbar.1", "cobblestone", 1)],
                    "stone_pickaxe", 0, 30),
 }
@@ -70,7 +74,7 @@ def trial(name):
     clear_site()
     prep(items=items, comp_at=COMP_AT)
     n = task(spec)
-    kind, text, _ = outcome(n, timeout, "craft")
+    kind, text, _ = outcome(n, timeout, spec.split()[0])
     time.sleep(2)
     got = count_item(NAME, check)
     got = got if isinstance(got, int) else -1
