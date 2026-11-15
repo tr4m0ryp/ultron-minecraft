@@ -6,9 +6,9 @@ At dusk: go back to the base, set_mode build or mine, arm hp_below with retreat_
 inside the base, and with the human near, arm entity_within creeper of_companion with
 place_block_between.
 Night work, best first:
-- sleep: a bed within 16 blocks means sleep_in_bed. No bed yet: craft white_bed (3
-  white_wool over 3 planks) and place it inside the base. Wool comes from sheep: by day
-  go_to a flock, attack passive there and collect white_wool, or ask the human for wool.
+- sleep: a bed within 16 blocks means sleep_in_bed. No bed yet: collect white_wool 3
+  (sheep nearby; the body hunts or shears them), craft white_bed 1, place it inside the
+  base, then sleep_in_bed. Or ask the human for wool.
 - craft what the next project needs: planks, sticks, tools, chest, furnace, door, bed.
 - build and fix at the base: walls, roof holes, floor, door, a second room, a fence.
 - mine from inside: stone, coal or ore reachable from inside or right beside the base, for
