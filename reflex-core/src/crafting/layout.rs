@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use super::book::{Recipe, Shape};
+use super::book::{Ingredient, Recipe, Shape};
 
 /// Concrete grid contents for `crafts` crafts: each cell's index and item, `crafts` deep.
 #[derive(Clone, Debug, PartialEq)]
@@ -33,13 +33,12 @@ fn assign(r: &Recipe, grid: usize, inv: &[(String, u32)], n: u32) -> Option<Layo
         *left.entry(name.as_str()).or_default() += c;
     }
     let mut cells: Vec<(usize, String)> = Vec::new();
-    let mut chosen: Vec<(*const _, String)> = Vec::new();
+    let mut chosen: Vec<(&Ingredient, String)> = Vec::new();
     for (slot, ing) in r.cells(grid) {
-        let key = ing as *const _;
         let ok = |name: &str, left: &HashMap<&str, u32>| left.get(name).is_some_and(|c| *c >= n);
         let reuse = chosen
             .iter()
-            .find(|(k, name)| *k == key && ok(name, &left))
+            .find(|(k, name)| *k == ing && ok(name, &left))
             .map(|(_, name)| name.clone());
         let pick = reuse.or_else(|| {
             ing.0
@@ -49,7 +48,7 @@ fn assign(r: &Recipe, grid: usize, inv: &[(String, u32)], n: u32) -> Option<Layo
                 .cloned()
         })?;
         *left.get_mut(pick.as_str()).expect("checked") -= n;
-        chosen.push((key, pick.clone()));
+        chosen.push((ing, pick.clone()));
         cells.push((slot, pick));
     }
     Some(Layout { crafts: n, cells })
@@ -98,7 +97,7 @@ pub fn matches(r: &Recipe, grid: usize, items: &[Option<String>]) -> bool {
 }
 
 /// Every laid item matched to a distinct shapeless ingredient (backtracking, at most nine).
-fn pair(got: &[&String], used: &mut Vec<bool>, ings: &[super::book::Ingredient]) -> bool {
+fn pair(got: &[&String], used: &mut Vec<bool>, ings: &[Ingredient]) -> bool {
     let Some((first, rest)) = got.split_first() else {
         return true;
     };
