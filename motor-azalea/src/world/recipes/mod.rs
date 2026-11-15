@@ -4,6 +4,7 @@
 //! goals fail with a clear reason.
 
 mod parse;
+mod stations;
 #[cfg(test)]
 mod tests;
 
@@ -87,7 +88,9 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, Skipped), Stri
             (None, Some(rest)) => (rest, false),
             _ => continue,
         };
-        let Some(id) = dir.strip_suffix(".json").filter(|id| !id.contains('/')) else {
+        // Recipes sit at the top of the folder, except the brewing ones in `brewing/`.
+        let flat = |id: &&str| !id.contains('/') || (!is_tag && id.starts_with("brewing/"));
+        let Some(id) = dir.strip_suffix(".json").filter(flat) else {
             if !is_tag && !dir.is_empty() && !dir.ends_with('/') {
                 skip(dir.split('/').next().unwrap_or("unreadable"));
             }

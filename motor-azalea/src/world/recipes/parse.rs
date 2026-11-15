@@ -1,14 +1,15 @@
 //! One data-pack recipe file into the planner's `Recipe`: shaped and shapeless crafting,
-//! transmuting (dyeing a shulker box or a bundle, two items in the grid) and smelting, with
-//! tag and list ingredients expanded into concrete items.
+//! transmuting (dyeing a shulker box or a bundle, two items in the grid), smelting, brewing
+//! and smithing transforms (`stations`), with tag and list ingredients expanded into
+//! concrete items.
 //!
-//! Skipped, by kind (counts for 26.3, 735 in all):
+//! Skipped, by kind (counts for 26.3, 444 in all):
 //! - stonecutting (351), blasting (25), smoking (9), campfire_cooking (9): another station
 //!   for a result the grid or the furnace already makes. Every cooked result has a smelting
 //!   recipe; every cut one a crafting recipe, except cobblestone and cobbled deepslate,
 //!   which are mined.
-//! - brewing (279), smithing_transform (12), smithing_trim (18): a brewing stand or a
-//!   smithing table, which the hands have no menu for yet, and Nether materials.
+//! - smithing_trim (18): the result is the same armour with a pattern on it, which item
+//!   names do not carry.
 //! - crafting_dye (6), banner duplicate (16), map cloning (1, a transmute with no named
 //!   result), shield decoration, map extending, book cloning, repair, firework star, star
 //!   fade and rocket, decorated pot, tipped arrow (9): the result depends on colour,
@@ -113,6 +114,8 @@ pub fn recipe(id: &str, v: &Value, tags: &Tags) -> Option<Recipe> {
             input: ingredient(&v["ingredient"], tags)?,
             ticks: v["cookingtime"].as_u64().unwrap_or(200) as u32,
         },
+        "brewing" => return super::stations::brewing(id, v, tags),
+        "smithing_transform" => return super::stations::smithing(id, v, tags),
         _ => return None,
     };
     let (result, count) = result(&v["result"])?;
