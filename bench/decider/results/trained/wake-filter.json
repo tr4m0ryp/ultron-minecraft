@@ -1,0 +1,519 @@
+{
+ "waits": {
+  "train": 55,
+  "test_real": 18,
+  "test_hand": 8
+ },
+ "arms": {
+  "a1 encoder + logistic head": {
+   "train_cv_at_0.5": {
+    "t": 0.5,
+    "filtered": 22,
+    "correct": 7,
+    "precision": 31.8,
+    "coverage": 6.1,
+    "recall": 12.7
+   },
+   "t95_train": 0.6130256652832031,
+   "test_real": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.7,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.8,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.9,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.613,
+     "filtered": 5,
+     "correct": 5,
+     "precision": 100.0,
+     "coverage": 4.6,
+     "recall": 27.8
+    },
+    "oracle": {
+     "t": 0.251,
+     "filtered": 14,
+     "correct": 14,
+     "precision": 100.0,
+     "coverage": 13.0,
+     "recall": 77.8
+    }
+   },
+   "test_hand": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.7,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.8,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.9,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.613,
+     "filtered": 0,
+     "correct": 0,
+     "precision": null,
+     "coverage": 0.0,
+     "recall": 0.0
+    },
+    "oracle": {
+     "t": 0.492,
+     "filtered": 4,
+     "correct": 4,
+     "precision": 100.0,
+     "coverage": 8.3,
+     "recall": 50.0
+    }
+   }
+  },
+  "c1 features + logistic regression": {
+   "train_cv_at_0.5": {
+    "t": 0.5,
+    "filtered": 40,
+    "correct": 30,
+    "precision": 75.0,
+    "coverage": 11.0,
+    "recall": 54.5
+   },
+   "t95_train": 0.9562347321564341,
+   "test_real": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 6,
+      "correct": 6,
+      "precision": 100.0,
+      "coverage": 5.6,
+      "recall": 33.3
+     },
+     {
+      "t": 0.7,
+      "filtered": 2,
+      "correct": 2,
+      "precision": 100.0,
+      "coverage": 1.9,
+      "recall": 11.1
+     },
+     {
+      "t": 0.8,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.9,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.956,
+     "filtered": 0,
+     "correct": 0,
+     "precision": null,
+     "coverage": 0.0,
+     "recall": 0.0
+    },
+    "oracle": {
+     "t": 0.366,
+     "filtered": 12,
+     "correct": 12,
+     "precision": 100.0,
+     "coverage": 11.1,
+     "recall": 66.7
+    }
+   },
+   "test_hand": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 6,
+      "correct": 4,
+      "precision": 66.7,
+      "coverage": 12.5,
+      "recall": 50.0
+     },
+     {
+      "t": 0.7,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.8,
+      "filtered": 2,
+      "correct": 2,
+      "precision": 100.0,
+      "coverage": 4.2,
+      "recall": 25.0
+     },
+     {
+      "t": 0.9,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.956,
+     "filtered": 0,
+     "correct": 0,
+     "precision": null,
+     "coverage": 0.0,
+     "recall": 0.0
+    },
+    "oracle": {
+     "t": 0.732,
+     "filtered": 3,
+     "correct": 3,
+     "precision": 100.0,
+     "coverage": 6.2,
+     "recall": 37.5
+    }
+   }
+  },
+  "c2 features + boosted trees": {
+   "train_cv_at_0.5": {
+    "t": 0.5,
+    "filtered": 43,
+    "correct": 33,
+    "precision": 76.7,
+    "coverage": 11.9,
+    "recall": 60.0
+   },
+   "t95_train": 0.9666398351995615,
+   "test_real": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.7,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.8,
+      "filtered": 10,
+      "correct": 10,
+      "precision": 100.0,
+      "coverage": 9.3,
+      "recall": 55.6
+     },
+     {
+      "t": 0.9,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.967,
+     "filtered": 0,
+     "correct": 0,
+     "precision": null,
+     "coverage": 0.0,
+     "recall": 0.0
+    },
+    "oracle": {
+     "t": 0.789,
+     "filtered": 11,
+     "correct": 11,
+     "precision": 100.0,
+     "coverage": 10.2,
+     "recall": 61.1
+    }
+   },
+   "test_hand": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 5,
+      "correct": 4,
+      "precision": 80.0,
+      "coverage": 10.4,
+      "recall": 50.0
+     },
+     {
+      "t": 0.7,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.8,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.9,
+      "filtered": 1,
+      "correct": 1,
+      "precision": 100.0,
+      "coverage": 2.1,
+      "recall": 12.5
+     },
+     {
+      "t": 0.95,
+      "filtered": 0,
+      "correct": 0,
+      "precision": null,
+      "coverage": 0.0,
+      "recall": 0.0
+     }
+    ],
+    "train_threshold": {
+     "t": 0.967,
+     "filtered": 0,
+     "correct": 0,
+     "precision": null,
+     "coverage": 0.0,
+     "recall": 0.0
+    },
+    "oracle": {
+     "t": 0.813,
+     "filtered": 3,
+     "correct": 3,
+     "precision": 100.0,
+     "coverage": 6.2,
+     "recall": 37.5
+    }
+   }
+  },
+  "rule: goal_blocked means wait": {
+   "train_cv_at_0.5": {
+    "t": 0.5,
+    "filtered": 41,
+    "correct": 35,
+    "precision": 85.4,
+    "coverage": 11.3,
+    "recall": 63.6
+   },
+   "t95_train": null,
+   "test_real": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.7,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.8,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.9,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     },
+     {
+      "t": 0.95,
+      "filtered": 11,
+      "correct": 11,
+      "precision": 100.0,
+      "coverage": 10.2,
+      "recall": 61.1
+     }
+    ],
+    "train_threshold": null,
+    "oracle": {
+     "t": 1.0,
+     "filtered": 11,
+     "correct": 11,
+     "precision": 100.0,
+     "coverage": 10.2,
+     "recall": 61.1
+    }
+   },
+   "test_hand": {
+    "curve": [
+     {
+      "t": 0.5,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.7,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.8,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.9,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     },
+     {
+      "t": 0.95,
+      "filtered": 3,
+      "correct": 3,
+      "precision": 100.0,
+      "coverage": 6.2,
+      "recall": 37.5
+     }
+    ],
+    "train_threshold": null,
+    "oracle": {
+     "t": 1.0,
+     "filtered": 3,
+     "correct": 3,
+     "precision": 100.0,
+     "coverage": 6.2,
+     "recall": 37.5
+    }
+   }
+  }
+ }
+}
