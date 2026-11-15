@@ -69,8 +69,8 @@ def main():
     cases = data.real()[1] + data.hand()
     fns, info = (classic if a.what == "classic" else lm)(a, cases)
     res = {"threads": a.threads, **info, "rows": {}}
-    for name, fn in fns.items():
-        idle = gate(wait_s=a.gate_wait)
+    for i, (name, fn) in enumerate(fns.items()):
+        idle = gate(wait_s=a.gate_wait if i == 0 else 10)      # one full wait, then a short check per row
         with Monitor() as mon:
             ms = timed(fn, cases, a.reps)
         d = mon.summary()
