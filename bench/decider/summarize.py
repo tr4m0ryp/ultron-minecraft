@@ -4,6 +4,7 @@
 """
 import glob, json, os, statistics
 HERE = os.path.dirname(os.path.abspath(__file__))
+CLEAN = 1.0  # cores used by other processes during a run; above this (or with a compiler seen) the run is marked "!"
 
 
 def load(sub):
@@ -12,7 +13,7 @@ def load(sub):
 
 def env(r):
     i, d = r["idle"], r["during"]
-    flag = "!" if d["compilers_seen"] or i["compilers"] else ""
+    flag = "!" if d["compilers_seen"] or i["compilers"] or d["foreign_cores_mean"] > CLEAN else ""
     return f"{i['load1']} | {d['foreign_cores_mean']}{flag}"
 
 
