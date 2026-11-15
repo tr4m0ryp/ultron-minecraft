@@ -49,12 +49,12 @@ def arms():
     lr = lambda C: LogisticRegression(C=C, max_iter=3000)
     return {
         "a1 encoder + logistic head": ("emb", lambda: lr(10.0)),
-        "a2 encoder + MLP head": ("emb", lambda: MLPClassifier((256,), max_iter=600, random_state=0)),
+        "a2 encoder + MLP head": ("emb", lambda: MLPClassifier((256,), max_iter=150, tol=1e-3, random_state=0)),
         "a3 encoder + features + logistic head": ("both", lambda: lr(10.0)),
         "b1 encoder nearest neighbour k=1": ("emb", lambda: KNN(1)),
         "b5 encoder nearest neighbours k=5": ("emb", lambda: KNN(5)),
         "c1 features + logistic regression": ("feat", lambda: make_pipeline(MaxAbsScaler(), lr(1.0))),
-        "c2 features + boosted trees": ("feat", lambda: HistGradientBoostingClassifier(max_iter=200, learning_rate=0.1,
+        "c2 features + boosted trees": ("feat", lambda: HistGradientBoostingClassifier(max_iter=80, learning_rate=0.1,
                                                                                       max_depth=4, random_state=0)),
     }
 
