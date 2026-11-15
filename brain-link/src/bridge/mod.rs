@@ -146,7 +146,21 @@ impl Bridge {
         &self,
         host: &mut H,
         snap: &Snapshot,
+        echo: impl FnMut(&WakeEvent),
+    ) -> Vec<String> {
+        self.pump_commit(host, snap, echo, |_| {})
+    }
+
+    /// `pump_echo` with a `commit` step that runs after the queued requests were applied and
+    /// before any of them is answered: what a reply promises is on disk when it leaves.
+    /// Live, a `protect` was acknowledged a few ms before its box reached the ledger file,
+    /// and a bot killed in that window forgot the box (1 restart in 5).
+    pub fn pump_commit<H: Host>(
+        &self,
+        host: &mut H,
+        snap: &Snapshot,
         mut echo: impl FnMut(&WakeEvent),
+        commit: impl FnOnce(&mut H),
     ) -> Vec<String> {
         let wakes = host.upward().take_wake(snap.tick);
         let (jobs, wakes_pending) = {
@@ -176,6 +190,9 @@ impl Bridge {
         // must already see the new goal as running.
         let idle = idle::body_idle(host);
         self.lock().body.update(idle);
+        if !replies.is_empty() {
+            commit(host);
+        }
         for (tx, r) in replies {
             let _ = tx.send(r);
         }

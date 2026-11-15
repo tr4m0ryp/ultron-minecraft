@@ -79,35 +79,24 @@ impl State {
             });
             let mut say = l.inbox.drain(&mut l.exec);
             l.exec.knobs.kept = l.goals.ledger().keep();
-            sync_protected(l);
+            super::link::sync_protected(&l.goals, &mut l.exec.knobs);
             let out = l.exec.tick(&snap);
             l.ledger_watch.tick(bot, l.goals.ledger(), &snap, &out);
             crate::nav::set_max_drop(l.exec.knobs.gains.safe_drop());
             l.goals.settle(&mut l.exec.knobs);
             dump_trace(&mut l.exec);
-            l.trace.tick(&snap, &l.exec, sensed);
+            l.trace.tick(&snap, &l.exec, &out, sensed);
             say.extend(super::link::publish(
                 l.link.as_ref(),
                 &mut l.exec,
                 &l.goals,
                 &snap,
             ));
-            // A box the bridge marked this tick is on disk before the tick ends.
-            sync_protected(l);
             (out, say)
         });
         act::apply(bot, &out, &snap.me, &mut inner.hands);
         for text in say {
             bot.chat(text.as_str());
-        }
-    }
-}
-
-/// Mirrors the protected boxes into the ledger and writes it at once when they changed.
-fn sync_protected(l: &mut Local) {
-    if l.goals.ledger().sync_regions(&mut l.exec.knobs.protected) {
-        if let Err(e) = l.goals.ledger().flush() {
-            eprintln!("ledger not written: {e}");
         }
     }
 }

@@ -137,3 +137,38 @@ fn real_executor_is_a_host() {
     let log: wire::LogPage = serde_json::from_value(wire::open(log.wait(NOW)).unwrap()).unwrap();
     assert!(log.lines.len() <= 5);
 }
+
+#[test]
+fn a_reply_leaves_only_after_the_commit_step() {
+    // Live: `protect` was acknowledged before its box reached the ledger file.
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    let bridge = Bridge::new();
+    let world = FakeWorld::new();
+    let mut exec = FakeExecutor::default();
+    let written = Arc::new(AtomicBool::new(false));
+    let ticket = bridge.enqueue(Request::Protect {
+        min: Some([0.0, 60.0, 0.0]),
+        max: Some([4.0, 64.0, 4.0]),
+        clear: None,
+    });
+    let seen = written.clone();
+    let reader = std::thread::spawn(move || {
+        let reply = wire::open(ticket.wait(NOW));
+        (reply.is_ok(), seen.load(Ordering::SeqCst))
+    });
+    bridge.pump_commit(
+        &mut exec,
+        &world.snap,
+        |_| {},
+        |host| {
+            assert_eq!(host.knobs.protected.len(), 1, "applied before the commit");
+            std::thread::sleep(Duration::from_millis(50));
+            written.store(true, Ordering::SeqCst);
+        },
+    );
+    let (ok, written_first) = reader.join().expect("reader");
+    assert!(ok && written_first, "the reply waited for the write");
+    // A tick with no request has nothing to commit.
+    bridge.pump_commit(&mut exec, &world.snap, |_| {}, |_| panic!("no request"));
+}

@@ -1,9 +1,10 @@
 //! Per-tick debug trace, enabled by `MOTOR_TRACE=1`: the snapshot vitals, the owner of each
-//! body channel, and every event the executor emitted this tick (including Log class).
+//! body channel, the block the hand works on (`hand=dig:x,y,z` or `place:x,y,z`) and every
+//! event the executor emitted this tick (including Log class).
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use reflex_core::{Channel, Executor, Snapshot};
+use reflex_core::{channels::MainCmd, Channel, Executor, MotorOutput, Snapshot};
 
 pub struct Trace {
     on: bool,
@@ -18,7 +19,7 @@ impl Default for Trace {
 }
 
 impl Trace {
-    pub fn tick(&self, snap: &Snapshot, exec: &Executor, sensed: Duration) {
+    pub fn tick(&self, snap: &Snapshot, exec: &Executor, out: &MotorOutput, sensed: Duration) {
         if !self.on {
             return;
         }
@@ -30,7 +31,7 @@ impl Trace {
         println!(
             "T {} ms={} pos={:.2},{:.2},{:.2} hp={:.1} food={} sat={:.1} air={} fire={} \
              water={} ground={} slot={} held={} ents={} legs={} gaze={} main={} inv={} \
-             vel={:.3},{:.3},{:.3} off={} shield={} near={} note={}",
+             vel={:.3},{:.3},{:.3} off={} shield={} near={} note={} hand={}",
             snap.tick,
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -59,6 +60,7 @@ impl Trace {
             me.shield_ticks,
             nearest(snap),
             exec.legs_note().unwrap_or("-"),
+            hand(out),
         );
         if sensed.as_millis() >= 10 {
             println!("P {} sense_ms={}", snap.tick, sensed.as_millis());
@@ -81,6 +83,16 @@ impl Trace {
                 e.tick, e.class, e.kind, e.subject, e.text
             );
         }
+    }
+}
+
+/// The block the main hand digs or places this tick.
+fn hand(out: &MotorOutput) -> String {
+    match out.main {
+        Some(MainCmd::Dig(p)) => format!("dig:{},{},{}", p.x, p.y, p.z),
+        Some(MainCmd::PlaceAt { cell: p, .. }) => format!("place:{},{},{}", p.x, p.y, p.z),
+        Some(MainCmd::PlaceOn(p)) => format!("click:{},{},{}", p.x, p.y, p.z),
+        _ => "-".into(),
     }
 }
 

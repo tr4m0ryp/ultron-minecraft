@@ -78,7 +78,21 @@ pub fn publish(
         return Vec::new();
     };
     let mut body = Body { exec, goals };
-    link.bridge.pump_echo(&mut body, snap, |e| {
-        println!("WAKE t={} {} {} {}", e.t, e.kind, e.subject, e.text);
-    })
+    link.bridge.pump_commit(
+        &mut body,
+        snap,
+        |e| println!("WAKE t={} {} {} {}", e.t, e.kind, e.subject, e.text),
+        // A box marked or lifted by a request of this tick is in the ledger file before
+        // the request is answered.
+        |b| sync_protected(b.goals, &mut b.exec.knobs),
+    )
+}
+
+/// Mirrors the protected boxes into the ledger and writes it at once when they changed.
+pub fn sync_protected(goals: &GoalHandle, knobs: &mut Knobs) {
+    if goals.ledger().sync_regions(&mut knobs.protected) {
+        if let Err(e) = goals.ledger().flush() {
+            eprintln!("ledger not written: {e}");
+        }
+    }
 }
