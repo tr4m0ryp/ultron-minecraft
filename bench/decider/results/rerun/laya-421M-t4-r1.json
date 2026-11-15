@@ -1,0 +1,49 @@
+{
+ "label": "laya-421M-t4-r1",
+ "backend": "laya",
+ "threads": 4,
+ "accuracy": 0.4,
+ "correct": 8,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "4/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 1422.0,
+  "p90": 1586.4,
+  "p95": 1603.2,
+  "mean": 1424.1,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 6846.7,
+  "p90": 7628.5,
+  "p95": 7628.5,
+  "mean": 7025.6,
+  "n": 3
+ },
+ "load_s": 3.87,
+ "first_call_s": 1.73,
+ "rss_gb": 2.06,
+ "peak_rss_gb": 2.81,
+ "errors": [],
+ "n_errors": 0,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.27,
+  "busy_cores": 0.97,
+  "java_cpu_pct": 0.0,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.84,
+  "foreign_cores_max": 1.2,
+  "compilers_seen": [],
+  "samples": 23
+ }
+}
