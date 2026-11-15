@@ -12,7 +12,15 @@ R = connect()
 T_RE = re.compile(r"^T (\d+) ms=(\d+) pos=([-\d.]+),([-\d.]+),([-\d.]+) hp=([-\d.]+) food=(\d+) sat=([-\d.]+) air=(-?\d+) fire=(\d) water=(\d) ground=(\d) slot=(\d+) held=(.+?) ents=(\d+) legs=(\S+) gaze=(\S+) main=(\S+) inv=(\S+)")
 
 def rc(*cmds):
-    out = [R.cmd(c) for c in cmds]
+    """Runs RCON commands; a connection the server dropped is reopened once per command."""
+    global R
+    out = []
+    for c in cmds:
+        try:
+            out.append(R.cmd(c))
+        except (ConnectionError, OSError):
+            R = connect()
+            out.append(R.cmd(c))
     return out[-1] if out else ""
 
 def send(line, who="bot"):
