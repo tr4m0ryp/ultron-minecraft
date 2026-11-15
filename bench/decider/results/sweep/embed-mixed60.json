@@ -1,0 +1,32 @@
+{
+ "label": "embed-mixed60",
+ "model": "BAAI/bge-small-en-v1.5",
+ "cases": "cases.jsonl",
+ "n_cases": 60,
+ "threads": 4,
+ "reps": 1,
+ "correct_zero": 29,
+ "correct_shots": null,
+ "n_shots": 0,
+ "ms": {
+  "p50": 73.1,
+  "p90": 96.2,
+  "mean": 76.3,
+  "n": 60
+ },
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 1.57,
+  "busy_cores": 1.11,
+  "java_cpu_pct": 0.5,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.9,
+  "foreign_cores_max": 1.0,
+  "compilers_seen": [],
+  "samples": 4
+ }
+}

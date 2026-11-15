@@ -1,0 +1,44 @@
+{
+ "label": "jeff-router-r3",
+ "backend": "jeff",
+ "threads": 8,
+ "accuracy": 0.5,
+ "correct": 2,
+ "n_cases": 4,
+ "by_kind": {
+  "choice": "1/2",
+  "yesno": "1/1"
+ },
+ "single_ms": {
+  "p50": 5949.3,
+  "p90": 6191.6,
+  "p95": 6191.6,
+  "mean": 5775.9,
+  "n": 3
+ },
+ "batch5_ms": null,
+ "load_s": 14.91,
+ "first_call_s": 6.17,
+ "rss_gb": 4.3,
+ "peak_rss_gb": 5.58,
+ "errors": [
+  "c46: InvalidLabels: jeff.routing.router-open-v14.specialist: label key '0' looks like a number; use a word",
+  "batch5: InvalidLabels: jeff.routing.router-open-v14.specialist: label key '0' looks like a number; use a word"
+ ],
+ "n_errors": 2,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 3.46,
+  "busy_cores": 0.93,
+  "java_cpu_pct": 0.5,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.8,
+  "foreign_cores_max": 1.11,
+  "compilers_seen": [],
+  "samples": 16
+ }
+}
