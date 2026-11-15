@@ -42,7 +42,7 @@ layout)   # solved examples in the cached prefix; only the volatile state fields
 goals)    # 65 cases over the 13 real goals, one fixed question
   G="--cases $HERE/cases_goals.jsonl --no-shuffle"   # one fixed option order, as it would be deployed
   for m in "smol135 $BEST135" "smol360 $BEST360" "qwen05 $BEST05" "qwen15 Qwen2.5-1.5B-Instruct-Q4_K_M"; do set -- $m
-    run "goals-$1" "$2" $G --reps 1 --calib
+    [ $1 = qwen15 ] || run "goals-$1" "$2" $G --reps 1 --calib   # the 1.5B plain run takes 20 minutes and decides nothing
     run "goals-$1-shots-key" "$2" $G --reps 1 --shots "$HERE/shots/goals.jsonl" --label-by key --calib
     run "goals-$1-shots-key-volatile" "$2" $G --reps 3 --shots "$HERE/shots/goals.jsonl" --label-by key --volatile --calib
   done ;;
