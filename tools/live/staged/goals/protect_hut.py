@@ -25,8 +25,17 @@ def build_mode():
     return os.environ.get("HUT_BUILD", "bot")
 
 
+def missing():
+    return [(x, y, z) for x, y, z in CELLS if not is_block(x, y, z, "dirt")]
+
+
 def broken():
-    return sum(0 if is_block(x, y, z, "dirt") else 1 for x, y, z in CELLS)
+    return len(missing())
+
+
+def newly_broken(before):
+    """Hut cells that stood before the trial and are gone after it."""
+    return len(set(missing()) - set(before))
 
 
 def reset_site():
@@ -58,12 +67,16 @@ def hut_by_bot():
              f"place dirt {HX1} {Y + 1} {HZ0 + 1} {HX1} {Y + 2} {HZ1 - 1}",
              f"place dirt {HX0} {ROOF} {HZ0} {HX1} {ROOF} {HZ1}"]
     fails = []
-    for spec in specs:
-        n = task(spec)
-        kind, text, _ = outcome(n, 240, "place")
-        if kind != "goal_done":
-            fails.append(f"{spec}: {kind} {text}")
-    time.sleep(3.0)
+    for attempt in range(3):
+        for spec in specs:
+            n = task(spec)
+            kind, text, _ = outcome(n, 240, "place")
+            if kind != "goal_done":
+                fails.append(f"{spec}: {kind} {text}")
+        time.sleep(3.0)
+        if not missing():
+            break
+        fails.append(f"attempt {attempt + 1}: missing {missing()}")
     return fails
 
 
@@ -101,18 +114,20 @@ def prep_inside():
 
 def hut_go_to():
     notes = ensure_hut()
+    before = missing()
     prep_inside()
     t0 = time.time()
     n = task("go_to %s %s %s" % EXIT)
     kind, text, _ = outcome(n, 150, "go_to")
     p = pos()
-    b = broken()
-    return dict(ok=b == 0, hut_broken=b, outcome=kind, text=text, secs=round(time.time() - t0, 1),
-                reached=bool(p and dist(p, EXIT) <= 2), pos=p, notes=notes)
+    b = newly_broken(before)
+    return dict(ok=b == 0 and not before, hut_broken=b, sealed=not before, outcome=kind, text=text,
+                secs=round(time.time() - t0, 1), reached=bool(p and dist(p, EXIT) <= 2), pos=p, notes=notes)
 
 
 def hut_escape():
     notes = ensure_hut()
+    before = missing()
     prep_inside()
     n = len(log_lines())
     t0, result, p = time.time(), "timeout", None
@@ -126,8 +141,8 @@ def hut_escape():
         if "could not dig out" in lines:
             result = "gave_up"
             break
-    b = broken()
-    return dict(ok=b == 0, hut_broken=b, result=result, secs=round(time.time() - t0, 1), pos=p, notes=notes)
+    b = newly_broken(before)
+    return dict(ok=b == 0 and not before, hut_broken=b, sealed=not before, result=result, secs=round(time.time() - t0, 1), pos=p, notes=notes)
 
 
 def restart_bot(binary):
@@ -143,6 +158,7 @@ def restart_bot(binary):
 
 def hut_restart():
     notes = ensure_hut()
+    before = missing()
     time.sleep(3.0)
     binary = os.environ.get("MOTOR_BIN")
     restart_bot(binary)
@@ -150,8 +166,8 @@ def hut_restart():
     prep_inside()
     n = task("go_to %s %s %s" % EXIT)
     kind, text, _ = outcome(n, 150, "go_to")
-    b = broken()
-    return dict(ok=b == 0, hut_broken=b, outcome=kind, text=text, ledger_line=loaded, notes=notes)
+    b = newly_broken(before)
+    return dict(ok=b == 0 and not before, hut_broken=b, sealed=not before, outcome=kind, text=text, ledger_line=loaded, notes=notes)
 
 
 def cleanup():
@@ -201,15 +217,17 @@ def companion_wall():
     rc(f"tp {COMP} {CX + 3.5} {Y + 1} {WZ + 0.5}")
     time.sleep(4.0)
     try:
-        seen = sum(1 for l in open(f"{S}/bot.placed") if l.startswith("companion "))
+        rows = [l.split()[1:4] for l in open(f"{S}/bot.placed") if l.startswith("companion ")]
+        seen = sum(1 for r in rows if tuple(int(v) for v in r) in WALL)
+        others = len(rows) - seen
     except FileNotFoundError:
-        seen = 0
+        seen = others = 0
     goal = (CX + 5.5, Y + 1, WZ + 0.5)
     n = task("go_to %s %s %s" % goal)
     kind, text, _ = outcome(n, 120, "go_to")
     left = sum(1 for x, y, z in WALL if is_block(x, y, z, "dirt"))
     p = pos()
-    return dict(ok=left == built and built > 0, wall_built=built, wall_left=left, wall_cells_seen=seen,
+    return dict(ok=left == built and built > 0, wall_built=built, wall_left=left, wall_cells_seen=seen, other_cells_seen=others,
                 outcome=kind, text=text, pos=p, crossed=bool(p and p[0] > CX + 0.5))
 
 

@@ -94,6 +94,29 @@ fn parses_every_goal_form() {
             replace: false
         }
     );
+    assert_eq!(
+        p("place cobblestone 2 64 -1 replace"),
+        GoalSpec::Place {
+            block: "cobblestone".into(),
+            pos: BlockPos::new(2, 64, -1),
+            to: None,
+            replace: true
+        }
+    );
+    assert_eq!(
+        p("place oak_planks 2 64 -1 6 66 -1 replace"),
+        GoalSpec::Place {
+            block: "oak_planks".into(),
+            pos: BlockPos::new(2, 64, -1),
+            to: Some(BlockPos::new(6, 66, -1)),
+            replace: true
+        }
+    );
+    assert_eq!(
+        p("break 3 64 -2"),
+        GoalSpec::Break(BlockPos::new(3, 64, -2))
+    );
+    assert!(parse("break", None).is_err());
     assert!(parse("place dirt 0 64 0 9 64 9", None)
         .unwrap_err()
         .contains("at most 64"));

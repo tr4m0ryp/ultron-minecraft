@@ -42,6 +42,7 @@ fn every_goal_maps_to_a_spec_the_goal_layer_parses() {
             GoalName::Place,
             params(Some("cobblestone"), Some([1.0, 64.0, 2.0]), None),
         ),
+        (GoalName::Break, params(None, Some([1.0, 64.0, 2.0]), None)),
         (GoalName::SleepInBed, params(None, None, None)),
         (GoalName::EatNow, params(None, None, None)),
     ];
@@ -59,6 +60,16 @@ fn every_goal_maps_to_a_spec_the_goal_layer_parses() {
     assert!(matches!(
         goals::parse(&spec, target).unwrap(),
         goals::GoalSpec::Place { to: Some(_), .. }
+    ));
+    let replace = GoalParams {
+        replace: Some(true),
+        ..params(Some("cobblestone"), Some([1.0, 64.0, 2.0]), None)
+    };
+    let (spec, target, _) = layer_spec(&snap, GoalName::Place, &replace).unwrap();
+    assert_eq!(spec, "place cobblestone 1 64 2 replace");
+    assert!(matches!(
+        goals::parse(&spec, target).unwrap(),
+        goals::GoalSpec::Place { replace: true, .. }
     ));
     let give = layer_spec(&snap, GoalName::Give, &params(Some("bread"), None, Some(2))).unwrap();
     assert_eq!(
