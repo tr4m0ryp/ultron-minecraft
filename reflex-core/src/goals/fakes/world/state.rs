@@ -22,6 +22,8 @@ pub struct FakeWorldState {
     pub book: Arc<RecipeBook>,
     pub drops: Vec<ItemDrop>,
     pub sleeping: bool,
+    /// Right clicks on a bed (by day they only set the spawn point).
+    pub bed_clicks: u32,
     /// Read every cell as roofed over (no open sky).
     pub no_sky: bool,
     /// `craft_status` calls that report Busy before the craft lands.

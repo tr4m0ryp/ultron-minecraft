@@ -70,13 +70,8 @@ impl GoalName {
     /// Parameters a goal cannot do without.
     pub fn required(self) -> &'static [&'static str] {
         match self {
-<<<<<<< ours
             GoalName::GoTo | GoalName::Break => &["pos"],
-            GoalName::Mine | GoalName::Collect | GoalName::Craft => &["kind"],
-=======
-            GoalName::GoTo => &["pos"],
             GoalName::Mine | GoalName::Collect | GoalName::Craft | GoalName::Smelt => &["kind"],
->>>>>>> theirs
             GoalName::Place => &["kind", "pos"],
             GoalName::Attack => &["kind"],
             GoalName::Give => &["kind"],
