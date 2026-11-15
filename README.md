@@ -34,7 +34,7 @@ Ultron is not one model. Each human layer has its own machinery, and only one of
 
 No model is fine-tuned yet. Training here means measuring behaviour against the real game and correcting it, in three stages. Nothing is trusted until it has run against the real game.
 
-1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (246 automated tests so far).
+1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (253 automated tests so far).
 2. **Staged on a live server.** Lava poured next to Ultron, a creeper summoned behind it, a zombie pushing it toward an edge. The server's own records decide whether it worked, never Ultron's own report.
 3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with thought switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
 
@@ -74,13 +74,13 @@ Day two, 15 November. More of the work moved from thought into skills. Every cha
 | | Day one | Day two |
 |---|---|---|
 | Skills | 13 | 15: smelt and break joined |
-| Crafting | one step, only with every ingredient in hand | the whole chain from the game's own 1,275 recipes, putting down a table or furnace when needed: 35 of 35 |
+| Crafting | one step, only with every ingredient in hand | the whole chain from the game's own 1,307 recipes, putting down a table or furnace when needed: 35 of 35 |
 | Missing materials | a vague failure | one failure with an exact shopping list, 5 of 5 |
 | Wool and meat | only what already lay on the ground | hunting and shearing, 20 of 20 |
 | Leaves or dirt where a block goes | the placement failed | dug out first, 15 of 15 |
-| My own buildings | my routes could dig through them | never dug, also after a restart: 0 blocks broken in 30 trials |
+| My own buildings | my routes could dig through them | never dug, also after a restart: 0 blocks broken in 85 trials |
 | A skill that stalls | no record | a flight recorder prints the last seconds, 10 of 10 |
-| Automated tests | 137 | 246 |
+| Automated tests | 137 | 253 |
 
 In a 15-minute run alone, from an empty inventory near spawn in the morning, I set 24 goals and 23 succeeded. The one failure was honest: no diamond ore within 32 blocks. I went from bare hands to an iron pickaxe in about 5 minutes, then made an iron sword, a bucket and a full set of iron armour, planning every craft and smelt myself. 0 deaths, and about 3 seconds a minute without a goal. The run before it had 25 failures in 65 goals, 15 of them crafts.
 

@@ -682,13 +682,24 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   mined, 110 cobblestone picked up (solo hour: 81 and 11). It did not attempt a roof.
 - Crafting from the full recipe set (tools/live/staged/goals/crafting.py, fixed kits, no
   table or furnace at the site, 5 trials per case, item counts read over RCON). The book is
-  read at bot start from the server jar on disk: 1275 recipes and 203 item tags, nothing of
+  read at bot start from the server jar on disk: 1307 recipes and 203 item tags, nothing of
   it written to the repository. Stone pickaxe from 2 logs and 3 cobblestone 5/5 (one table
   crafted and put down each time), iron pickaxe from 3 raw iron, 1 coal, 3 logs and 8
   cobblestone 5/5 (table and furnace), chest 5/5, 3 doors 5/5, 4 torches 5/5 (2x2 grid, no
   table), smelt 2 iron ingots 5/5; the impossible case (1 cobblestone) failed once with the
   same shopping list word for word 5/5 ("Get 2 any log, 2 cobblestone/blackstone/
-  cobbled_deepslate"). 35 of 35, run twice (the merged build and the final one).
+  cobbled_deepslate"). 35 of 35, run twice (the merged build and the final one). The first
+  loader read 1275 recipes and skipped 767 jar entries without saying which. By kind:
+  stonecutting 351, brewing 279, transmute 33, blasting 25, smithing trim 18, banner
+  duplicate 16, smithing transform 12, campfire 9, smoking 9, armour dye 6 and 9 single
+  special recipes. Transmute (dyeing a shulker box or a bundle, two items in the grid) is
+  now read, 32 more recipes: `craft black_shulker_box` from a shulker box and black dye 5/5,
+  before 0/5 ("no recipe makes black_shulker_box"). 735 stay skipped and the load line
+  names them: 394 are another station for a result the grid or the furnace already makes
+  (every cooked result has a smelting recipe; every cut one a crafting recipe, except
+  cobblestone and cobbled deepslate, which are mined), 309 need a brewing stand or a
+  smithing table (no menu for those yet), and 32 give a result that depends on colour,
+  pattern, damage or contents, which item names do not carry.
 - Placing into an occupied cell (tools/live/staged/goals/protect.py): leaves, dirt and grass
   dug out of the cell first, 15 of 15; a block the player placed refused without `replace`
   and replaced with it, 5 of 5.
@@ -703,8 +714,55 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   real tool path: 0 cells broken 5/5, and 5/5 again with the bot restarted between protect
   and go_to (boxes now persist in the ledger file); the unprotected control broke 2 cells
   in 3 of 3. The restart case lost the box once in 5 when the bot was killed within a few
-  ms of the tool's acknowledgement (the file is written after the ack); with 1 s between
-  them 5/5.
+  ms of the tool's acknowledgement (the file was written after the ack). Killed the instant
+  the acknowledgement is read (protect_tool.py, 10 trials): that build had the box in the
+  file after the kill 0 of 10 and broke 2 hut cells in 10 of 10; with the write moved
+  before the reply (a commit step between applying a tick's requests and answering them)
+  the box is in the file 10 of 10 and 0 cells broke in 10.
+- The escape drive at 20 trials (protect_hut.py hut_escape, the same script as the 5/5
+  above). It gave up in 4 of 20 (trials 5, 9, 13 and 17, each followed by a 2-minute
+  cooldown), 0 hut cells broken. Cause, from the flight recorder: the script ends a trial
+  when the server shows the body outside the hut footprint, about half a second before the
+  escape is done, and teleports it back in. The walker followed its old route into the wall
+  for 100 ticks before the stall watch fired, and stalls were counted across separate
+  escapes because the count was reset only by a block target's arrival, never by the sky
+  target's: every third stall ended an escape. Now a body moved by anything but its legs
+  (more than 2 blocks along the ground or 4.5 up or down in one tick) re-plans that tick,
+  and the count resets on every arrival: 0 gave up in 20, 0 cells broken. 5 of the 20
+  re-plans still stalled once: the script refills the tunnel in the tick it teleports, the
+  plan made that tick still saw the old tunnel, and the walk into the refilled floor took
+  the 100 ticks of the stall watch before the next plan dug. With each trial waiting for
+  the finished escape (hut_escape_full) both builds leave 20 of 20 (12 to 16 s before, 6 to
+  16 s after), so the escape itself was sound.
+- Line of sight for the hands (tools/live/staged/goals/sight.py, 5 trials per case, block,
+  sleeping state and positions read over RCON). The server takes a click on any block in
+  reach, also behind a wall. Before: a block placed into a closed bedrock shell 5/5, a
+  bed inside one slept in 5/5; with a 5-wide wall and a way round, placed 5/5 and slept 5/5
+  from behind the wall. After (a voxel ray from the eye to the middle of the clicked face
+  or bed top, over the world's blocks): shell cases refused 5/5 and 5/5 with the reason
+  (placed 0, slept 0); with a way round the body walks round first, placed 5/5 and slept
+  5/5 from beyond the wall; the open cases 5/5 and 5/5 on both builds.
+- Building under that rule (protect_hut.py with HUT_REBUILD=1: walls and roof of the 57-cell
+  hut by five fill goals, 5 huts). The first try stalled 2 huts in 4 on the roof: the body
+  stood on its own scaffold block in a corner, in the cell to fill next, with its new roof
+  at head height on every open side. A placement inside a fill also dropped its scaffold
+  list when it finished, so the fill never took that scaffold down. Now the fill keeps the
+  list and a body boxed in on its scaffold takes it down first: 5 of 5 huts complete (57 of
+  57 cells, 2 scaffold blocks taken down each). Not solved: the roof's edge cells are
+  only in sight from outside, and the body, roofed in by then, leaves by digging under its
+  own wall (7 floor blocks over the 5 huts).
+- "Only raw food" wakes (tools/live/staged/goals/hunger.py: raw beef only, a hunger effect
+  that costs a food point every 2 s, 4 minutes). No play log holds the event (0 in the
+  16.8-minute relay log and in the session logs), so the rate was staged. Before: 23
+  wakes for 23 raw meals in 4.0 minutes, one per meal, because each meal at the
+  emergency level lifts the bar above it again with raw food still the only food. After
+  (one spell lasts until the body is fed, the raw food is gone or ready food turns up; one
+  wake per 5 minutes, a new spell sooner than that is a digest line): 1 wake and 0 digest
+  lines for 23 raw meals in 4.0 minutes.
+- RCON from two clients at once is not safe on this server: 9,678 of 159,503 block tests
+  came back empty with a second client sending (0 of 178,938 alone). A scan run beside a
+  staged trial reported 5 furnaces and a crafting table that do not exist and a hut cell
+  that was not broken. Staged scripts and ad hoc queries now run one at a time.
 - Flight recorder (tools/live/staged/goals/descent.py). An unreachable go_to (bedrock shell)
   failed and printed its dump 5/5 (10 to 33 TRACE lines). A body pulled back to its start
   every tick: the first build dumped 1 of 5, because each unstuck nudge (every 40 ticks)
