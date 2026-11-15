@@ -1,0 +1,29 @@
+{
+ "threads": 4,
+ "tokens_mean": 84.4,
+ "model": "SmolLM2-135M-Instruct-f16.gguf",
+ "rows": {
+  "d 135M adapter prompt, llama.cpp, base weights": {
+   "p50": 238.84,
+   "p90": 337.03,
+   "n": 468,
+   "idle": {
+    "gate": "load limit not met",
+    "limit": 0.5,
+    "load1": 2.31,
+    "busy_cores": 1.17,
+    "java_cpu_pct": 0.5,
+    "compilers": [],
+    "waited_s": 37
+   },
+   "during": {
+    "foreign_cores_mean": 0.87,
+    "foreign_cores_max": 1.41,
+    "compilers_seen": [],
+    "samples": 56
+   },
+   "contaminated": false,
+   "foreign_over_1_core": false
+  }
+ }
+}
