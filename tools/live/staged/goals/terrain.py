@@ -6,7 +6,7 @@ Each trial rebuilds its structure on the goal site (x 1400..1440, z 1000..1040, 
 gives the bot an iron pickaxe and 32 dirt, sets one goal and checks the result over RCON.
 The site is restored to its plain floor at the end. One JSON line per trial.
 """
-import json, signal, sys
+import json, os, signal, sys
 from kit import *
 
 KIT = [("hotbar.0", "iron_pickaxe", 1), ("hotbar.1", "dirt", 32)]
@@ -138,13 +138,16 @@ if __name__ == "__main__":
     binary, trials = sys.argv[1], int(sys.argv[2])
     names = sys.argv[3:] or list(CASES)
     build_site()
-    rc("gamerule spawn_mobs false", "gamerule advance_time false", "time set noon")
+    os.environ.setdefault("ULTRON_BRIDGE", "0")
     start(None if binary == "-" else binary)
     try:
         for name in names:
             for k in range(trials):
                 clear()
+                n0 = len(log_lines())
                 r = CASES[name]()
+                if not r.get("ok"):
+                    r["trace"] = trace_lines(n0)
                 print(json.dumps(dict(case=name, trial=k, **r)), flush=True)
                 send("goal-end")
                 time.sleep(1)
@@ -152,4 +155,3 @@ if __name__ == "__main__":
         stop()
         clear()
         build_site()
-        rc("gamerule advance_time true", "gamerule spawn_mobs true")

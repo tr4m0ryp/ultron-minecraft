@@ -78,6 +78,11 @@ def log_lines():
         return f.read().splitlines()
 
 
+def trace_lines(since):
+    """Flight-recorder `TRACE` lines the bot printed after log line `since`."""
+    return [l for l in log_lines()[since:] if l.startswith("TRACE")]
+
+
 def task(spec):
     """Sets a goal by goal-layer spec over stdin; returns the log line count before it."""
     n = len(log_lines())

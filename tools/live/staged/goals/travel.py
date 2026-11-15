@@ -1,6 +1,8 @@
 """Travel goals live: go_to across terrain, follow and come_here with the companion moving
-around obstacles and up/down terrain, stay. Usage: python3 travel.py [case ...]"""
-import json, sys
+around obstacles and up/down terrain, stay.
+Usage: python3 travel.py [-b <binary>] [-n <trials>] [case ...]
+A failed trial carries the bot's flight-recorder `TRACE` lines."""
+import json, os, sys
 from kit import *
 
 WALL_Z = 1020
@@ -73,11 +75,25 @@ def stay():
 CASES = dict(go_to=go_to, follow=follow, come_here=come_here, stay=stay)
 
 if __name__ == "__main__":
-    names = sys.argv[1:] or list(CASES)
+    args, binary, trials = sys.argv[1:], None, 1
+    while args and args[0] in ("-b", "-n"):
+        flag, val, args = args[0], args[1], args[2:]
+        if flag == "-b":
+            binary = val
+        else:
+            trials = int(val)
+    names = args or list(CASES)
+    os.environ.setdefault("ULTRON_BRIDGE", "0")
     terrain()
-    start()
+    start(binary)
     try:
         for name in names:
-            print(json.dumps(CASES[name]()), flush=True)
+            for k in range(trials):
+                n0 = len(log_lines())
+                r = CASES[name]()
+                bad = r.get("outcome") in ("goal_failed", "timeout") or r.get("err", 0) > 1.5
+                if bad:
+                    r["trace"] = trace_lines(n0)
+                print(json.dumps(dict(trial=k, **r)), flush=True)
     finally:
         stop()
