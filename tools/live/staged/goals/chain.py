@@ -9,7 +9,10 @@ food: kit is 8 cobblestone, 2 oak_log, 1 coal and an iron sword; food driven low
       hunger effect; 3 cows nearby. collect beef 3 -> smelt cooked_beef 3 -> eat_now.
       Verified over RCON: beef and cooked_beef counts, foodLevel before and after.
 
-Usage: chain.py [-n trials] [--bin path] [case ...]   cases: bed_sword bed_shears food
+bed_hill: the bed chain with the shelter dug into a hill, reached by a corridor: the body
+      must stand inside to place the bed, so the bed's facing decides whether it fits.
+
+Usage: chain.py [-n trials] [--bin path] [case ...]   cases: bed_sword bed_shears bed_hill food
 Prints one JSON line per trial (per-step outcome and seconds) and a summary line.
 """
 import argparse, json, re, sys
@@ -101,9 +104,18 @@ def bed_cells():
     return foot, head
 
 
-def bed(tool):
-    clear_site()
+def hill():
+    """The shelter dug into a hill: stone 3 blocks around it, 4 high, and a corridor to the
+    door. No spot outside the walls reaches the bed, so the body stands inside, where a bed
+    against the back wall only fits facing north or south."""
+    rc(f"fill {HX - 5} {Y + 1} {HZ - 5} {HX + 5} {Y + 4} {HZ + 5} stone")
     shelter()
+    rc(f"fill {HX - 5} {Y + 1} {HZ} {HX - 3} {Y + 2} {HZ} air")
+
+
+def bed(tool, dug_in=False):
+    clear_site()
+    hill() if dug_in else shelter()
     prep(items=[("hotbar.0", tool, 1), ("hotbar.1", "oak_log", 3)], comp_at=COMP_AT)
     rc(f"kill @e[type=item,x={CX},y={Y},z={CZ},distance=..60]")
     summon("sheep", [(-12, 6), (-14, 10), (-10, 14)])
@@ -126,7 +138,8 @@ def bed(tool):
     m = re.search(r"Count: (\d+)", sheep)
     ok = (wool >= 3 and beds >= 1 and foot == [BED] and len(head) == 1 and sleeping
           and not gone)
-    return dict(case=f"bed_{'shears' if tool == 'shears' else 'sword'}", ok=ok, wool=wool,
+    case = f"bed_{'shears' if tool == 'shears' else 'sword'}{'_hill' if dug_in else ''}"
+    return dict(case=case, ok=ok, wool=wool,
                 beds_crafted=beds, bed_foot=foot, bed_head=head, sleeping=sleeping,
                 sleeping_pos=slept_at.split(": ", 1)[-1], shelter_broken=gone, sheep_alive=int(m.group(1)) if m else 0,
                 steps=steps, total_secs=round(sum(s["secs"] for s in steps), 1))
@@ -161,7 +174,8 @@ def food():
                 total_secs=round(sum(s["secs"] for s in steps), 1))
 
 
-CASES = dict(bed_sword=lambda: bed("iron_sword"), bed_shears=lambda: bed("shears"), food=food)
+CASES = dict(bed_sword=lambda: bed("iron_sword"), bed_shears=lambda: bed("shears"),
+             bed_hill=lambda: bed("shears", dug_in=True), food=food)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
