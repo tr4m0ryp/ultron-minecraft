@@ -117,7 +117,8 @@ def bed(tool):
     time.sleep(1.0)
     steps.append(step("sleep_in_bed", 60))
     # The path alone: the whole player record is split over several RCON packets.
-    sleeping = "has the following" in rc(f"data get entity {NAME} sleeping_pos")
+    slept_at = rc(f"data get entity {NAME} sleeping_pos")
+    sleeping = "has the following" in slept_at
     # Wake: a teleport takes the player out of bed; then the clock goes back to noon.
     rc(f"tp {NAME} {CX + 0.5} {Y + 1} {CZ + 0.5}", "time set noon")
     gone = broken()
@@ -127,7 +128,7 @@ def bed(tool):
           and not gone)
     return dict(case=f"bed_{'shears' if tool == 'shears' else 'sword'}", ok=ok, wool=wool,
                 beds_crafted=beds, bed_foot=foot, bed_head=head, sleeping=sleeping,
-                shelter_broken=gone, sheep_alive=int(m.group(1)) if m else 0,
+                sleeping_pos=slept_at.split(": ", 1)[-1], shelter_broken=gone, sheep_alive=int(m.group(1)) if m else 0,
                 steps=steps, total_secs=round(sum(s["secs"] for s in steps), 1))
 
 
