@@ -4,6 +4,7 @@
 
 mod nav;
 pub mod recipes;
+mod stations;
 mod world;
 
 pub use nav::{FakeNav, FakeNavState};

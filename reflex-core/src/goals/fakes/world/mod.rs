@@ -6,7 +6,6 @@ mod state;
 mod stations;
 
 pub use state::FakeWorldState;
-pub use stations::Stand;
 
 use std::cell::RefCell;
 use std::rc::Rc;

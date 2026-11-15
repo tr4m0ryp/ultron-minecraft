@@ -4,10 +4,16 @@ use crate::crafting::{plan, CraftPlan, PlanStep, Stations};
 const NONE: Stations = Stations {
     table: false,
     furnace: false,
+    stand: false,
+    smithing: false,
+    stand_fuelled: false,
 };
 const BOTH: Stations = Stations {
     table: true,
     furnace: true,
+    stand: false,
+    smithing: false,
+    stand_fuelled: false,
 };
 
 fn steps(p: &CraftPlan) -> Vec<String> {

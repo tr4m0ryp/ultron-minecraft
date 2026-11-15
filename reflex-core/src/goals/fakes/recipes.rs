@@ -183,6 +183,7 @@ pub fn book() -> RecipeBook {
     ] {
         b.add(r);
     }
+    super::stations::add(&mut b);
     b.finish();
     b
 }

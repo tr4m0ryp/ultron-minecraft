@@ -73,12 +73,6 @@ impl Smithing {
         }
     }
 
-    pub fn reset(&mut self) {
-        if let Some(v) = &mut self.visit {
-            v.reset();
-        }
-    }
-
     pub fn step(&mut self, cx: &mut GoalCx, walker: &mut Walker) -> Smithed {
         if self.visit.is_none() {
             match self.job(cx) {
