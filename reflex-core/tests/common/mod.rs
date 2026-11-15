@@ -6,7 +6,9 @@ use reflex_core::channels::{Commands, LegsCmd, Speed};
 use reflex_core::events::Event;
 use reflex_core::knobs::Knobs;
 use reflex_core::predict::{Efference, Prediction};
-use reflex_core::snapshot::{BlockKind, Entity, EntityKind, ItemKind, ItemStack, Snapshot};
+use reflex_core::snapshot::{
+    BlockKind, Companion, Entity, EntityKind, ItemKind, ItemStack, Snapshot,
+};
 use reflex_core::{BlockPos, Vec3};
 
 pub const BOT: &str = "Ultron";
@@ -99,4 +101,15 @@ pub fn walk(dir: Vec3) -> Commands {
 
 pub fn knobs() -> Knobs {
     Knobs::new()
+}
+
+/// The companion standing at x on the floor, at full health.
+pub fn companion_at(x: f64) -> Companion {
+    Companion {
+        name: "human".into(),
+        entity_id: Some(99),
+        pos: Vec3::new(x, 64.0, 0.5),
+        vel: Vec3::ZERO,
+        health: Some(20.0),
+    }
 }
