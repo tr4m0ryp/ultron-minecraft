@@ -694,12 +694,37 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   duplicate 16, smithing transform 12, campfire 9, smoking 9, armour dye 6 and 9 single
   special recipes. Transmute (dyeing a shulker box or a bundle, two items in the grid) is
   now read, 32 more recipes: `craft black_shulker_box` from a shulker box and black dye 5/5,
-  before 0/5 ("no recipe makes black_shulker_box"). 735 stay skipped and the load line
+  before 0/5 ("no recipe makes black_shulker_box"). 735 stayed skipped and the load line
   names them: 394 are another station for a result the grid or the furnace already makes
   (every cooked result has a smelting recipe; every cut one a crafting recipe, except
-  cobblestone and cobbled deepslate, which are mined), 309 need a brewing stand or a
-  smithing table (no menu for those yet), and 32 give a result that depends on colour,
-  pattern, damage or contents, which item names do not carry.
+  cobblestone and cobbled deepslate, which are mined), 309 needed a brewing stand or a
+  smithing table, and 32 give a result that depends on colour, pattern, damage or
+  contents, which item names do not carry.
+- Brewing stand and smithing table (tools/live/staged/goals/stations.py, fixed kits, no
+  station at the site, 5 trials per case, counts read over RCON, potions by their
+  contents). 291 of those 309 recipes are read now, 1598 in the book: 279 brewing and the
+  12 smithing transforms (the netherite upgrades); the 18 armour trims stay out, since a
+  trim leaves the item's name as it was, and 444 entries are skipped in all. A potion is
+  one item name per content (water_potion, healing_potion, healing_splash_potion), in the
+  recipes and in every inventory read. The planner treats both stations as it treats the
+  furnace (found within 16 blocks, else a held one put down, else crafted first), counts
+  one reagent for up to three bottles, and asks for blaze powder only for a stand it has to
+  put down or has seen come back unbrewed; the body offers a held powder to an empty fuel
+  slot on every load. A batch brews with the menu closed and is collected after 440 ticks.
+  Upgrade a diamond pickaxe with a template and a netherite ingot, the smithing table and
+  its crafting table made from 2 iron ingots and 2 logs: 5/5 (1 netherite pickaxe, 0
+  diamond pickaxes left). An awkward potion from a water bottle and nether wart, then a
+  potion of healing from it and a glistering melon slice, two goals on one blaze powder:
+  5/5. Three water bottles to three potions of healing in one goal, two batches: 5/5. The
+  impossible cases (the pickaxe with no template and no ingot; the potion with no wart and
+  no melon) failed once each with the same list word for word, 5/5 and 5/5. 25 of 25. No
+  packet patch was needed: the pinned library opens both menus and its slot numbers match
+  the server's. Before: 0 of 25 by construction ("no recipe makes netherite_pickaxe").
+  Not done: filling a bottle at water, the blast furnace, smoker, campfire and stonecutter
+  (394 recipes whose results the grid or the furnace also makes), and trims. Two
+  weaknesses seen: a count of healing_potion also counts strong_healing_potion (names
+  match by their last words), and the shopping list for a deep chain names odd steps
+  ("smelt 4 gold_ingot from 4 gold_nugget").
 - Placing into an occupied cell (tools/live/staged/goals/protect.py): leaves, dirt and grass
   dug out of the cell first, 15 of 15; a block the player placed refused without `replace`
   and replaced with it, 5 of 5.
