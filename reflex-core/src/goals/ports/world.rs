@@ -52,11 +52,14 @@ pub enum StationMenu {
 /// 0..=2, reagent 3, fuel 4; smithing: template 0, base 1, addition 2, result 3). The
 /// `take` slots are emptied into the inventory first, then each `put` moves that many of an
 /// item into its slot, then the `result` slots are taken once the server has filled them.
+/// `fuel` is put only into an empty slot and only when held: blaze powder waits in a
+/// stand's fuel slot until the stand needs it, so offering it is never wrong.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StationJob {
     pub menu: StationMenu,
     pub take: Vec<usize>,
     pub put: Vec<(usize, String, u32)>,
+    pub fuel: Option<(usize, String)>,
     pub result: Vec<usize>,
 }
 

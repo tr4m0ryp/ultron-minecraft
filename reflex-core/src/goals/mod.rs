@@ -17,7 +17,7 @@ pub mod travel;
 pub use ledger::{Keep, Ledger};
 pub use ports::{
     kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, NavFailure, NavStatus, NavTarget,
-    Navigator, Steer, ToolNeed, Work, World,
+    Navigator, StationJob, StationMenu, Steer, ToolNeed, Work, World,
 };
 pub use runner::{GoalHandle, GoalRunner, GoalState, GoalStatus, Reporter};
 pub use spec::{parse, AttackTarget, GoalSpec, Person};

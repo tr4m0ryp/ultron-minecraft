@@ -6,4 +6,7 @@ mod nav;
 mod world;
 
 pub use nav::{NavFailure, NavStatus, NavTarget, Navigator, Steer, Work};
-pub use world::{kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed, World};
+pub use world::{
+    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, StationMenu,
+    ToolNeed, World,
+};
