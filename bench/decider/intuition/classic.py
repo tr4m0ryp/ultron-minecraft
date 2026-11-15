@@ -120,9 +120,12 @@ def main():
     ap.add_argument("--out", default=os.path.join(data.ROOT, "results", "trained", "classic.json"))
     ap.add_argument("--label", choices=("label", "detail"), default="label")
     ap.add_argument("--no-loso", action="store_true")
+    ap.add_argument("--encoder", choices=("bge", "lm135"), default="bge", help="lm135: frozen 135M model as encoder")
+    ap.add_argument("--arms", default="", help="comma-separated arm prefixes, e.g. a1,b5 (default: all)")
+    ap.add_argument("--sets", default="real,real+vary,real+vary+rules")
     a = ap.parse_args()
-    from embed import Encoder
-    enc = Encoder()
+    from embed import Encoder, LMEncoder
+    enc = Encoder() if a.encoder == "bge" else LMEncoder()
     label = (lambda p: p["label"]) if a.label == "label" else data.detail_label
     train, test_real = data.real()
     hand, vary, rules = data.hand(), data.synth("vary"), data.synth("rules")
@@ -133,8 +136,10 @@ def main():
     res = {"label": a.label, "n": {"train_real": len(train), "vary": len(vary), "rules": len(rules),
                                    "test_real": len(test_real), "test_hand": len(hand)}, "arms": {}}
     for name, (kind, make) in arms().items():
+        if a.arms and name.split()[0] not in a.arms.split(","):
+            continue
         for sname, tr in sets.items():
-            if a.label == "detail" and sname != "real":
+            if (a.label == "detail" and sname != "real") or sname not in a.sets.split(","):
                 continue
             cp, cc, cg = held_out_predictions(kind, make, train, extra[sname], enc, label)
             t95 = metrics.threshold_for(cp, cc, cg)

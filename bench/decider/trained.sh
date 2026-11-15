@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Trained-Intuition measurement: pairs from recorded Thought decisions, then every arm, in sequence.
-#   bench/decider/trained.sh data classic plan habit encoder lora untrained latency
+#   bench/decider/trained.sh data floors classic plan habit probe encoder lora untrained latency
 # Weights live outside the repository ($GGUF, $HF); pairs and logs are ignored by git (data/, logs/).
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; I="$HERE/intuition"
@@ -21,6 +21,8 @@ for phase in "$@"; do case $phase in
 data)      (cd "$HERE/../.." && python3 "$I/extract.py") && (cd "$I" && python3 synth.py && python3 lm_cases.py) ;;
 classic)   step classic "$EPY" -u "$I/classic.py"; step classic-detail "$EPY" -u "$I/classic.py" --label detail --no-loso ;;
 plan)      INTUITION_PLAN=1 step classic-plan "$EPY" -u "$I/classic.py" ;;
+probe)     step classic-lm135-probe "$EPY" -u "$I/classic.py" --encoder lm135 --arms a1,a2,b5 --sets real ;;
+floors)    step floors "$EPY" -u "$I/floors.py"; step wake-filter "$EPY" -u "$I/wake_filter.py" ;;
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
 encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 10
            step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 6 ;;

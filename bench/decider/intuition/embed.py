@@ -1,4 +1,5 @@
-"""Sentence-encoder embeddings of pair texts (CLS token, L2-normalised), cached on disk by text hash."""
+"""Sentence-encoder embeddings of pair texts (CLS token, L2-normalised), cached on disk by text hash.
+LMEncoder gives the same interface over a frozen language model: the hidden state of the last prompt token."""
 import hashlib, os
 import numpy as np
 import torch
@@ -34,3 +35,20 @@ class Encoder:
         if new and self.path:
             np.savez(self.path, **self.cache)
         return np.stack(out)
+
+
+class LMEncoder(Encoder):
+    """Frozen 135M language model as a feature extractor (arm d0, a linear probe): no adapter, no generation."""
+
+    def __init__(self, path="~/models/intuition/hf/SmolLM2-135M-Instruct", threads=4, cache=True):
+        from transformers import AutoModel, AutoTokenizer
+        torch.set_num_threads(threads)
+        path = os.path.expanduser(path)
+        self.tok, self.model = AutoTokenizer.from_pretrained(path), AutoModel.from_pretrained(path).eval()
+        self.path = os.path.join(DATA, "emb-lm135-last.npz") if cache else None
+        self.cache = dict(np.load(self.path)) if self.path and os.path.exists(self.path) else {}
+
+    @torch.inference_mode()
+    def one(self, s):
+        x = self.tok([s + "\nAnswer:"], truncation=True, max_length=320, return_tensors="pt")
+        return torch.nn.functional.normalize(self.model(**x).last_hidden_state[:, -1], dim=-1)[0].numpy()
