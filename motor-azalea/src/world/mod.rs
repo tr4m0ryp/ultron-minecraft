@@ -10,6 +10,7 @@ mod furnace;
 mod inventory;
 pub(crate) mod names;
 mod recipes;
+mod station;
 mod tools;
 
 use std::sync::Arc;
@@ -17,7 +18,7 @@ use std::sync::Arc;
 use azalea::Client;
 use reflex_core::{
     crafting::{Recipe, RecipeBook},
-    goals::{FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed, World},
+    goals::{FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed, World},
     math::{BlockPos, Vec3},
     snapshot::{Slot, Snapshot},
 };
@@ -49,6 +50,7 @@ pub struct AzaleaWorld {
     book: Arc<RecipeBook>,
     crafter: craft::Crafter,
     furnace: furnace::Furnacer,
+    station: station::Visitor,
 }
 
 impl AzaleaWorld {
@@ -58,6 +60,7 @@ impl AzaleaWorld {
             book: recipes::book(),
             crafter: craft::Crafter::default(),
             furnace: furnace::Furnacer::default(),
+            station: station::Visitor::default(),
         }
     }
 }
@@ -136,6 +139,14 @@ impl World for AzaleaWorld {
 
     fn furnace_seen(&self) -> Option<FurnaceSlots> {
         self.furnace.seen.clone()
+    }
+
+    fn start_station(&mut self, pos: BlockPos, job: &StationJob) {
+        self.station.start(&self.bot, pos, job);
+    }
+
+    fn station_status(&mut self) -> MenuStatus {
+        self.station.status(&self.bot)
     }
 
     fn toss(&mut self, item: &str, count: u32) -> u32 {

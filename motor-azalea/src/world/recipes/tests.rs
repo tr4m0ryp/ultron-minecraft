@@ -34,8 +34,6 @@ fn vanilla_book_plans_the_staged_cases() {
             "blasting",
             "smoking",
             "campfire_cooking",
-            "brewing",
-            "smithing_transform",
             "smithing_trim",
             "crafting_dye",
             // Map cloning only: its result is whatever map went in.

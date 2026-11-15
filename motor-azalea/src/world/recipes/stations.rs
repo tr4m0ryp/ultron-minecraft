@@ -19,7 +19,9 @@ fn bottle_in(v: &Value) -> Option<String> {
 fn bottle_out(v: &Value) -> Option<String> {
     let item = bare(v["id"].as_str()?);
     let c = &v["components"];
-    let contents = c.get("minecraft:potion_contents").or(c.get("potion_contents"))?;
+    let contents = c
+        .get("minecraft:potion_contents")
+        .or(c.get("potion_contents"))?;
     Some(potion_name(item, bare(contents["potion"].as_str()?)))
 }
 
@@ -79,13 +81,19 @@ mod tests {
     #[test]
     fn a_smithing_transform_reads_its_three_slots() {
         let mut tags = Tags::new();
-        tags.insert("netherite_tool_materials".into(), vec!["netherite_ingot".into()]);
+        tags.insert(
+            "netherite_tool_materials".into(),
+            vec!["netherite_ingot".into()],
+        );
         let v = json!({"type": "minecraft:smithing_transform",
             "addition": "#minecraft:netherite_tool_materials", "base": "minecraft:diamond_pickaxe",
             "result": {"id": "minecraft:netherite_pickaxe"},
             "template": "minecraft:netherite_upgrade_smithing_template"});
         let r = smithing("netherite_pickaxe_smithing", &v, &tags).expect("reads");
-        assert_eq!((r.result.as_str(), r.station()), ("netherite_pickaxe", Some("smithing_table")));
+        assert_eq!(
+            (r.result.as_str(), r.station()),
+            ("netherite_pickaxe", Some("smithing_table"))
+        );
         assert_eq!(r.inputs().len(), 3);
     }
 }
