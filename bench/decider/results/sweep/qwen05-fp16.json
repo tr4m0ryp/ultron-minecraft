@@ -1,0 +1,61 @@
+{
+ "label": "qwen05-fp16",
+ "model": "qwen2.5-0.5b-instruct-fp16.gguf",
+ "cases": "cases.jsonl",
+ "n_cases": 20,
+ "threads": 4,
+ "reps": 3,
+ "shuffled": true,
+ "label_by": "letter",
+ "shots": 0,
+ "volatile": false,
+ "wrong": [
+  "c01:keep_mining",
+  "c04:mine",
+  "c10:sleep",
+  "c13:sleep",
+  "c16:sleep",
+  "c19:mine",
+  "c22:sleep",
+  "c37:no",
+  "c43:yes",
+  "c46:1",
+  "c49:2",
+  "c55:axe",
+  "c58:rotten_flesh"
+ ],
+ "correct_argmax": 7,
+ "correct_calib": null,
+ "correct_generate": null,
+ "deterministic": true,
+ "prompt_tokens_mean": 140.8,
+ "suffix_tokens_mean": 82.8,
+ "cold_ms": {
+  "p50": 1131.8,
+  "p90": 1296.5,
+  "mean": 1143.4,
+  "n": 60
+ },
+ "cached_ms": {
+  "p50": 676.7,
+  "p90": 766.1,
+  "mean": 685.3,
+  "n": 60
+ },
+ "generate_ms": null,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.5,
+  "busy_cores": 1.08,
+  "java_cpu_pct": 0.5,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.98,
+  "foreign_cores_max": 2.09,
+  "compilers_seen": [],
+  "samples": 52
+ }
+}
