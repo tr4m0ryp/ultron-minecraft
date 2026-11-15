@@ -111,7 +111,8 @@ impl Brewing {
     fn collect(&self) -> Visit {
         let job = StationJob {
             menu: StationMenu::BrewingStand,
-            take: BOTTLES.to_vec(),
+            // A reagent still in its slot means the batch never ran: it comes back too.
+            take: vec![BOTTLES[0], BOTTLES[1], BOTTLES[2], REAGENT],
             put: Vec::new(),
             fuel: None,
             result: Vec::new(),
