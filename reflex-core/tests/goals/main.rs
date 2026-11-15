@@ -1,6 +1,7 @@
 //! Goal layer tests: every goal driven through the real executor and selector by simulated
 //! tick sequences over the in-memory port fakes.
 
+mod bed;
 mod care;
 mod combat;
 mod craft;
