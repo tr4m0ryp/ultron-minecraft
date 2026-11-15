@@ -741,8 +741,8 @@ first run of 2026-11-14 that was taken while builds were compiling.
   load read 1.5 to 5.5, part of it the previous benchmark run decaying. The game server took
   0 to 1 % of one core. Runs where other processes averaged more than 1.0 core were redone;
   rows still above that are marked "!".
-- One Laya launch in six died with an illegal-instruction signal at start-up, before any
-  timing. Not reproduced in five further launches; cause unknown.
+- The first Laya launch of the day died with an illegal-instruction signal at start-up,
+  before any timing. 13 later launches did not; cause unknown.
 
 ### 9.2 Trivial baselines
 
@@ -851,14 +851,14 @@ and chat, 43 tokens, which holds when nothing else changed since the last decisi
   135M model with cached examples and a volatile suffix (33/65 at 245 ms, p90 309 ms) and
   the encoder with nearest example (30/65 at 74 ms). Both are wrong on about half the cases
   and far below the keyword rule (63/65). Not adopted. The layer stays empty.
-- (a) Quantized weights: lost a comparison. On this CPU 4-bit is 1.7x to 1.8x slower than
+- (a) Quantized weights: lost a comparison. On this CPU 4-bit is 1.7x to 1.9x slower than
   16-bit float and 5-bit is the slowest format; accuracy is the same within 2 cases. Premise:
   AVX without AVX2, where the integer kernels have no wide path. Reopen on any AVX2 CPU or
   GPU, where the order normally reverses.
 - (b) Argmax scoring: works as a mechanism (one pass, always a valid option), worth 1 to 7 %
   latency. It was never the bottleneck: prompt evaluation is.
 - (c) Prefix caching: works. 1.7x on the original layout (149 to 86 tokens evaluated), 2.1x
-  more with volatile-ordered state fields (86 to 37). It also makes solved examples free per
+  to 2.3x more with volatile-ordered state fields (86 to 37 tokens). It also makes solved examples free per
   decision, and those are what moved accuracy (135M on goals: 6/65 to 37/65).
 - (d) Threads: works, use 4. 2 threads cost 1.9x, 8 threads 1.3x to 1.4x.
 - (e) Smallest sizes: latency passes at 135M to 270M and at the 33M encoder; accuracy lost
