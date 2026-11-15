@@ -75,6 +75,7 @@ impl Watch {
                 self.clicks.push((cell, now));
             }
         }
+        let mut confirmed: Vec<(BlockPos, String)> = Vec::new();
         self.clicks.retain(|&(cell, at)| {
             if now.saturating_sub(at) > CLICK_TICKS {
                 return false;
@@ -82,11 +83,15 @@ impl Watch {
             match block_at(bot, cell) {
                 Some(name) if now > at && !replaceable(&name) => {
                     ledger.remember(cell, &name);
+                    confirmed.push((cell, name));
                     false
                 }
                 _ => true,
             }
         });
+        for (c, name) in &confirmed {
+            println!("LEDGER own {} {} {} {name} t={now}", c.x, c.y, c.z);
+        }
         let pending: Vec<BlockPos> = self.clicks.iter().map(|(c, _)| *c).collect();
         self.companion.tick(bot, ledger, snap, &pending);
         if now.is_multiple_of(AUDIT_EVERY) {
