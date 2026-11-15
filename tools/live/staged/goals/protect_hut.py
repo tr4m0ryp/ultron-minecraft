@@ -178,6 +178,47 @@ def hut_restart():
     return dict(ok=b == 0 and not before, hut_broken=b, sealed=not before, outcome=kind, text=text, ledger_line=loaded, notes=notes)
 
 
+def dug_cells(since):
+    """Cells the hand dug since log line `since` (the trace's `hand=dig:x,y,z`)."""
+    out = set()
+    for l in log_lines()[since:]:
+        if l.startswith("T ") and "hand=dig:" in l:
+            out.add(tuple(int(v) for v in l.rsplit("hand=dig:", 1)[1].split()[0].split(",")))
+    return out
+
+
+def hut_build():
+    """The building itself: walls and roof by five fill goals, one pass, then 15 s with no
+    goal. Counted on the server: hut cells standing, and floor blocks gone (the repair fill
+    says how many it put back). From the trace: hut cells and floor cells the hand dug."""
+    reset_site()
+    rc(f"fill {HX0} {Y + 1} {HZ0} {HX1} {ROOF} {HZ1} air")
+    prep(items=[("hotbar.1", "dirt", 64), ("hotbar.2", "dirt", 64), ("hotbar.0", "iron_pickaxe", 1)],
+         at=(CX + 6.5, Y + 1, CZ - 6.5), comp_at=(CX - 12.5, Y + 1, CZ - 12.5))
+    n0, t0, texts = len(log_lines()), time.time(), []
+    for spec in (f"place dirt {HX0} {Y + 1} {HZ0} {HX1} {Y + 2} {HZ0}",
+                 f"place dirt {HX0} {Y + 1} {HZ1} {HX1} {Y + 2} {HZ1}",
+                 f"place dirt {HX0} {Y + 1} {HZ0 + 1} {HX0} {Y + 2} {HZ1 - 1}",
+                 f"place dirt {HX1} {Y + 1} {HZ0 + 1} {HX1} {Y + 2} {HZ1 - 1}",
+                 f"place dirt {HX0} {ROOF} {HZ0} {HX1} {ROOF} {HZ1}"):
+        n = task(spec)
+        kind, text, _ = outcome(n, 300, "place")
+        texts.append(f"{kind}: {text}")
+    secs = round(time.time() - t0, 1)
+    p = pos()
+    time.sleep(15)
+    gone = missing()
+    out = rc(f"fill {X0} {Y - 3} {Z0} {X1} {Y} {Z1} stone replace air")
+    m = re.search(r"filled (\d+) block", out)
+    floor = int(m.group(1)) if m else 0
+    dug = dug_cells(n0)
+    hut_dug = sorted(c for c in dug if c in CELLS)
+    floor_dug = sorted(c for c in dug if c[1] <= Y)
+    return dict(ok=not gone and floor == 0 and not hut_dug and not floor_dug, placed=len(CELLS) - len(gone),
+                of=len(CELLS), floor_blocks_gone=floor, hut_cells_dug=len(hut_dug), floor_cells_dug=len(floor_dug),
+                inside_at_end=bool(in_hut(p)), secs=secs, roof=texts[-1], pos=p)
+
+
 def cleanup():
     rc(f"fill {X0 - 2} {Y + 1} {Z0 - 2} {X1 + 2} {Y + 14} {Z1 + 2} air",
        f"fill {X0} {Y - 3} {Z0} {X1} {Y} {Z1} stone",
@@ -239,5 +280,5 @@ def companion_wall():
                 outcome=kind, text=text, pos=p, crossed=bool(p and p[0] > CX + 0.5))
 
 
-CASES = dict(hut_go_to=hut_go_to, hut_escape=hut_escape, hut_restart=hut_restart,
+CASES = dict(hut_build=hut_build, hut_go_to=hut_go_to, hut_escape=hut_escape, hut_restart=hut_restart,
              hut_escape_full=lambda: hut_escape(full=True), companion_wall=companion_wall)
