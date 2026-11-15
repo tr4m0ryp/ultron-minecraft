@@ -86,12 +86,18 @@ fn raw_meat_waits_for_the_furnace_until_the_emergency() {
 fn ready_food_is_eaten_before_raw_and_raw_is_kept() {
     let mut s = flat();
     let mut h = Hunger::default();
-    give(&mut s, 2, raw_beef(), 3);
+    // Raw food that would outscore the bread on nutrition alone.
+    let rich_raw = ItemKind::Food {
+        nutrition: 9,
+        saturation: 9.0,
+        cookable: true,
+    };
+    give(&mut s, 2, rich_raw, 3);
     give(&mut s, 7, bread(), 1);
     s.me.selected_slot = 7;
     s.me.food = 10;
     let (bid, ev) = eval(&mut h, &s, &knobs());
     let bid = bid.expect("eats the bread");
-    assert_eq!(bid.cmds.main, Some(MainCmd::Use), "the bread in the held slot");
+    assert_eq!(bid.commands.main, Some(MainCmd::Use), "the bread in the held slot");
     assert!(!ev.iter().any(|e| e.kind.starts_with("hungry_")));
 }
