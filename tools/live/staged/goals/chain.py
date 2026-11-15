@@ -58,6 +58,15 @@ def clear_site():
     return found
 
 
+def pen():
+    """A fence round the site's edge: animals that wander off the platform fall out of reach
+    (live, the last sheep left over the edge and the collect ended one wool short)."""
+    rc(f"fill {X0} {Y + 1} {Z0} {X1} {Y + 1} {Z0} oak_fence",
+       f"fill {X0} {Y + 1} {Z1} {X1} {Y + 1} {Z1} oak_fence",
+       f"fill {X0} {Y + 1} {Z0} {X0} {Y + 1} {Z1} oak_fence",
+       f"fill {X1} {Y + 1} {Z0} {X1} {Y + 1} {Z1} oak_fence")
+
+
 def shelter():
     rc(f"fill {HX - 2} {Y + 1} {HZ - 2} {HX + 2} {Y + 3} {HZ + 2} {WALL}",
        f"fill {HX - 1} {Y + 1} {HZ - 1} {HX + 1} {Y + 2} {HZ + 1} air",
@@ -116,6 +125,7 @@ def hill():
 def bed(tool, dug_in=False):
     clear_site()
     hill() if dug_in else shelter()
+    pen()
     prep(items=[("hotbar.0", tool, 1), ("hotbar.1", "oak_log", 3)], comp_at=COMP_AT)
     rc(f"kill @e[type=item,x={CX},y={Y},z={CZ},distance=..60]")
     summon("sheep", [(-12, 6), (-14, 10), (-10, 14)])
@@ -147,6 +157,7 @@ def bed(tool, dug_in=False):
 
 def food():
     clear_site()
+    pen()
     prep(items=[("hotbar.0", "iron_sword", 1), ("hotbar.1", "cobblestone", 8),
                 ("hotbar.2", "oak_log", 2), ("hotbar.3", "coal", 1)], comp_at=COMP_AT)
     rc(f"kill @e[type=item,x={CX},y={Y},z={CZ},distance=..60]",
