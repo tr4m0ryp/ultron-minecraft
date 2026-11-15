@@ -186,7 +186,7 @@ impl GoalTask for Place {
         }
         let me = cx.snap().me.clone();
         let feet = me.pos.block();
-        if feet == self.pos || feet.above() == self.pos {
+        if stand::body_overlaps(me.pos, self.pos) {
             cx.blocked("standing in the spot to fill");
             let legs = LegsCmd::toward(away_from(me.pos, self.pos.feet_centre()), Speed::Walk);
             return Step::Bid(Plan::new("goal_place", Commands::default().legs(legs)));

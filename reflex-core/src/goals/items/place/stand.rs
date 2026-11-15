@@ -36,6 +36,22 @@ pub struct Spot {
     pub pillar: u32,
 }
 
+/// Whether a player standing at `pos` has any part of its hitbox (0.6 wide, 1.8 tall) in
+/// `cell`, with a small margin. The server refuses a block whose shape would hold a player,
+/// and the walk to a spot ends up to half a block off its centre: live, a bed went unplaced
+/// eight clicks in a row with the body 0.05 into the foot cell.
+pub fn body_overlaps(pos: Vec3, cell: BlockPos) -> bool {
+    const HALF: f64 = 0.3 + 0.02;
+    const HEIGHT: f64 = 1.8;
+    let (x, y, z) = (f64::from(cell.x), f64::from(cell.y), f64::from(cell.z));
+    pos.x + HALF > x
+        && pos.x - HALF < x + 1.0
+        && pos.z + HALF > z
+        && pos.z - HALF < z + 1.0
+        && pos.y + HEIGHT > y
+        && pos.y < y + 1.0
+}
+
 pub fn eye_at(feet: BlockPos) -> Vec3 {
     feet.feet_centre() + Vec3::new(0.0, 1.62, 0.0)
 }
