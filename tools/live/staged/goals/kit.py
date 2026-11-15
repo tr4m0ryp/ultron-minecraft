@@ -17,6 +17,8 @@ DX, DZ = int(os.environ.get("SITE_DX", "0")), int(os.environ.get("SITE_DZ", "0")
 X0, X1, Z0, Z1, Y = 1400 + DX, 1440 + DX, 1000 + DZ, 1040 + DZ, 100
 CX, CZ = 1420 + DX, 1020 + DZ
 COMP = os.environ.get("BOT_COMP", "Buddy")
+# STAGE_TIME=0 leaves the clock alone (the time is server-wide; another site may need night).
+SET_TIME = os.environ.get("STAGE_TIME", "1") != "0"
 WAKE_RE = re.compile(r"^WAKE t=(\d+) (goal_\w+) (\S+) #(\d+) \S+: (.*)$")
 
 
@@ -61,7 +63,7 @@ def prep(items=(), night=False, at=(CX + 0.5, Y + 1, CZ + 0.5), comp_at=None):
     """Clean survival bot with `items` [(slot, item, n)], placed at `at`."""
     rc(f"effect clear {NAME}", f"gamemode survival {NAME}", f"clear {NAME}",
        f"effect give {NAME} instant_health 1 5", f"effect give {NAME} saturation 1 20",
-       f"time set {'midnight' if night else 'noon'}",
+       *([f"time set {'midnight' if night else 'noon'}"] if night or SET_TIME else []),
        f"kill @e[type=!player,x={CX},y={Y},z={CZ},distance=..60]",
        *[f"item replace entity {NAME} {s} with {i} {n}" for s, i, n in items],
        f"tp {NAME} {at[0]} {at[1]} {at[2]}")
