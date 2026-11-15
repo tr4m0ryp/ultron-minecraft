@@ -10,6 +10,7 @@ sys.path.insert(0, HERE)
 t_proc0 = time.perf_counter()
 import psutil
 from backends import BACKENDS
+from idle import Monitor, gate
 
 def load_cases():
     return [json.loads(l) for l in open(os.path.join(HERE, "cases.jsonl"))]
@@ -27,7 +28,7 @@ def pct(xs, p):
     return xs[min(len(xs) - 1, int(round(p / 100 * (len(xs) - 1))))]
 
 def ms(xs):
-    return {"p50": round(pct(xs, 50) * 1e3, 1), "p95": round(pct(xs, 95) * 1e3, 1), "mean": round(statistics.mean(xs) * 1e3, 1), "n": len(xs)}
+    return {"p50": round(pct(xs, 50) * 1e3, 1), "p90": round(pct(xs, 90) * 1e3, 1), "p95": round(pct(xs, 95) * 1e3, 1), "mean": round(statistics.mean(xs) * 1e3, 1), "n": len(xs)}
 
 def rss(pid):
     p = psutil.Process(pid)
@@ -54,6 +55,7 @@ def main():
     ap.add_argument("--stride", type=int, default=1, help="use every Nth case (bounds runtime on slow CPUs)")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--pid", type=int, default=None, help="server pid for RSS (http backend)")
+    ap.add_argument("--gate-wait", type=int, default=300, help="seconds to wait for an idle machine before timing")
     ap.add_argument("--load-kw", default="{}", help="json kwargs for backend.load")
     a = ap.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", str(a.threads))
@@ -70,6 +72,8 @@ def main():
     t_first = time.perf_counter() - t0
     for i in range(min(3, len(cases))):  # warm-up
         be.predict(cases[i]["state"], {"q": cases[i]["question"]})
+    idle = gate(wait_s=a.gate_wait)
+    mon = Monitor(pid=a.pid).__enter__()
     # accuracy + latency in the same pass structure: cycle all 60 cases, repeat until n-lat calls
     correct, per_kind, lat, errs = 0, {}, [], []
     n_pass = max(1, -(-a.n_lat // len(cases)))
@@ -97,6 +101,7 @@ def main():
             blat.append(time.perf_counter() - t)
         except Exception as e:
             errs.append(f"batch5: {type(e).__name__}: {e}"[:200]); break
+    mon.__exit__()
     pid = a.pid or os.getpid()
     res = {"label": a.label, "backend": a.backend, "threads": a.threads,
            "accuracy": round(correct / len(cases), 3), "correct": correct, "n_cases": len(cases),
@@ -104,7 +109,7 @@ def main():
            "single_ms": ms(lat) if lat else None, "batch5_ms": ms(blat) if blat else None,
            "load_s": round(t_load, 2), "first_call_s": round(t_first, 2),
            "rss_gb": round(rss(pid), 2), "peak_rss_gb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6, 2) if not a.pid else None,
-           "errors": errs[:5], "n_errors": len(errs)}
+           "errors": errs[:5], "n_errors": len(errs), "idle": idle, "during": mon.summary()}
     print(json.dumps(res, indent=1))
     if a.out:
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
