@@ -5,6 +5,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::channels::{LegsCmd, Speed};
+use crate::goals::ledger::Keep;
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget, Navigator};
 use crate::goals::travel::route::Region;
 use crate::math::{BlockPos, Vec3};
@@ -93,6 +94,10 @@ impl Navigator for TracedNav {
 
     fn protect(&mut self, regions: &[Region]) {
         self.inner.protect(regions);
+    }
+
+    fn keep(&mut self, cells: Keep) {
+        self.inner.keep(cells);
     }
 
     fn take_placed(&mut self) -> Vec<BlockPos> {
