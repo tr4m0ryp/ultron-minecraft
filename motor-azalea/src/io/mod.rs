@@ -6,5 +6,5 @@ mod outbox;
 mod trace;
 
 pub use inbox::{BrainCmd, Inbox};
-pub use outbox::publish;
+pub use outbox::{dump_trace, publish};
 pub use trace::Trace;

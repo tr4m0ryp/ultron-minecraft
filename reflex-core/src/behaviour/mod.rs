@@ -125,4 +125,10 @@ pub trait Behaviour {
 
     /// Selection feedback: whether this behaviour's bid won any channel this tick.
     fn granted(&mut self, _won: bool) {}
+
+    /// The flight-recorder probe this behaviour writes its state to, if any (the goal
+    /// runner); the executor reads it into its ring every tick.
+    fn probe(&self) -> Option<crate::trace::Probe> {
+        None
+    }
 }

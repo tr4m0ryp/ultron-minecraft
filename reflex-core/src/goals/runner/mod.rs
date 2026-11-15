@@ -3,6 +3,7 @@
 
 mod escape;
 mod handle;
+mod probe;
 mod report;
 mod status;
 
@@ -17,6 +18,8 @@ use super::task::{GoalCx, GoalTask, Intent, Step};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::behaviours::GOAL_ID;
 use crate::knobs::{Goal, GOAL_QUEUE_MAX};
+use crate::trace::{GoalTick, NavCode, Probe};
+use probe::{Seen, SeenCell, StallWatch, TracedNav};
 
 struct Active {
     goal_id: u64,
@@ -36,12 +39,17 @@ pub struct GoalRunner {
     preempted: bool,
     intent: Option<Intent>,
     escape: escape::Escape,
+    seen: SeenCell,
+    probe: Probe,
+    watch: StallWatch,
 }
 
 impl GoalRunner {
     pub fn new(nav: Box<dyn Navigator>, world: Box<dyn World>, handle: GoalHandle) -> Self {
+        let seen = SeenCell::default();
+        let probe = handle.probe();
         Self {
-            nav,
+            nav: Box::new(TracedNav::new(nav, seen.clone())),
             world,
             handle,
             active: None,
@@ -50,6 +58,9 @@ impl GoalRunner {
             preempted: false,
             intent: None,
             escape: escape::Escape::default(),
+            seen,
+            probe,
+            watch: StallWatch::default(),
         }
     }
 
@@ -106,6 +117,10 @@ impl GoalRunner {
         let Some(a) = self.active.as_mut() else {
             return;
         };
+        if let Step::Failed(reason) = step {
+            let why = format!("#{} {} failed: {reason}", a.goal_id, a.rep.label());
+            request_dump(&self.probe, &mut self.watch, ctx.snap.tick, why);
+        }
         match step {
             Step::Done(text) => a.rep.done(ctx, text),
             Step::Failed(reason) => a.rep.failed(ctx, reason),
@@ -120,12 +135,45 @@ impl GoalRunner {
     }
 }
 
-impl Behaviour for GoalRunner {
-    fn id(&self) -> &'static str {
-        GOAL_ID
+/// Asks the executor to print its ring, at most once per `DUMP_GAP_TICKS`.
+fn request_dump(probe: &Probe, watch: &mut StallWatch, tick: u64, reason: String) {
+    if watch.allow(tick) {
+        probe.request_dump(reason);
+    }
+}
+
+impl GoalRunner {
+    /// Publishes this tick's goal state to the flight recorder and raises a dump on a
+    /// navigator stall or a moving body that went nowhere.
+    fn record(&mut self, ctx: &Ctx, bid: Option<&Bid>) {
+        let seen = self.seen.get();
+        let (goal_id, label, blocked) = self.active.as_ref().map_or((0, "", false), |a| {
+            (a.goal_id, a.rep.label(), a.rep.is_blocked().is_some())
+        });
+        let g = GoalTick {
+            goal_id,
+            label,
+            phase: bid.map_or("", |b| b.note),
+            moving: bid.is_some_and(|b| b.commands.legs.as_ref().is_some_and(probe::asks_to_move)),
+            nav: seen.nav,
+            flags: seen.flags,
+            wp: seen.wp,
+            preempted: self.preempted,
+            blocked,
+        };
+        self.probe.set(g);
+        let tick = ctx.snap.tick;
+        let why = if seen.nav == NavCode::Stalled {
+            Some(format!("#{goal_id} {label} navigator Stalled"))
+        } else {
+            self.watch.observe(&g, ctx.snap.me.pos)
+        };
+        if let Some(why) = why {
+            request_dump(&self.probe, &mut self.watch, tick, why);
+        }
     }
 
-    fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
+    fn eval(&mut self, ctx: &Ctx) -> Option<Bid> {
         self.bid_last = false;
         let Some(goal) = ctx.knobs.goal.as_ref() else {
             self.retire_active(ctx, false);
@@ -189,9 +237,28 @@ impl Behaviour for GoalRunner {
             }
         }
     }
+}
+
+impl Behaviour for GoalRunner {
+    fn id(&self) -> &'static str {
+        GOAL_ID
+    }
+
+    fn evaluate(&mut self, ctx: &Ctx) -> Option<Bid> {
+        self.seen.set(Seen::default());
+        let bid = self.eval(ctx);
+        self.record(ctx, bid.as_ref());
+        bid
+    }
+
+    fn probe(&self) -> Option<Probe> {
+        Some(self.probe.clone())
+    }
 
     fn granted(&mut self, won: bool) {
         self.preempted = self.bid_last && !won;
+        let pre = self.preempted;
+        self.probe.update(|g| g.preempted = pre);
         let intent = self.intent.take();
         if !won {
             return;

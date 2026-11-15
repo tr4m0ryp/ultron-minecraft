@@ -13,4 +13,5 @@ mod protect;
 mod runner;
 mod sim;
 mod spec;
+mod trace;
 mod travel;

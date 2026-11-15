@@ -1,6 +1,7 @@
 //! One tick of the reflex layer: sense, predict, bid, select, veto, compose, report.
 
 mod armed;
+mod record;
 mod report;
 
 use std::collections::{HashMap, HashSet};
@@ -13,6 +14,7 @@ use crate::knobs::Knobs;
 use crate::predict::{Efference, Prediction};
 use crate::selector::{compose, resolve_gaze, salience, Candidate, MotorOutput, Selector};
 use crate::snapshot::Snapshot;
+use crate::trace::{Probe, TickRing, VETO_SLOTS};
 
 /// Goal loses the legs this long before the brain hears INTERRUPTED (design note 4.4, step 6).
 pub const GOAL_INTERRUPT_TICKS: u64 = 200;
@@ -32,6 +34,11 @@ pub struct Executor {
     seen_kinds: HashSet<crate::snapshot::EntityKind>,
     /// Note of the bid that won the legs last tick, for the trace.
     legs_note: Option<&'static str>,
+    /// Flight recorder: the last `RING_TICKS` ticks of decisions and goal state.
+    ring: TickRing,
+    probe: Option<Probe>,
+    /// Rendered dump lines waiting for the adapter to print them.
+    dump: Vec<String>,
 }
 
 /// Tracks how long the goal has bid without owning the legs.
@@ -47,6 +54,7 @@ impl Executor {
     }
 
     pub fn with_behaviours(bot_name: &str, behaviours: Vec<Box<dyn Behaviour>>) -> Self {
+        let probe = behaviours.iter().find_map(|b| b.probe());
         Self {
             name: bot_name.to_string(),
             behaviours,
@@ -58,7 +66,21 @@ impl Executor {
             goal_watch: GoalWatch::default(),
             seen_kinds: HashSet::new(),
             legs_note: None,
+            ring: TickRing::default(),
+            probe,
+            dump: Vec::new(),
         }
+    }
+
+    /// The flight recorder rendered now, for an on-demand look (`TRACE` lines).
+    pub fn trace_dump(&self, reason: &str) -> Vec<String> {
+        self.ring.render(reason)
+    }
+
+    /// Dump lines produced by a stall or failure since the last call; the adapter prints
+    /// them to the log.
+    pub fn take_trace_dump(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.dump)
     }
 
     /// Id of the behaviour (or "ARM:<n>") that owned `c` on the last tick.
@@ -149,6 +171,8 @@ impl Executor {
         let mut plan = alloc.plan.clone();
         resolve_gaze(snap, &mut plan);
         let mut now_active: HashMap<String, Priority> = HashMap::new();
+        let mut vetoes = [""; VETO_SLOTS];
+        let mut n_vetoes = 0;
         for b in self.behaviours.iter_mut() {
             let mut trial = plan.clone();
             let Some(v) = b.veto(&ctx, &mut trial) else {
@@ -159,6 +183,10 @@ impl Executor {
             let drive = self.knobs.gains.behaviour_gain(id) * (1.0 - inh);
             if v.priority == Priority::P0 || drive >= VETO_DRIVE_MIN {
                 plan = trial;
+                if n_vetoes < VETO_SLOTS {
+                    vetoes[n_vetoes] = b.id();
+                    n_vetoes += 1;
+                }
                 if v.priority == Priority::P0 && inh > 0.0 {
                     ctx.emit(report::override_event(&ctx, id, v.note));
                 }
@@ -193,6 +221,7 @@ impl Executor {
         report::first_sightings(&ctx, &mut self.seen_kinds);
         let events = ctx.take_events();
         drop(ctx);
+        self.record(snap, &alloc.owners, &owners_idx, vetoes);
 
         armed::retire_fired(&mut self.knobs, &cands, &alloc.winners);
         for e in events {

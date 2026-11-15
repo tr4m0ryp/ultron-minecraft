@@ -20,3 +20,11 @@ pub fn publish(exec: &mut Executor, now: u64) {
         }
     }
 }
+
+/// Flight-recorder dump after a goal stall or failure: `TRACE` lines, run-length encoded, so
+/// the play log stays readable and `grep TRACE` pulls out the lead-up to any stall.
+pub fn dump_trace(exec: &mut Executor) {
+    for line in exec.take_trace_dump() {
+        println!("{line}");
+    }
+}

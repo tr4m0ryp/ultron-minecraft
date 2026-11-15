@@ -1,3 +1,4 @@
+mod scrape;
 mod work;
 
 pub use work::scaffold_slot;
@@ -7,6 +8,7 @@ use crate::channels::{Commands, LegsCmd, Speed};
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget};
 use crate::goals::task::{GoalCx, Plan};
 use crate::math::{BlockPos, Vec3};
+use scrape::Scrape;
 
 /// Planner failures in a row before a walk gives up.
 pub const MAX_NAV_FAILURES: u32 = 3;
@@ -31,6 +33,7 @@ pub struct Walker {
     paused: bool,
     failures: u32,
     planning: u32,
+    scrape: Scrape,
     /// Times the walk re-planned after a pre-emption.
     pub replans: u32,
     /// Scaffold blocks the paths of this walker placed, for the goal to clean up.
@@ -107,6 +110,7 @@ impl Walker {
         match status {
             NavStatus::Moving(s) if s.work.is_some() => {
                 self.planning = 0;
+                self.scrape.reset();
                 let w = s.work.expect("checked");
                 match work::work_plan(cx, s, w, note) {
                     Ok(plan) => Walk::Moving(plan),
@@ -115,6 +119,10 @@ impl Walker {
             }
             NavStatus::Moving(s) => {
                 self.planning = 0;
+                if self.scrape.step(cx.me_pos()) {
+                    self.scrape.reset();
+                    return self.fail(cx, NavFailure::Stalled);
+                }
                 let me = &cx.snap().me;
                 let speed = if s.sprint && me.food > 6 {
                     Speed::Sprint
@@ -131,6 +139,7 @@ impl Walker {
             }
             NavStatus::Failed(f) => self.fail(cx, f),
             status => {
+                self.scrape.reset();
                 self.planning += 1;
                 if self.planning > PLANNING_LIMIT {
                     return self.fail(cx, NavFailure::Stalled);
@@ -163,6 +172,7 @@ impl Walker {
         }
         self.paused = false;
         self.planning = 0;
+        self.scrape.reset();
     }
 
     /// Forget the request without touching the planner (it was cancelled elsewhere).
@@ -170,5 +180,6 @@ impl Walker {
         self.target = None;
         self.paused = false;
         self.planning = 0;
+        self.scrape.reset();
     }
 }

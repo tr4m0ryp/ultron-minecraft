@@ -14,6 +14,7 @@ pub mod math;
 pub mod predict;
 pub mod selector;
 pub mod snapshot;
+pub mod trace;
 
 pub use behaviour::{Behaviour, Bid, Ctx, Priority, Veto};
 pub use channels::{Channel, ChannelSet, Commands};

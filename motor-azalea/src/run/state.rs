@@ -8,7 +8,7 @@ use reflex_core::{Behaviour, Executor};
 
 use crate::{
     act::{self, HandState},
-    io::{Inbox, Trace},
+    io::{dump_trace, Inbox, Trace},
     sense::{self, EventBuffer, SenseState},
 };
 
@@ -83,6 +83,7 @@ impl State {
             l.ledger_watch.tick(bot, l.goals.ledger(), &snap, &out);
             crate::nav::set_max_drop(l.exec.knobs.gains.safe_drop());
             l.goals.settle(&mut l.exec.knobs);
+            dump_trace(&mut l.exec);
             l.trace.tick(&snap, &l.exec, sensed);
             say.extend(super::link::publish(
                 l.link.as_ref(),

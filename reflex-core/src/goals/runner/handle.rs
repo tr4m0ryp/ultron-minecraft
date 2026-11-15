@@ -4,12 +4,14 @@ use std::rc::Rc;
 use super::status::GoalStatus;
 use crate::goals::ledger::Ledger;
 use crate::knobs::Knobs;
+use crate::trace::Probe;
 
 #[derive(Debug, Default)]
 struct Inner {
     finished: Cell<Option<u64>>,
     status: RefCell<Option<GoalStatus>>,
     ledger: Ledger,
+    probe: Probe,
 }
 
 /// Shared between the goal runner and the adapter's tick loop. The runner records the id of
@@ -30,6 +32,11 @@ impl GoalHandle {
 
     pub fn ledger(&self) -> &Ledger {
         &self.0.ledger
+    }
+
+    /// The flight-recorder probe the runner writes and the executor reads.
+    pub fn probe(&self) -> Probe {
+        self.0.probe.clone()
     }
 
     pub(super) fn finish(&self, goal_id: u64) {

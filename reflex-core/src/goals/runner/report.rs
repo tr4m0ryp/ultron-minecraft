@@ -39,6 +39,14 @@ impl Reporter {
         }
     }
 
+    pub fn goal_id(&self) -> u64 {
+        self.goal_id
+    }
+
+    pub fn label(&self) -> &'static str {
+        self.label
+    }
+
     fn send(&self, ctx: &Ctx, class: EventClass, kind: &str, text: &str) {
         let text = format!("#{} {}: {text}", self.goal_id, self.label);
         ctx.emit(ctx.report(class, kind, self.label).text(text));
