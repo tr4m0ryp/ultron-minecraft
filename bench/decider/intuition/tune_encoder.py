@@ -23,10 +23,10 @@ def folds(pairs, k):
     return [([p for p in pairs if part[p["session"]] != f], [p for p in pairs if part[p["session"]] == f]) for f in range(k)]
 
 
-def fit(train, a, tok_enc, rng):
-    """Train a fresh encoder and head on `train`. -> predict(pairs) -> (labels, confidences), label list."""
-    from transformers import AutoModel
-    tok, enc = tok_enc, AutoModel.from_pretrained(MODEL)
+def fit(train, a, rng, log=False):
+    """Train a fresh encoder and head on `train`. -> (predict(pairs) -> labels, confidences; parts to save)."""
+    from transformers import AutoModel, AutoTokenizer
+    tok, enc = AutoTokenizer.from_pretrained(MODEL), AutoModel.from_pretrained(MODEL)
     labels = sorted({p["label"] for p in train})
     head = torch.nn.Linear(enc.config.hidden_size, len(labels))
     opt = torch.optim.AdamW([{"params": enc.parameters(), "lr": a.lr}, {"params": head.parameters(), "lr": 1e-3}])
@@ -35,29 +35,31 @@ def fit(train, a, tok_enc, rng):
         x = tok([data.text(p) for p in ps], padding=True, truncation=True, max_length=256, return_tensors="pt")
         return head(enc(**x).last_hidden_state[:, 0])
 
+    t0 = time.time()
     for ep in range(a.epochs):
-        enc.train()
+        enc.train(); tot = 0.0
         for b in batches(len(train), 16, rng):
             loss = torch.nn.functional.cross_entropy(logits([train[i] for i in b]),
                                                      torch.tensor([labels.index(train[i]["label"]) for i in b]))
-            opt.zero_grad(); loss.backward(); opt.step()
+            opt.zero_grad(); loss.backward(); opt.step(); tot += loss.item() * len(b)
+        if log:
+            print(f"epoch {ep + 1} loss {tot / len(train):.3f} {time.time() - t0:.0f}s", flush=True)
     enc.eval()
 
     @torch.inference_mode()
     def predict(ps):
         P = torch.cat([torch.softmax(logits(ps[i:i + 32]), -1) for i in range(0, len(ps), 32)])
         return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1).values]
-    return predict
+    return predict, (tok, enc, head, labels)
 
 
 def cross(a):
     """--folds K: K-fold over all real sessions, so the trained encoder has a view beside the one test day."""
-    from transformers import AutoTokenizer
     torch.set_num_threads(a.threads); torch.manual_seed(0); rng = random.Random(0)
     tr, te = data.real()
     pred, conf, gold, sess = [], [], [], []
     for i, (train, test) in enumerate(folds(tr + te, a.folds)):
-        pr, cf = fit(train, a, AutoTokenizer.from_pretrained(MODEL), rng)(test)
+        pr, cf = fit(train, a, rng)[0](test)
         pred += pr; conf += cf; gold += [p["label"] for p in test]; sess += [(p["session"], p["i"]) for p in test]
         print("fold", i, len(train), len(test), sum(x == y for x, y in zip(pr, [p["label"] for p in test])), flush=True)
     res = {"arm": "a4 encoder trained end to end", "folds": a.folds, "epochs": a.epochs, "cases": sess,
@@ -74,35 +76,16 @@ def main():
     a = ap.parse_args()
     if a.folds:
         return cross(a)
-    from transformers import AutoModel, AutoTokenizer
     torch.set_num_threads(a.threads); torch.manual_seed(0); rng = random.Random(0)
     train, test_real = data.real()
     hand = data.hand()
     train = train + (data.synth("vary") if "vary" in a.set else []) + (data.synth("rules") if "rules" in a.set else [])
-    labels = sorted({p["label"] for p in train})
-    tok, enc = AutoTokenizer.from_pretrained(MODEL), AutoModel.from_pretrained(MODEL)
-    head = torch.nn.Linear(enc.config.hidden_size, len(labels))
-    opt = torch.optim.AdamW([{"params": enc.parameters(), "lr": a.lr}, {"params": head.parameters(), "lr": 1e-3}])
-
-    def logits(ps):
-        x = tok([data.text(p) for p in ps], padding=True, truncation=True, max_length=256, return_tensors="pt")
-        return head(enc(**x).last_hidden_state[:, 0])
-
     t0 = time.time()
-    for ep in range(a.epochs):
-        enc.train(); tot = 0.0
-        for b in batches(len(train), 16, rng):
-            loss = torch.nn.functional.cross_entropy(logits([train[i] for i in b]),
-                                                     torch.tensor([labels.index(train[i]["label"]) for i in b]))
-            opt.zero_grad(); loss.backward(); opt.step(); tot += loss.item() * len(b)
-        print(f"epoch {ep + 1} loss {tot / len(train):.3f} {time.time() - t0:.0f}s", flush=True)
-    enc.eval()
-
-    @torch.inference_mode()
-    def predict(ps):
-        P = torch.cat([torch.softmax(logits(ps[i:i + 32]), -1) for i in range(0, len(ps), 32)])
-        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1).values]
-
+    predict, (tok, enc, head, labels) = fit(train, a, rng, log=True)
+    if a.save:                                  # before scoring: a failed evaluation must not cost the training
+        os.makedirs(a.save, exist_ok=True)
+        enc.save_pretrained(a.save); tok.save_pretrained(a.save)
+        torch.save({"head": head.state_dict(), "labels": labels}, os.path.join(a.save, "head.pt"))
     res = {"arm": "a4 encoder trained end to end", "set": a.set, "epochs": a.epochs, "n_train": len(train),
            "train_s": round(time.time() - t0), "labels": labels}
     for name, ps in (("test_real", test_real), ("test_hand", hand)):
@@ -110,10 +93,6 @@ def main():
         res[name] = score(pr, cf, [p["label"] for p in ps], None)
         print(name, res[name]["k"], "/", res[name]["n"], res[name]["cov95_oracle"])
     json.dump(res, open(a.out, "w"), indent=1)
-    if a.save:
-        os.makedirs(a.save, exist_ok=True)
-        enc.save_pretrained(a.save); tok.save_pretrained(a.save)
-        torch.save({"head": head.state_dict(), "labels": labels}, os.path.join(a.save, "head.pt"))
 
 
 if __name__ == "__main__":
