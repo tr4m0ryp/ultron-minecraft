@@ -31,12 +31,12 @@ def main():
         print(f"| {g} | {len(rs)} | {statistics.mean(p):.0f} ({min(p):.0f} to {max(p):.0f}) | {', '.join(str(r['correct']) + '/' + str(r['n_cases']) for r in rs)} |")
     print("\nvariants\n| run | cases | threads | prompt tok | suffix tok | argmax | calib | generate | cold p50 | cold p90 | cached p50 | cached p90 | gen p50 | n | load1 | foreign cores |\n" + "|---" * 16 + "|")
     for r in load("sweep"):
-        if "cold_ms" not in r:
+        if "cached_ms" not in r:
             continue
         n, c, k, g = r["n_cases"], r["cold_ms"], r["cached_ms"], r["generate_ms"]
         f = lambda v: "-" if v is None else f"{v}/{n}"
         print(f"| {r['label']} | {r['cases']} | {r['threads']} | {r['prompt_tokens_mean']} | {r['suffix_tokens_mean']} | {f(r['correct_argmax'])} | "
-              f"{f(r['correct_calib'])} | {f(r['correct_generate'])} | {c['p50']} | {c['p90']} | {k['p50']} | {k['p90']} | {g['p50'] if g else '-'} | {c['n']} | {env(r)} |")
+              f"{f(r['correct_calib'])} | {f(r['correct_generate'])} | {c['p50'] if c else '-'} | {c['p90'] if c else '-'} | {k['p50']} | {k['p90']} | {g['p50'] if g else '-'} | {k['n']} | {env(r)} |")
     print("\nsentence encoder\n| run | cases | threads | zero-shot | nearest example | leave-one-out | p50 ms | p90 ms | n | load1 | foreign cores |\n" + "|---" * 11 + "|")
     for r in load("sweep"):
         if "ms" in r:

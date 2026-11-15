@@ -95,6 +95,16 @@ class Scorer:
         self.llm._ctx.kv_cache_seq_rm(-1, n, -1)
         self.llm.n_tokens = n
 
+    def ensure(self, pre):
+        """Bring the context to exactly `pre`, evaluating only what is not already there."""
+        have = [int(t) for t in self.llm.input_ids[:self.llm.n_tokens]]
+        n = 0
+        while n < min(len(have), len(pre)) and have[n] == pre[n]:
+            n += 1
+        self.rewind(n)
+        if n < len(pre):
+            self.llm.eval(pre[n:])
+
     def row(self):
         """Logits of the last evaluated token, read from the context (the binding keeps none without logits_all)."""
         return np.ctypeslib.as_array(self.llm._ctx.get_logits(), shape=(self.llm.n_vocab(),))
@@ -146,18 +156,20 @@ def main():
             ok = {"argmax": 0, "calib": 0, "generate": 0}
             for c, (pre, suf, null, order, tag, ids) in zip(cases, built):
                 gold = order.index(c["answer"])
-                t = time.perf_counter(); sc.llm.reset(); sc.llm.eval(pre + suf); lg = sc.logits(ids); cold.append(time.perf_counter() - t)
-                ok["argmax"] += int(np.argmax(lg)) == gold
-                if r == 0 and int(np.argmax(lg)) != gold:
-                    wrong.append(f"{c['id']}:{order[int(np.argmax(lg))]}")
+                if not shots:  # with examples in the prefix the cold cost is a one-off, not a decision cost
+                    t = time.perf_counter(); sc.llm.reset(); sc.llm.eval(pre + suf); lg = sc.logits(ids); cold.append(time.perf_counter() - t)
                 if a.generate:
                     sc.llm.reset()
                     t = time.perf_counter(); sc.llm.eval(pre + suf); g = sc.generate(tag); gen.append(time.perf_counter() - t)
                     ok["generate"] += g == gold
-                sc.llm.reset(); sc.llm.eval(pre)  # the fixed part, paid once per question, not per decision
+                sc.ensure(pre)  # the fixed part, paid once per question, not per decision
                 if a.calib:
-                    sc.llm.eval(null); base = sc.logits(ids); sc.rewind(len(pre))
+                    sc.llm.eval(null); base = sc.logits(ids)
                 t = time.perf_counter(); sc.rewind(len(pre)); sc.llm.eval(suf); lg2 = sc.logits(ids); cached.append(time.perf_counter() - t)
+                pick = int(np.argmax(lg2))
+                ok["argmax"] += pick == gold
+                if r == 0 and pick != gold:
+                    wrong.append(f"{c['id']}:{order[pick]}")
                 if a.calib:
                     ok["calib"] += int(np.argmax(lg2 - base)) == gold
             runs.append(ok)
@@ -170,7 +182,7 @@ def main():
            "deterministic": all(r == runs[0] for r in runs),
            "prompt_tokens_mean": round(statistics.mean(len(b[0]) + len(b[1]) for b in built), 1),
            "suffix_tokens_mean": round(statistics.mean(len(b[1]) for b in built), 1),
-           "cold_ms": stats(cold), "cached_ms": stats(cached), "generate_ms": stats(gen) if gen else None,
+           "cold_ms": stats(cold) if cold else None, "cached_ms": stats(cached), "generate_ms": stats(gen) if gen else None,
            "idle": idle, "during": mon.summary()}
     print(json.dumps(res))
     if a.out:
