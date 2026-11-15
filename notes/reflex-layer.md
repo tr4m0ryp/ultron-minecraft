@@ -717,7 +717,7 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   potion of healing from it and a glistering melon slice, two goals on one blaze powder:
   5/5. Three water bottles to three potions of healing in one goal, two batches: 5/5. The
   impossible cases (the pickaxe with no template and no ingot; the potion with no wart and
-  no melon) failed once each with the same list word for word, 5/5 and 5/5. 25 of 25. No
+  no melon) failed once each with the same list word for word, 5/5 and 5/5. 25 of 25, run twice; the ten grid and furnace cases above on the same build, 50 of 50. No
   packet patch was needed: the pinned library opens both menus and its slot numbers match
   the server's. Before: 0 of 25 by construction ("no recipe makes netherite_pickaxe").
   Not done: filling a bottle at water, the blast furnace, smoker, campfire and stonecutter
@@ -844,8 +844,7 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   8 calls gave 8 lines, 28 of 28 checks against the server (position within 1 block of
   RCON at each call, inventory equal to the server's at 7 of 7 calls compared, the stone
   pickaxe absent before the craft and present in the first line after it, the running
-  craft goal shown with its plan). Cost on the tick thread, measured by the bot: median
-  71 and 93 us over two runs of 8, at most 125 us, about 1.0 to 1.2 kB a line; a full line
+  craft goal shown with its plan). Cost on the tick thread, measured by the bot: median 71, 91 and 93 us over three runs of 8, at most 159 us, about 1.0 to 1.2 kB a line; a full line
   (40 entities in range, 43 item kinds) costs 46 us on average in a release build. The log
   is flushed to the operating system per line and not synced.
 - Ledger timing (tools/live/staged/goals/ledger_kill.py: one dirt block placed by a goal,
