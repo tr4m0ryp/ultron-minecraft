@@ -4,14 +4,15 @@ in the bot's ledger of blocks it placed; only the tool can keep them.
 
 Cases: protect_tool (mark the hut box with `protect`, then `go_to` a point outside: no hut
 cell may break; the goal may fail or the body may tunnel under the floor), protect_restart
-(the same, with the bot restarted between `protect` and `go_to`: the box must come back
-from the ledger file), unprotected (control: no `protect`; the route digs through a wall).
-Each trial lifts the box again with `protect clear`.
+(the same, with the bot killed the instant `protect` is acknowledged and started again: the
+box must be in the ledger file once the bot is dead and come back from it), unprotected
+(control: no `protect`; the route digs through a wall). Each trial lifts the box again with
+`protect clear`.
 
 Usage: python3 protect_tool.py [-n trials] [case ...]   (needs the bot's bridge socket free)
 One JSON line per trial and a summary line per case; the site is cleared at the end.
 """
-import argparse, json, sys
+import argparse, json, os, signal, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -19,6 +20,17 @@ from mcp_drive import Mcp  # noqa: E402
 from protect_hut import (EXIT, HX0, HX1, HZ0, HZ1, ROOF, hut_by_rcon, missing,  # noqa: E402
                          newly_broken, prep_inside, reset_site)
 from kit import *  # noqa: E402,F401
+
+
+REGION = f"region {HX0} {Y + 1} {HZ0} {HX1} {ROOF} {HZ1}"
+
+
+def kill_bot():
+    """SIGTERM to the bot's process group, as `bot.sh stop` sends it, without the shell."""
+    try:
+        os.killpg(int(Path(f"{S}/bot.pid").read_text()), signal.SIGTERM)
+    except ProcessLookupError:
+        pass
 
 
 def connect():
@@ -41,10 +53,13 @@ def trial(m, protect, restart=False):
         ack, err, _ = m.tool("protect", box)
         if err:
             return m, dict(ok=False, protect_ack=ack)
+    on_disk = None
     if restart:
-        # The ack leaves before the ledger file is synced to disk (a few ms); killing the bot
-        # inside that window lost the box in 1 of 5 trials. A real restart is never that fast.
-        time.sleep(1.0)
+        # Killed the instant the acknowledgement is read: the box must already be in the
+        # ledger file (the reply used to leave a few ms before the write: 1 box in 5 lost).
+        kill_bot()
+        time.sleep(0.5)
+        on_disk = REGION in Path(f"{S}/bot.placed").read_text().splitlines()
         m.p.terminate()
         stop()
         start()
@@ -57,8 +72,8 @@ def trial(m, protect, restart=False):
     broken = newly_broken(before)
     cleared, _, _ = m.tool("protect", {"clear": [HX0, Y + 1, HZ0]})
     ok = not before and (broken == 0 if protect else broken > 0)
-    return m, dict(ok=ok, hut_broken=broken, protect_ack=ack, cleared=cleared, outcome=kind,
-                text=text, secs=round(time.time() - t0, 1), pos=p)
+    return m, dict(ok=ok, hut_broken=broken, protect_ack=ack, box_on_disk=on_disk, cleared=cleared,
+                   outcome=kind, text=text, secs=round(time.time() - t0, 1), pos=p)
 
 
 def main():

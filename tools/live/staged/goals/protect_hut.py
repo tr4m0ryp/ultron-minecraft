@@ -4,7 +4,8 @@ the companion places across a corridor (see protect.py for the usage).
 
 Hut: 5x5, walls 2 high (y+1, y+2) and a roof at y+3, centred on the site; 57 cells. BEFORE
 runs rebuild it by RCON each trial (the baseline remembers nothing); AFTER runs let the bot
-build it (place/fill goals) and rebuild by the bot only when a trial broke part of it.
+build it (place/fill goals) and rebuild by the bot only when a trial broke part of it
+(HUT_REBUILD=1: before every trial, to measure the building itself).
 Broken hut cells are counted over RCON.
 """
 import os, subprocess
@@ -87,7 +88,7 @@ def ensure_hut():
         reset_site()
         hut_by_rcon()
         return []
-    if BOT_BUILT and broken() == 0:
+    if BOT_BUILT and broken() == 0 and os.environ.get("HUT_REBUILD") != "1":
         reset_site_outside()
         return []
     notes = hut_by_bot()
@@ -125,7 +126,12 @@ def hut_go_to():
                 secs=round(time.time() - t0, 1), reached=bool(p and dist(p, EXIT) <= 2), pos=p, notes=notes)
 
 
-def hut_escape():
+def hut_escape(full=False):
+    """The trial ends when the server shows the body outside the hut footprint, which is
+    about half a second before the escape itself is done: the next trial then teleports a
+    body that is still walking out (live, that is what made 1 escape in 5 give up). With
+    `full` it also waits for the body's own "out under open sky" and for the server to show
+    it standing on the floor outside, so every trial starts from a finished escape."""
     notes = ensure_hut()
     before = missing()
     prep_inside()
@@ -135,14 +141,16 @@ def hut_escape():
         time.sleep(2)
         p = pos()
         lines = " ".join(l for l in log_lines()[n:] if " escape " in l)
-        if p and not in_hut(p):
+        done = not full or ("out under open sky" in lines and p and p[1] >= Y + 1)
+        if p and not in_hut(p) and done:
             result = "left"
             break
         if "could not dig out" in lines:
             result = "gave_up"
             break
-    b = newly_broken(before)
-    return dict(ok=b == 0 and not before, hut_broken=b, sealed=not before, result=result, secs=round(time.time() - t0, 1), pos=p, notes=notes)
+    cells = sorted(set(missing()) - set(before))
+    return dict(ok=not cells and not before, hut_broken=len(cells), sealed=not before, result=result,
+                secs=round(time.time() - t0, 1), pos=p, notes=notes, broken_cells=cells)
 
 
 def restart_bot(binary):
@@ -232,4 +240,4 @@ def companion_wall():
 
 
 CASES = dict(hut_go_to=hut_go_to, hut_escape=hut_escape, hut_restart=hut_restart,
-             companion_wall=companion_wall)
+             hut_escape_full=lambda: hut_escape(full=True), companion_wall=companion_wall)

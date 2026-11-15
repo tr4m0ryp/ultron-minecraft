@@ -1,5 +1,10 @@
 """Live reflex harness: stages situations over RCON and reads the bot trace (MOTOR_TRACE=1).
 
+One RCON client at a time. The server shares one reply buffer between its RCON clients:
+with two clients sending at once, 9,678 of 159,503 block tests came back empty (0 of
+178,938 alone), which reads as "block missing" here. Never run a second staged script or
+an ad hoc RCON query while a measurement is under way.
+
 The test arena is a stone platform at y=149 spanning x,z 960..1040 (force-loaded).
 """
 import os, re, sys, time

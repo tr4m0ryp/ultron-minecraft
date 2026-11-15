@@ -35,6 +35,9 @@ CASES = {
               [("hotbar.1", "raw_iron", 2), ("hotbar.2", "coal", 1),
                ("hotbar.3", "oak_log", 1), ("hotbar.4", "cobblestone", 8)],
               "iron_ingot", 2, 120),
+    "dyed_box": ("craft black_shulker_box 1",
+                 [("hotbar.1", "shulker_box", 1), ("hotbar.2", "black_dye", 1)],
+                 "black_shulker_box", 1, 60),
     "impossible": ("craft stone_pickaxe 1", [("hotbar.1", "cobblestone", 1)],
                    "stone_pickaxe", 0, 30),
 }
