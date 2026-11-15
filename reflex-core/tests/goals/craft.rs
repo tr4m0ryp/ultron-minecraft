@@ -153,3 +153,21 @@ fn smelt_goal_waits_out_the_cooking_and_collects() {
     assert_eq!(said(&s, "goal_done"), "smelted 2 iron_ingot");
     assert_eq!((held(&s, "iron_ingot"), held(&s, "oak_planks")), (2, 0));
 }
+
+#[test]
+fn smelt_goes_back_for_output_a_visit_left_in_the_furnace() {
+    // Live: the collect visit clicked before the furnace's slots arrived, the input read
+    // empty, the cooked items stayed in the furnace and the goal said done.
+    let mut s = sim();
+    s.item("raw_iron", 2, None);
+    s.item("oak_planks", 2, None);
+    s.block(BlockPos::new(3, 64, 0), "furnace");
+    s.goal("smelt iron_ingot 2", true);
+    s.world.state().furnace_output_missed = 0;
+    // The load visit takes no output anyway; the first collect visit misses it.
+    assert!(s.run_until(30, |s| !s.world.state().furnaces.is_empty()));
+    s.world.state().furnace_output_missed = 1;
+    assert!(s.run_until(800, |s| s.has_event("goal_done")));
+    assert_eq!(said(&s, "goal_done"), "smelted 2 iron_ingot");
+    assert_eq!(held(&s, "iron_ingot"), 2);
+}

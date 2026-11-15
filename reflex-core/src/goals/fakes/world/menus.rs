@@ -61,7 +61,9 @@ impl FakeWorldState {
             } else {
                 let (mut slots, mut burn) = self.furnaces.remove(&pos).unwrap_or_default();
                 self.cook(&mut slots, &mut burn);
-                if let Some((item, n)) = slots.output.take() {
+                if self.furnace_output_missed > 0 {
+                    self.furnace_output_missed -= 1;
+                } else if let Some((item, n)) = slots.output.take() {
                     self.add_item(&item, n);
                 }
                 if let Some((item, n)) = job.input {

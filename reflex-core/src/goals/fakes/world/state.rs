@@ -33,6 +33,9 @@ pub struct FakeWorldState {
     pub tossed: Vec<(String, u32)>,
     /// Furnaces by position: what each holds, and the burn left in quarter smelts.
     pub furnaces: HashMap<BlockPos, (FurnaceSlots, u32)>,
+    /// Furnace visits that leave the output in the furnace (live: clicks before the
+    /// server sent the slots).
+    pub furnace_output_missed: u32,
     pub(super) craft: Option<(Recipe, u32, u32)>,
     pub(super) status: Option<MenuStatus>,
     pub(super) furnace_job: Option<(BlockPos, FurnaceJob, u32)>,

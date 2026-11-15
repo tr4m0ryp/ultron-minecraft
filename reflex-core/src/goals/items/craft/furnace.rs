@@ -40,6 +40,8 @@ pub struct Smelting {
     phase: Phase,
     last_left: Option<u32>,
     stalls: u32,
+    /// Collect visits that came back with the output still in the furnace.
+    retakes: u32,
 }
 
 impl Smelting {
@@ -52,6 +54,7 @@ impl Smelting {
             phase: Phase::Walk { load: true },
             last_left: None,
             stalls: 0,
+            retakes: 0,
         }
     }
 
@@ -174,6 +177,14 @@ impl Smelting {
             _ => 0,
         };
         if left == 0 {
+            // Live, a visit clicked before the server sent the slots and left the cooked
+            // items behind: go back for them rather than call it done.
+            let output = seen.output.as_ref().filter(|(n, _)| *n == self.recipe.result);
+            if output.is_some() && self.retakes < MAX_STALLS {
+                self.retakes += 1;
+                self.phase = Phase::Visit(FurnaceJob::default());
+                return Smelted::Bid(Plan::hold("goal_smelt"));
+            }
             return Smelted::Done;
         }
         if !load && self.last_left == Some(left) {
