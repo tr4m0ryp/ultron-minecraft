@@ -46,6 +46,11 @@ impl Need {
 /// own logs), the shopping list names the union of those inputs ("any log"), not the first
 /// alternative's ("oak_log").
 pub fn widen(book: &RecipeBook, ing: &Ingredient, mut v: Via) -> Via {
+    // Only a craft is widened: live, a smelt kept its verb and got the craft's input, and
+    // the list read "smelt 4 gold_ingot from 4 gold_nugget".
+    if v.verb != "craft" {
+        return v;
+    }
     let mut union: Vec<String> = Vec::new();
     for a in &ing.0 {
         let Some(r) = book.recipes_for(a).iter().find(|r| r.verb() == "craft") else {
