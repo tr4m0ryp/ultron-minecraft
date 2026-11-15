@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Trained-Intuition measurement: pairs from recorded Thought decisions, then every arm, in sequence.
-#   bench/decider/trained.sh data floors classic plan habit probe encoder latency untrained_small untrained_large \\
+#   bench/decider/trained.sh data floors classic plan habit probe encoder latency untrained_small untrained_large \
 #                            lora_real lora_rules
 # Weights live outside the repository ($GGUF, $HF); pairs and logs are ignored by git (data/, logs/).
 set -u
