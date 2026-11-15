@@ -7,6 +7,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"; I="$HERE/intuition"
 GGUF="${GGUF:-$HOME/models/intuition/gguf}"
 PY="${PY:-$HOME/models/intuition/venv/bin/python}"                     # llama.cpp binding
 EPY="${EPY:-$HERE/../../third_party/decider/kev/.venv/bin/python}"     # torch, transformers, scikit-learn, peft
+TRAINED="${TRAINED:-$HOME/models/intuition/trained}"
 OUT="$HERE/results/trained"; LOG="$HERE/logs"; mkdir -p "$OUT" "$LOG"
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 TOKENIZERS_PARALLELISM=false
 S135=SmolLM2-135M-Instruct-f16; Q15=Qwen2.5-1.5B-Instruct-Q4_K_M
@@ -24,10 +25,10 @@ plan)      INTUITION_PLAN=1 step classic-plan "$EPY" -u "$I/classic.py" ;;
 probe)     step classic-lm135-probe "$EPY" -u "$I/classic.py" --encoder lm135 --arms a1,a2,b5 --sets real ;;
 floors)    step floors "$EPY" -u "$I/floors.py"; step wake-filter "$EPY" -u "$I/wake_filter.py" ;;
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
-encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 10
+encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 6
            step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 3 ;;
-lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 5
-           step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 ;;
+lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 8 --lr 1e-3 --save "$TRAINED/lm135-lora-real"
+           step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 --lr 1e-3 --save "$TRAINED/lm135-lora-rules" ;;
 untrained) old untrained-smol135-real $S135 lm_test_real; old untrained-smol135-hand $S135 lm_test_hand
            old untrained-qwen15-real $Q15 lm_test_real; old untrained-qwen15-hand $Q15 lm_test_hand ;;
 latency)   step latency-classic "$EPY" -u "$I/latency.py" classic --gate-wait "${GATE_WAIT:-300}"

@@ -50,7 +50,7 @@ def main():
     @torch.inference_mode()
     def predict(ps):
         P = torch.cat([torch.softmax(logits(ps[i:i + 32]), -1) for i in range(0, len(ps), 32)])
-        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1)]
+        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1).values]
 
     res = {"arm": "a4 encoder trained end to end", "set": a.set, "epochs": a.epochs, "n_train": len(train),
            "train_s": round(time.time() - t0), "labels": labels}

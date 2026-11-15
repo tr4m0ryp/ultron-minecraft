@@ -72,11 +72,13 @@ def main():
             opt.zero_grad(); loss.backward(); opt.step(); tot += loss.item() * len(b); steps += 1
         print(f"epoch {ep + 1} loss {tot / len(train):.3f} {time.time() - t0:.0f}s", flush=True)
     model.eval()
+    if a.save:                                  # before scoring: a failed evaluation must not cost the training
+        model.save_pretrained(a.save)
 
     @torch.inference_mode()
     def predict(ps):
         P = torch.cat([torch.softmax(logits(ps[i:i + 16]), -1) for i in range(0, len(ps), 16)])
-        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1)]
+        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1).values]
 
     res = {"arm": "d 135M + low-rank adapter", "set": a.set, "epochs": a.epochs, "rank": a.rank, "top_layers": a.top,
            "n_train": len(train),
@@ -93,8 +95,6 @@ def main():
     lat.sort(); res["torch_ms"] = {"p50": round(lat[len(lat) // 2] * 1e3), "p90": round(lat[int(len(lat) * .9)] * 1e3),
                                    "note": "ungated, unmerged adapter"}
     json.dump(res, open(a.out, "w"), indent=1)
-    if a.save:
-        model.save_pretrained(a.save)
 
 
 if __name__ == "__main__":
