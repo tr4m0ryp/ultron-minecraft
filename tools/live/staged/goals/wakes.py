@@ -21,10 +21,10 @@ def cell(dx, dy, dz):
 
 
 def shell(dx, dz, inner, r=1):
-    """A bedrock box of half-width `r` round one cell on the floor. The hands dig a block in
-    reach through a wall, so a block that must stay out of reach needs r = 4."""
+    """A bedrock box of half-width `r` round one cell on the floor, through the floor as
+    well: with stone under it the body tunnels up to the cell from below."""
     x, y, z = cell(dx, 1, dz)
-    return [f"fill {x - r} {y} {z - r} {x + r} {y + r + 1} {z + r} bedrock",
+    return [f"fill {x - r} {y - 4} {z - r} {x + r} {y + r + 1} {z + r} bedrock",
             f"setblock {x} {y} {z} {inner}"]
 
 
@@ -49,7 +49,7 @@ def sealed():
 
 def mine_mixed():
     ores = [cell(30, 1, 16), cell(30, 1, 24)]
-    rc(*shell(8, 10, "iron_ore", 4), *shell(8, 30, "iron_ore", 4),
+    rc(*shell(8, 12, "iron_ore", 2), *shell(8, 28, "iron_ore", 2),
        *[f"setblock {x} {y} {z} iron_ore" for x, y, z in ores])
     prep(items=[("hotbar.0", "stone_pickaxe", 1)], at=(X0 + 8.5, Y + 1, Z0 + 20.5))
     n = task("mine iron_ore 2")
