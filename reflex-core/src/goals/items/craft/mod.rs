@@ -1,18 +1,24 @@
 //! Crafting and smelting along a planned dependency chain. Every round plans afresh from
 //! the inventory and runs the plan's first step: a 2x2 craft in the inventory grid, a 3x3
 //! craft at a crafting table (walked to when one stands near, else a held one is put down
-//! beside the player), or a furnace visit. Missing raw materials end the goal once, with the
-//! planner's shopping list.
+//! beside the player), a furnace visit, a batch at a brewing stand or one item at a smithing
+//! table. Missing raw materials end the goal once, with the planner's shopping list.
 
+mod brew;
 mod furnace;
+mod replan;
+mod smith;
 mod station;
+mod visit;
 
-use crate::crafting::{plan, PlanStep, Recipe, Stations, FURNACE, TABLE};
+use crate::crafting::Recipe;
 use crate::goals::ports::{MenuStatus, NavTarget, Navigator};
 use crate::goals::task::{GoalCx, GoalTask, Intent, Plan, Step};
 use crate::goals::travel::{Walk, Walker};
 use crate::math::{BlockPos, Vec3};
+use brew::{Brewed, Brewing};
 use furnace::{Smelted, Smelting};
+use smith::{Smithed, Smithing};
 use station::{Placed, Placing};
 
 pub use station::STATION_RADIUS as TABLE_RADIUS;
@@ -36,6 +42,8 @@ enum Phase {
     Craft(Recipe, u32, Option<BlockPos>),
     Waiting(u32),
     Smelt(Smelting),
+    Brew(Brewing),
+    Smith(Smithing),
 }
 
 pub struct Craft {
@@ -48,6 +56,10 @@ pub struct Craft {
     steps: u32,
     fails: u32,
     placed: Vec<String>,
+    /// How the last step was made ("craft", "smelt", "brew", "smith"), for the outcome.
+    made_by: &'static str,
+    /// A brewing stand this goal found without fuel: the next plan asks for blaze powder.
+    stand_empty: bool,
 }
 
 impl Craft {
@@ -62,6 +74,8 @@ impl Craft {
             steps: 0,
             fails: 0,
             placed: Vec::new(),
+            made_by: "craft",
+            stand_empty: false,
         }
     }
 
@@ -74,65 +88,17 @@ impl Craft {
     }
 
     fn done_text(&self, got: u32) -> String {
-        let verb = if self.smelt_only {
-            "smelted"
-        } else {
-            "crafted"
+        let verb = match (self.smelt_only, self.made_by) {
+            (true, _) => "smelted",
+            (_, "brew") => "brewed",
+            (_, "smith") => "smithed",
+            _ => "crafted",
         };
         let mut s = format!("{verb} {got} {}", self.item);
         if !self.placed.is_empty() {
             s.push_str(&format!("; put down {}", self.placed.join(", ")));
         }
         s
-    }
-
-    /// Plans from the inventory and sets up the first step.
-    fn replan(&mut self, cx: &mut GoalCx, wanted: u32) -> Result<(), String> {
-        self.steps += 1;
-        if self.steps > MAX_STEPS {
-            return Err(format!("{} took more than {MAX_STEPS} steps", self.item));
-        }
-        let book = cx.world.recipe_book();
-        if book.is_empty() {
-            return Err("no recipe data: the server jar was not found at bot start".into());
-        }
-        let table = station::find(cx, TABLE);
-        let furnace = station::find(cx, FURNACE);
-        let near = Stations {
-            table: table.is_some(),
-            furnace: furnace.is_some(),
-        };
-        let inv = cx.world.inventory();
-        let p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
-        let steps: Vec<String> = p.steps.iter().map(PlanStep::describe).collect();
-        cx.doing(format!("plan: {}", steps.join(", then ")));
-        let held = |cx: &GoalCx, b: &str| cx.world.count_item(b) > 0;
-        self.phase = match p.steps.into_iter().next() {
-            None => return Err(format!("nothing to do for {}", self.item)),
-            Some(PlanStep::Craft { recipe, crafts }) => {
-                if cx.world.free_slots() == 0 {
-                    return Err(format!("inventory full; no room for {}", recipe.result));
-                }
-                match (recipe.needs_table(), table) {
-                    (false, _) => Phase::Craft(recipe, crafts, None),
-                    (true, Some(t)) => Phase::Walk(t, recipe, crafts),
-                    (true, None) if held(cx, TABLE) => Phase::Place(Placing::new(TABLE)),
-                    (true, None) => {
-                        return Err(format!("{} needs a crafting table", recipe.result))
-                    }
-                }
-            }
-            Some(PlanStep::Smelt {
-                recipe,
-                count,
-                fuel,
-            }) => match furnace {
-                Some(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel)),
-                None if held(cx, FURNACE) => Phase::Place(Placing::new(FURNACE)),
-                None => return Err(format!("{} needs a furnace", recipe.result)),
-            },
-        };
-        Ok(())
     }
 
     fn adapter_failed(&mut self, what: String) -> Step {
@@ -234,6 +200,30 @@ impl GoalTask for Craft {
                 }
                 Smelted::Failed(e) => Step::Failed(e),
             },
+            Phase::Brew(b) => match b.step(cx, &mut self.walker) {
+                Brewed::Bid(p) => Step::Bid(p),
+                Brewed::Done => {
+                    self.phase = Phase::Settle(SETTLE_TICKS);
+                    hold()
+                }
+                Brewed::Failed(e) => {
+                    // One plan more, this time asking for the fuel the stand lacked.
+                    if e.contains("is not brewing") && !self.stand_empty {
+                        self.stand_empty = true;
+                        self.phase = Phase::Plan;
+                        return hold();
+                    }
+                    Step::Failed(e)
+                }
+            },
+            Phase::Smith(m) => match m.step(cx, &mut self.walker) {
+                Smithed::Bid(p) => Step::Bid(p),
+                Smithed::Done => {
+                    self.phase = Phase::Settle(SETTLE_TICKS);
+                    hold()
+                }
+                Smithed::Failed(e) => self.adapter_failed(e),
+            },
         }
     }
 
@@ -241,6 +231,8 @@ impl GoalTask for Craft {
         match &mut self.phase {
             Phase::Craft(..) => self.phase = Phase::Waiting(0),
             Phase::Smelt(s) => s.committed(),
+            Phase::Brew(b) => b.committed(),
+            Phase::Smith(m) => m.committed(),
             _ => {}
         }
     }
@@ -250,6 +242,8 @@ impl GoalTask for Craft {
         match &mut self.phase {
             // Whatever the furnace holds stays there: resume the smelt, do not re-plan.
             Phase::Smelt(s) => s.reset(),
+            // A stand keeps brewing with nobody at it: come back to it.
+            Phase::Brew(b) => b.reset(),
             Phase::Place(p) => {
                 p.stop(nav);
                 self.phase = Phase::Plan;
