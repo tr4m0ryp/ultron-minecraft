@@ -173,6 +173,22 @@ fn vanilla_book_plans_brewing_and_smithing() {
         no_upgrade.contains("need 1 netherite_ingot, have 0"),
         "{no_upgrade}"
     );
+    for (item, kit) in [
+        (
+            "netherite_pickaxe",
+            vec![("diamond_pickaxe", 1), ("smithing_table", 1)],
+        ),
+        (
+            "healing_potion",
+            vec![
+                ("water_potion", 1),
+                ("brewing_stand", 1),
+                ("blaze_powder", 1),
+            ],
+        ),
+    ] {
+        println!("LIVE {}", steps(item, 1, &kit, none).unwrap_err());
+    }
     let no_potion = steps("healing_potion", 1, &[("water_potion", 1)], stand).unwrap_err();
     println!("{no_potion}");
     assert!(no_potion.starts_with(
