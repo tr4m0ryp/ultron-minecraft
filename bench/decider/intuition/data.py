@@ -46,9 +46,14 @@ def snap_text(s):
     return re.sub(r"#\d+ ", "", s)
 
 
-def text(p):
+PLAN = bool(os.environ.get("INTUITION_PLAN"))   # add the journal's active project line to the text
+
+
+def text(p, plan=None):
     did = " > ".join(p["history"][-3:]) or "nothing yet"
-    return f"event: {event_text(p['event'])} | did: {did} | body: {snap_text(p['snapshot'])}"
+    s = f"event: {event_text(p['event'])} | did: {did} | body: {snap_text(p['snapshot'])}"
+    use = PLAN if plan is None else plan
+    return f"plan: {p.get('plan') or 'none'} | {s}" if use else s
 
 
 def detail_label(p):

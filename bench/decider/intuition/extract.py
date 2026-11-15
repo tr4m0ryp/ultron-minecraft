@@ -9,7 +9,8 @@ did between that point and its next wait_event:
   say, arm, set_mode, inhibit   if it did only that (in this priority)
   wait        if it called wait_event again without acting
 State is what the body could hand to a local model at that moment, no hindsight: the event text, the freshest
-observe snapshot (Thought's own observe calls in that turn included), the previous decisions and the mode.
+observe snapshot (Thought's own observe calls in that turn included), the previous decisions, the mode, and
+'plan': the active line of journal/projects.txt as it stood when the event arrived.
 Journal reads and writes are not decisions. The output is derived from private logs and stays untracked.
 """
 import glob, json, os, re, sys
@@ -30,9 +31,10 @@ def calls(path):
         if not isinstance(content, list):
             continue
         for b in content:
-            if b.get("type") == "tool_use" and b["name"].startswith(P):
+            journal = b.get("type") == "tool_use" and "projects.txt" in str(b["input"].get("file_path", ""))
+            if b.get("type") == "tool_use" and (b["name"].startswith(P) or journal):
                 open_[b["id"]] = len(out)
-                out.append([b["name"][len(P):], b["input"], ""])
+                out.append([b["name"][len(P):] if b["name"].startswith(P) else "journal_" + b["name"], b["input"], ""])
             elif b.get("type") == "tool_result" and b.get("tool_use_id") in open_:
                 x = b.get("content")
                 if isinstance(x, list):
@@ -53,8 +55,27 @@ def goal_text(inp):
     return " ".join(bits)
 
 
+def active(projects):
+    """The first active line of journal/projects.txt: the plan Thought wrote down for itself."""
+    for line in projects.split("\n"):
+        line = re.sub(r"^\s*\d+\t", "", line).strip()
+        if line.startswith("active"):
+            return " ".join(line.split())[:240]
+    return ""
+
+
+def journal(name, inp, res, projects):
+    """Follow the projects file through the session's reads, writes and edits. -> its new content."""
+    if name == "journal_Read":
+        return res or projects
+    if name == "journal_Write":
+        return inp.get("content", projects)
+    return projects.replace(inp.get("old_string", "\0"), inp.get("new_string", ""), 1)
+
+
 def pairs(path, session):
     cs, out = calls(path), []
+    projects, plan = "", ""
     snap, mode, hist, event, turn, obs_in_turn = "", "", [], "session start", [], False
 
     def close():
@@ -67,15 +88,20 @@ def pairs(path, session):
             names = [c[0] for c in turn]
             label = next((n for n in PRIORITY if n in names), "wait")
             detail = label
-        out.append({"session": session, "i": len(out), "event": event, "snapshot": snap, "mode": mode,
+        out.append({"session": session, "i": len(out), "event": event, "snapshot": snap, "mode": mode, "plan": plan,
                     "history": hist[-3:], "label": label, "detail": detail, "observed": obs_in_turn,
                     "chat": bool(re.search(r"chat: <[^>]+>", event))})
         hist.append(detail)
 
     for name, inp, res in cs:
-        if name == "wait_event":
+        if name.startswith("journal_"):
+            projects = journal(name, inp, res, projects)
+            if event == "session start" and not turn:
+                plan = active(projects)     # read before the first decision
+        elif name == "wait_event":
             close()
             event, turn, obs_in_turn = clean(res), [], False
+            plan = active(projects)         # the plan as written before this event, never the edit it causes
         elif name == "observe":
             snap, obs_in_turn = clean(res), True
             m = re.search(r"\bmode (\w+)", snap)
