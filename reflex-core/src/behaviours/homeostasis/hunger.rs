@@ -1,16 +1,24 @@
-use super::eat::{best_food, eat_commands, food_servings, meal_is_safe, EATING_TICKS};
+use super::eat::{
+    best_food, best_ready_food, eat_commands, food_servings, meal_is_safe, raw_servings,
+    EATING_TICKS,
+};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::channels::MainCmd;
 use crate::events::EventClass;
 
-/// H1: food at or below hunger_floor with no hostile within 12 blocks: eat the best food.
-/// Emergency at food 6 or less (sprinting impossible, so fleeing is too): P1, eats unless
-/// a hostile is within 4. Never starts a meal in an archer's line of fire (`meal_is_safe`).
+/// H1: food at or below hunger_floor with no hostile within 12 blocks: eat the best food
+/// that is ready to eat. Raw meat, fish and potatoes are kept for the furnace until the
+/// emergency at food 6 or less (sprinting impossible, so fleeing is too): P1, eats anything
+/// unless a hostile is within 4. Never starts a meal in an archer's line of fire
+/// (`meal_is_safe`). Live, the reflex ate the raw beef a `smelt cooked_beef 3` was about to
+/// cook, and the smelt failed one short.
 #[derive(Default)]
 pub struct Hunger {
     low_stock_reported: bool,
     /// Hungry with nothing to eat was told to thought; `Some(true)` once it was an emergency.
     no_food_told: Option<bool>,
+    /// Hungry with only raw food was told to thought.
+    raw_told: bool,
 }
 
 const EMERGENCY_FOOD: u8 = 6;
@@ -34,6 +42,7 @@ impl Behaviour for Hunger {
 
         let floor = ctx.knobs.gains.hunger_floor;
         self.tell_no_food(ctx, stock, floor);
+        self.tell_raw_only(ctx, floor);
         if me.food > floor {
             return None;
         }
@@ -42,7 +51,11 @@ impl Behaviour for Hunger {
         if ctx.snap.nearest_hostile(safe_radius).is_some() || !meal_is_safe(ctx.snap) {
             return None;
         }
-        let slot = best_food(me, false)?;
+        let slot = if emergency {
+            best_food(me, false)?
+        } else {
+            best_ready_food(me)?
+        };
         let cmds = eat_commands(me, slot);
         let eating = cmds.main == Some(MainCmd::Use);
         let priority = if emergency {
@@ -76,6 +89,35 @@ impl Hunger {
             .text(format!(
                 "food {food}/20 and nothing to eat: hunt a cow, pig, sheep or chicken \
                  (collect beef 3, porkchop, mutton or chicken), eat it raw or smelt it"
+            ));
+        ctx.emit(ev);
+    }
+
+    /// Hungry, not yet an emergency, and the only food is raw: the reflex leaves it for the
+    /// furnace, so thought hears once that a smelt (or an explicit meal) is up to it.
+    fn tell_raw_only(&mut self, ctx: &Ctx, floor: u8) {
+        let me = &ctx.snap.me;
+        let raw = raw_servings(me);
+        let waiting = me.food <= floor
+            && me.food > EMERGENCY_FOOD
+            && raw > 0
+            && best_ready_food(me).is_none();
+        if !waiting {
+            self.raw_told = false;
+            return;
+        }
+        if self.raw_told {
+            return;
+        }
+        self.raw_told = true;
+        let ev = ctx
+            .report(EventClass::Wake, "hungry_raw_food", "")
+            .magnitude(f32::from(20 - me.food.min(20)))
+            .text(format!(
+                "food {}/20 and only raw food ({raw}); kept for the furnace: smelt it \
+                 (smelt cooked_beef {raw}, cooked_porkchop, cooked_mutton or cooked_chicken), \
+                 or eat_now to eat it raw; the body eats it raw at food {EMERGENCY_FOOD}",
+                me.food
             ));
         ctx.emit(ev);
     }

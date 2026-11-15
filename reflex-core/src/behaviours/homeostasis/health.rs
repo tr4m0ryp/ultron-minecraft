@@ -1,4 +1,4 @@
-use super::eat::{best_food, eat_commands, meal_is_safe, EATING_TICKS};
+use super::eat::{best_food, best_ready_food, eat_commands, meal_is_safe, EATING_TICKS};
 use crate::behaviour::{Behaviour, Bid, Ctx, Priority};
 use crate::behaviours::common::{heading_to, open_retreat};
 use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
@@ -70,7 +70,8 @@ impl Behaviour for Health {
             && snap.nearest_hostile(12.0).is_none()
             && safe_meal
         {
-            let slot = best_food(me, false)?;
+            // Topping off is no emergency: raw meat stays for the furnace.
+            let slot = best_ready_food(me)?;
             let eat = eat_commands(me, slot);
             lock = if eat.main == Some(MainCmd::Use) {
                 EATING_TICKS
