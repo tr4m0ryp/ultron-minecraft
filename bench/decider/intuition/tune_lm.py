@@ -78,7 +78,8 @@ def main():
         P = torch.cat([torch.softmax(logits(ps[i:i + 16]), -1) for i in range(0, len(ps), 16)])
         return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1)]
 
-    res = {"arm": "d 135M + low-rank adapter", "set": a.set, "epochs": a.epochs, "rank": a.rank, "top_layers": a.top, "n_train": len(train),
+    res = {"arm": "d 135M + low-rank adapter", "set": a.set, "epochs": a.epochs, "rank": a.rank, "top_layers": a.top,
+           "n_train": len(train),
            "train_s": round(time.time() - t0), "labels": labels,
            "prompt_tokens_mean": round(sum(len(tok.encode(prompt(p))) for p in test_real) / len(test_real), 1)}
     for name, ps in (("test_real", test_real), ("test_hand", hand)):
