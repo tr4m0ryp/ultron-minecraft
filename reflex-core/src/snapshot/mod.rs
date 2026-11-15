@@ -29,6 +29,8 @@ pub struct Snapshot {
     /// Lowest buildable y of the dimension; below it is the void.
     pub world_min_y: i32,
     pub is_night: bool,
+    /// Time of day in ticks, 0..24000 (0 is sunrise); `None` until the clock is known.
+    pub day_time: Option<u32>,
     /// The configured companion's name, known even while the server does not track them.
     pub companion_name: Option<String>,
 }

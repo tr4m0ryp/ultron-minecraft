@@ -13,6 +13,11 @@ pub trait Host {
     fn goal_status(&self) -> Option<GoalStatus> {
         None
     }
+    /// Main inventory and hotbar by exact item name, counts summed per name, for the
+    /// decision log. Hosts without an inventory report none.
+    fn inventory(&self) -> Vec<(String, u32)> {
+        Vec::new()
+    }
 }
 
 impl Host for Executor {

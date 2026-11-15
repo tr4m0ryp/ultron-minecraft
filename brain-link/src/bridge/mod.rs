@@ -23,6 +23,7 @@ use std::time::{Duration, Instant};
 use reflex_core::Snapshot;
 use serde_json::Value;
 
+use crate::decisions::{self, Cost, Sink};
 use crate::host::Host;
 use crate::server::Server;
 use crate::wire::{self, ChatLine, Events, Request, WakeEvent};
@@ -40,6 +41,7 @@ pub struct Bridge {
     shared: Mutex<Shared>,
     woke: Condvar,
     gate: Mutex<ChatGate>,
+    decisions: Mutex<Sink>,
 }
 
 /// A queued request's pending reply.
@@ -66,6 +68,21 @@ impl Bridge {
         let bridge = Bridge::new();
         let server = Server::start(path.as_ref(), bridge.clone())?;
         Ok((bridge, server))
+    }
+
+    /// Starts the decision log at `path` (see `decisions`). The log stays off on an error.
+    pub fn record_decisions(&self, path: &Path) -> std::io::Result<()> {
+        *self.sink() = Sink::open(path)?;
+        Ok(())
+    }
+
+    /// What the decision log has cost the tick thread so far.
+    pub fn decision_cost(&self) -> Cost {
+        self.sink().cost()
+    }
+
+    fn sink(&self) -> MutexGuard<'_, Sink> {
+        self.decisions.lock().unwrap_or_else(|e| e.into_inner())
     }
 
     fn lock(&self) -> MutexGuard<'_, Shared> {
@@ -179,13 +196,22 @@ impl Bridge {
         let mut gate = self.gate.lock().unwrap_or_else(|e| e.into_inner());
         gate.heard(&snap.chat, snap.tick);
         let mut say = Vec::new();
+        let mut sink = self.sink();
         let replies: Vec<_> = jobs
             .into_iter()
             .map(|job| {
+                // The state is taken before the decision changes anything.
+                let logged = decisions::is_decision(&job.req)
+                    .then(|| sink.before(host, snap).map(|s| (s, job.req.clone())))
+                    .flatten();
                 let r = apply::run(job.req, host, snap, (&mut say, &mut gate), wakes_pending);
+                if let Some((taken, call)) = logged {
+                    sink.after(taken, snap.tick, call, &r);
+                }
                 (job.reply, r)
             })
             .collect();
+        drop(sink);
         // After the jobs and before their replies: a wait that follows a set_goal reply
         // must already see the new goal as running.
         let idle = idle::body_idle(host);

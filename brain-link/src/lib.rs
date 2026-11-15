@@ -4,6 +4,7 @@
 
 pub mod bridge;
 pub mod client;
+pub mod decisions;
 pub mod fake;
 pub mod host;
 pub mod mcp;
