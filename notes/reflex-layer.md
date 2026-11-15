@@ -664,6 +664,22 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   visible"); the new place skill, which stands where its eye sees a support face and
   pillars there when needed, placed 25 of 25 in 5 of 5 trials (13 to 14 s) and left no
   scaffold standing.
+- Idle at night (tools/brain/measure/idle; no goal = seconds per minute with no goal
+  running; idle wait = seconds per minute blocked in wait_event with no goal). The 58-minute
+  solo relay (24.6 night minutes, 33.3 day): night 37.1 s no goal and 25.4 s idle wait per
+  minute, day 39.0 and 26.5. Causes found in its logs: the night flag froze at its login
+  value (26.3 sends the clock only on login and changes), goal outcomes waited behind the
+  5 s wake gap, and the thought layer waited with no goal after a journal edit or a mode
+  change. After the fixes (clock run on at the server's rate, goal outcomes waking at once,
+  the first wait after a goal ends returning at once, waits capped at 45 s, a night work
+  list in the prompts) a 19.6-minute relay over two nights (16.7 night minutes): night 9.1 s
+  no goal and 0.2 s idle wait per minute, day (2.9 minutes) 13.5 and 0.2.
+- That 20-minute relay (empty inventory near spawn, as the solo hour began, but started at
+  dusk with the day between the nights skipped): 65 goals, 38 done, 25 failed, 0 deaths,
+  0.108 USD per minute. Failures: 15 crafts with missing ingredients or no table near, 4
+  places into a cell held by leaves or dirt, 3 collects with no drops (wool), 2 missing
+  tools, 1 go_to stalled; none "unreachable" (the solo hour had 41 of 127). Stone: 110
+  mined, 110 cobblestone picked up (solo hour: 81 and 11). It did not attempt a roof.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 
