@@ -142,7 +142,11 @@ impl State {
             .take(EVENTS_KEPT)
             .map(|e| EventLine {
                 t: e.tick,
-                class: if e.class == EventClass::Wake { 'W' } else { 'D' },
+                class: if e.class == EventClass::Wake {
+                    'W'
+                } else {
+                    'D'
+                },
                 kind: e.kind.clone(),
                 subject: e.subject.clone(),
                 text: e.text.clone(),

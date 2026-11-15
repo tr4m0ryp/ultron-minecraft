@@ -35,9 +35,11 @@ fn busy_world() -> FakeWorld {
     w.snap.is_night = true;
     w.snap.me.health = 17.5;
     w.snap.me.pos = Vec3::new(10.5, 64.0, -3.25);
-    w.snap
-        .entities
-        .push(Entity::new(9, EntityKind::Zombie, Vec3::new(14.5, 64.0, -3.25)));
+    w.snap.entities.push(Entity::new(
+        9,
+        EntityKind::Zombie,
+        Vec3::new(14.5, 64.0, -3.25),
+    ));
     w.exec.inventory = vec![
         ("cobblestone".into(), 40),
         ("oak_log".into(), 3),
@@ -92,7 +94,9 @@ fn a_set_goal_is_recorded_with_this_ticks_state_and_every_parameter() {
     let r = &got[0];
     assert_eq!(r["v"], FORMAT);
     assert_eq!(r["tick"], 4321);
-    assert!(r["wall_ms"].as_u64().is_some_and(|ms| ms > 1_600_000_000_000));
+    assert!(r["wall_ms"]
+        .as_u64()
+        .is_some_and(|ms| ms > 1_600_000_000_000));
     assert_eq!(
         r["call"],
         json!({"op": "set_goal", "goal": "place", "priority": 0.7, "params": {
@@ -104,13 +108,29 @@ fn a_set_goal_is_recorded_with_this_ticks_state_and_every_parameter() {
     let s = &r["state"];
     assert_eq!((&s["hp"], &s["food"]), (&json!(17.5), &json!(18)));
     assert_eq!(s["pos"], json!([10.5, 64.0, -3.25]));
-    assert_eq!((&s["day_time"], &s["night"]), (&json!(13_000), &json!(true)));
-    assert_eq!((&s["mode"], &s["legs"]), (&json!("explore"), &json!("GOAL")));
+    assert_eq!(
+        (&s["day_time"], &s["night"]),
+        (&json!(13_000), &json!(true))
+    );
+    assert_eq!(
+        (&s["mode"], &s["legs"]),
+        (&json!("explore"), &json!("GOAL"))
+    );
     assert_eq!(s["inventory"], json!({"cobblestone": 49, "oak_log": 3}));
     assert_eq!(s["companion"]["name"], "Steve");
     assert_eq!(s["entities"].as_array().map(Vec::len), Some(4));
+    let dists: Vec<f64> = s["entities"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|e| e["dist"].as_f64())
+        .collect();
+    assert!(
+        dists.windows(2).all(|d| d[0] <= d[1]),
+        "nearest first: {dists:?}"
+    );
     assert_eq!(
-        s["entities"][1],
+        s["entities"][2],
         json!({"kind": "zombie", "id": 9, "dist": 4.0, "pos": [14.5, 64.0, -3.25]})
     );
     // The state is the one the decision was made in: the old goal still runs.
@@ -158,17 +178,28 @@ fn every_decision_is_logged_once_and_reads_are_not() {
         decide(&bridge, &mut w, parse(c.clone()));
     }
     let got = lines(&path);
-    let ops: Vec<&str> = got.iter().filter_map(|r| r["call"]["op"].as_str()).collect();
+    let ops: Vec<&str> = got
+        .iter()
+        .filter_map(|r| r["call"]["op"].as_str())
+        .collect();
     assert_eq!(
         ops,
         ["set_mode", "set_gain", "inhibit", "arm", "say", "set_goal", "set_goal"]
     );
-    assert_eq!(got[2]["call"]["scope"], json!({"kind": "here", "radius": 6.0}));
+    assert_eq!(
+        got[2]["call"]["scope"],
+        json!({"kind": "here", "radius": 6.0})
+    );
     assert_eq!(got[2]["call"]["ttl_s"], 30.0);
     // A refused call is a decision too, recorded with the reason.
     assert_eq!(got[5]["result"]["ok"], false);
-    assert!(got[5]["result"]["text"].as_str().is_some_and(|t| t.contains("pos")));
-    assert_eq!(got[1]["state"]["mode"], "mine", "the mode set one call earlier");
+    assert!(got[5]["result"]["text"]
+        .as_str()
+        .is_some_and(|t| t.contains("pos")));
+    assert_eq!(
+        got[1]["state"]["mode"], "mine",
+        "the mode set one call earlier"
+    );
     let ticks: Vec<u64> = got.iter().filter_map(|r| r["tick"].as_u64()).collect();
     assert_eq!(ticks, [4323, 4324, 4325, 4326, 4327, 4329, 4330]);
     assert_eq!(bridge.decision_cost().records, 7);
@@ -178,7 +209,13 @@ fn every_decision_is_logged_once_and_reads_are_not() {
 fn no_file_is_written_until_the_log_is_started() {
     let bridge = Bridge::new();
     let mut w = busy_world();
-    decide(&bridge, &mut w, Request::SetMode { mode: WireMode::Mine });
+    decide(
+        &bridge,
+        &mut w,
+        Request::SetMode {
+            mode: WireMode::Mine,
+        },
+    );
     assert_eq!(bridge.decision_cost().records, 0);
 }
 
@@ -192,14 +229,22 @@ fn a_full_record_costs_far_less_than_a_tick() {
     let mut w = busy_world();
     for i in 0..40u32 {
         let at = Vec3::new(f64::from(i), 64.0, 2.0);
-        w.snap.entities.push(Entity::new(100 + i, EntityKind::Zombie, at));
+        w.snap
+            .entities
+            .push(Entity::new(100 + i, EntityKind::Zombie, at));
         w.exec.inventory.push((format!("item_{i}"), i + 1));
         let e = Event::new(4000 + u64::from(i), EventClass::Digest, "unstuck", "").text("x");
         w.exec.upward.push(e);
     }
     for _ in 0..500 {
         w.snap.tick += 1;
-        decide(&bridge, &mut w, Request::SetMode { mode: WireMode::Mine });
+        decide(
+            &bridge,
+            &mut w,
+            Request::SetMode {
+                mode: WireMode::Mine,
+            },
+        );
     }
     let c = bridge.decision_cost();
     let mean = c.total.as_secs_f64() * 1e6 / c.records as f64;
