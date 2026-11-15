@@ -98,6 +98,10 @@ fn ready_food_is_eaten_before_raw_and_raw_is_kept() {
     s.me.food = 10;
     let (bid, ev) = eval(&mut h, &s, &knobs());
     let bid = bid.expect("eats the bread");
-    assert_eq!(bid.commands.main, Some(MainCmd::Use), "the bread in the held slot");
+    assert_eq!(
+        bid.commands.main,
+        Some(MainCmd::Use),
+        "the bread in the held slot"
+    );
     assert!(!ev.iter().any(|e| e.kind.starts_with("hungry_")));
 }

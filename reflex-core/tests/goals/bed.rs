@@ -56,7 +56,10 @@ fn a_bed_against_the_back_wall_gets_its_head_inside() {
         let (x, z) = side(yaw);
         let head = foot.offset(x, 0, z);
         let w = s.world.state();
-        assert!(!w.blocks.contains_key(&head), "head {head:?} lands in a wall (yaw {yaw})");
+        assert!(
+            !w.blocks.contains_key(&head),
+            "head {head:?} lands in a wall (yaw {yaw})"
+        );
         assert_eq!(before, Some(yaw), "the yaw was held before the click");
     }
 }
