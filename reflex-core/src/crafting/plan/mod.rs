@@ -20,10 +20,7 @@ pub const BUDGET: u32 = 20_000;
 pub enum PlanStep {
     /// A grid craft, or `crafts` bottles at a brewing stand, or `crafts` items at a
     /// smithing table: the recipe's shape says which.
-    Craft {
-        recipe: Recipe,
-        crafts: u32,
-    },
+    Craft { recipe: Recipe, crafts: u32 },
     /// Smelt `count` items with `recipe`, burning `fuel` (empty until the plan is complete).
     Smelt {
         recipe: Recipe,

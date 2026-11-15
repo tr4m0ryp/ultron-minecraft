@@ -6,14 +6,12 @@ use super::furnace::Smelting;
 use super::smith::Smithing;
 use super::station::{self, Placing};
 use super::{Craft, Phase, MAX_STEPS};
-use crate::crafting::{
-    plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE,
-};
+use crate::crafting::{plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE};
 use crate::goals::task::GoalCx;
 
 impl Craft {
     /// Plans from the inventory and sets up the first step.
-    fn replan(&mut self, cx: &mut GoalCx, wanted: u32) -> Result<(), String> {
+    pub(super) fn replan(&mut self, cx: &mut GoalCx, wanted: u32) -> Result<(), String> {
         self.steps += 1;
         if self.steps > MAX_STEPS {
             return Err(format!("{} took more than {MAX_STEPS} steps", self.item));
@@ -24,38 +22,62 @@ impl Craft {
         }
         let table = station::find(cx, TABLE);
         let furnace = station::find(cx, FURNACE);
+        let stand = station::find(cx, BREWING_STAND);
+        let smithing = station::find(cx, SMITHING_TABLE);
+        // A stand already standing is taken to hold fuel until a brew at it came out
+        // unbrewed; one this goal puts down is new, and the plan asked for its powder
+        // while no stand stood near.
         let near = Stations {
             table: table.is_some(),
             furnace: furnace.is_some(),
+            stand: stand.is_some(),
+            smithing: smithing.is_some(),
+            stand_fuelled: stand.is_some() && !self.stand_empty,
         };
         let inv = cx.world.inventory();
         let p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
         let steps: Vec<String> = p.steps.iter().map(PlanStep::describe).collect();
         cx.doing(format!("plan: {}", steps.join(", then ")));
         let held = |cx: &GoalCx, b: &str| cx.world.count_item(b) > 0;
-        self.phase = match p.steps.into_iter().next() {
-            None => return Err(format!("nothing to do for {}", self.item)),
-            Some(PlanStep::Craft { recipe, crafts }) => {
+        // The station a step is made at: the one standing near, else a held one to put down.
+        let at = |cx: &GoalCx, found, name: &'static str, result: &str| match found {
+            Some(p) => Ok(Ok(p)),
+            None if held(cx, name) => Ok(Err(Phase::Place(Placing::new(name)))),
+            None => Err(format!("{result} needs a {name}")),
+        };
+        let Some(step) = p.steps.into_iter().next() else {
+            return Err(format!("nothing to do for {}", self.item));
+        };
+        self.made_by = step.recipe().verb();
+        self.phase = match step {
+            PlanStep::Craft { recipe, crafts } => {
                 if cx.world.free_slots() == 0 {
                     return Err(format!("inventory full; no room for {}", recipe.result));
                 }
-                match (recipe.needs_table(), table) {
-                    (false, _) => Phase::Craft(recipe, crafts, None),
-                    (true, Some(t)) => Phase::Walk(t, recipe, crafts),
-                    (true, None) if held(cx, TABLE) => Phase::Place(Placing::new(TABLE)),
-                    (true, None) => {
-                        return Err(format!("{} needs a crafting table", recipe.result))
-                    }
+                match recipe.station() {
+                    None => Phase::Craft(recipe, crafts, None),
+                    Some(BREWING_STAND) => match at(cx, stand, BREWING_STAND, &recipe.result)? {
+                        Ok(p) => Phase::Brew(Brewing::new(p, recipe, crafts)),
+                        Err(place) => place,
+                    },
+                    Some(SMITHING_TABLE) => match at(cx, smithing, SMITHING_TABLE, &recipe.result)?
+                    {
+                        Ok(p) => Phase::Smith(Smithing::new(p, recipe)),
+                        Err(place) => place,
+                    },
+                    Some(_) => match at(cx, table, TABLE, &recipe.result)? {
+                        Ok(t) => Phase::Walk(t, recipe, crafts),
+                        Err(place) => place,
+                    },
                 }
             }
-            Some(PlanStep::Smelt {
+            PlanStep::Smelt {
                 recipe,
                 count,
                 fuel,
-            }) => match furnace {
-                Some(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel)),
-                None if held(cx, FURNACE) => Phase::Place(Placing::new(FURNACE)),
-                None => return Err(format!("{} needs a furnace", recipe.result)),
+            } => match at(cx, furnace, FURNACE, &recipe.result)? {
+                Ok(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel)),
+                Err(place) => place,
             },
         };
         Ok(())

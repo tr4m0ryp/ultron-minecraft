@@ -213,5 +213,8 @@ fn a_roof_is_never_laid_from_under_it() {
     // The test planner walks level lines only, so the raised spots are never reached and
     // the fill itself is measured live; what counts here is where the body is sent.
     assert!(under.is_empty(), "stood under the roof at {under:?}");
-    assert!(spots.iter().all(|p| p.y >= 65), "eye above the wall top: {spots:?}");
+    assert!(
+        spots.iter().all(|p| p.y >= 65),
+        "eye above the wall top: {spots:?}"
+    );
 }

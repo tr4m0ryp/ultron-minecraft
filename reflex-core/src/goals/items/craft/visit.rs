@@ -44,7 +44,10 @@ impl Visit {
     }
 
     pub fn at(&self) -> String {
-        format!("{} at {} {} {}", self.what, self.pos.x, self.pos.y, self.pos.z)
+        format!(
+            "{} at {} {} {}",
+            self.what, self.pos.x, self.pos.y, self.pos.z
+        )
     }
 
     /// The runner handed the job to the adapter.
