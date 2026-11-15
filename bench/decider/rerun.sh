@@ -9,24 +9,24 @@ TP="$HERE/../../third_party/decider"
 OUT="$HERE/results/rerun"
 REPS="${1:-3}"
 export HF_HOME="$TP/.hf" HF_HUB_OFFLINE=1 TOKENIZERS_PARALLELISM=false
-mkdir -p "$OUT"
+LOG="$HERE/logs"; mkdir -p "$OUT" "$LOG"   # logs/ is ignored by git
 COMMON="--stride 3 --n-lat 20 --n-batch 3 --gate-wait ${GATE_WAIT:-240}"
 
 laya() {  # label threads
   [ -s "$OUT/$1.json" ] && return
-  "$TP/laya/.venv/bin/python" "$HERE/run.py" --backend laya --label "$1" --threads "$2" $COMMON --out "$OUT/$1.json" >/dev/null 2>"$OUT/$1.log"
+  "$TP/laya/.venv/bin/python" "$HERE/run.py" --backend laya --label "$1" --threads "$2" $COMMON --out "$OUT/$1.json" >/dev/null 2>"$LOG/$1.log"
 }
 kev() {  # label threads ("" = server default)
   [ -s "$OUT/$1.json" ] && return
-  ( cd "$TP/kev" && exec env ${2:+OMP_NUM_THREADS=$2} .venv/bin/python -m kev.serve --run jaredpalmer/kev-0.8b --port 8009 ) >"$OUT/$1.serve.log" 2>&1 &
+  ( cd "$TP/kev" && exec env ${2:+OMP_NUM_THREADS=$2} .venv/bin/python -m kev.serve --run jaredpalmer/kev-0.8b --port 8009 ) >"$LOG/$1.serve.log" 2>&1 &
   local pid=$!
   until curl -sf -m 2 http://127.0.0.1:8009/v1/models >/dev/null; do sleep 2; kill -0 $pid 2>/dev/null || return 1; done
-  "$TP/kev/.venv/bin/python" "$HERE/run.py" --backend http --load-kw '{"url": "http://127.0.0.1:8009", "model": "kev-latest"}' --label "$1" --threads "${2:-4}" --pid $pid $COMMON --out "$OUT/$1.json" >/dev/null 2>"$OUT/$1.log"
+  "$TP/kev/.venv/bin/python" "$HERE/run.py" --backend http --load-kw '{"url": "http://127.0.0.1:8009", "model": "kev-latest"}' --label "$1" --threads "${2:-4}" --pid $pid $COMMON --out "$OUT/$1.json" >/dev/null 2>"$LOG/$1.log"
   kill $pid; wait $pid 2>/dev/null; return 0
 }
 jeff() {  # label; the first run used every 15th case (4 cases), it is too slow for more
   [ -s "$OUT/$1.json" ] && return
-  "$TP/jeff/.venv/bin/python" "$HERE/run.py" --backend jeff --label "$1" --threads 8 --stride 15 --n-lat 4 --n-batch 3 --gate-wait "${GATE_WAIT:-240}" --out "$OUT/$1.json" >/dev/null 2>"$OUT/$1.log"
+  "$TP/jeff/.venv/bin/python" "$HERE/run.py" --backend jeff --label "$1" --threads 8 --stride 15 --n-lat 4 --n-batch 3 --gate-wait "${GATE_WAIT:-240}" --out "$OUT/$1.json" >/dev/null 2>"$LOG/$1.log"
 }
 
 try() { "$@" || { echo "failed once, retrying: $*"; "$@"; }; }  # one laya launch in six died with SIGILL at start-up

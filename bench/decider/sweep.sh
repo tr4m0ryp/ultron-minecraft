@@ -7,7 +7,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 GGUF="${GGUF:-$HOME/models/intuition/gguf}"
 PY="${PY:-$HOME/models/intuition/venv/bin/python}"
 EPY="${EPY:-$HERE/../../third_party/decider/kev/.venv/bin/python}"   # any environment with torch and transformers
-OUT="$HERE/results/sweep"; mkdir -p "$OUT"
+OUT="$HERE/results/sweep"; LOG="$HERE/logs"; mkdir -p "$OUT" "$LOG"   # logs/ is ignored by git
 S135=SmolLM2-135M-Instruct; S360=SmolLM2-360M-Instruct; Q05=qwen2.5-0.5b-instruct
 # 16-bit float weights are the fastest format on this CPU (AVX without AVX2), see the quant phase
 BEST135="${BEST135:-$S135-f16}"; BEST360="${BEST360:-$S360-f16}"; BEST05="${BEST05:-$Q05-fp16}"
@@ -15,7 +15,7 @@ BEST135="${BEST135:-$S135-f16}"; BEST360="${BEST360:-$S360-f16}"; BEST05="${BEST
 run() {  # label file-stem extra args...
   local label=$1 stem=$2; shift 2
   [ -s "$OUT/$label.json" ] && return
-  "$PY" "$HERE/logit_run.py" --model "$GGUF/$stem.gguf" --label "$label" --gate-wait "${GATE_WAIT:-45}" --out "$OUT/$label.json" "$@" >/dev/null 2>"$OUT/$label.err" || echo "failed: $label"
+  "$PY" "$HERE/logit_run.py" --model "$GGUF/$stem.gguf" --label "$label" --gate-wait "${GATE_WAIT:-45}" --out "$OUT/$label.json" "$@" >/dev/null 2>"$LOG/$label.err" || echo "failed: $label"
 }
 M20="--stride 3 --reps 3"
 
@@ -51,7 +51,7 @@ full)     # all 60 mixed cases, accuracy
     run "full60-$1" "$2" --reps 1 --calib
   done ;;
 embed)
-  e() { [ -s "$OUT/$1.json" ] || "$EPY" "$HERE/embed_run.py" --label "$1" --out "$OUT/$1.json" --gate-wait "${GATE_WAIT:-45}" "${@:2}" >/dev/null 2>"$OUT/$1.err" || echo "failed: $1"; }
+  e() { [ -s "$OUT/$1.json" ] || "$EPY" "$HERE/embed_run.py" --label "$1" --out "$OUT/$1.json" --gate-wait "${GATE_WAIT:-45}" "${@:2}" >/dev/null 2>"$LOG/$1.err" || echo "failed: $1"; }
   e embed-mixed20 --stride 3; e embed-mixed60 --reps 1
   e embed-goals --cases "$HERE/cases_goals.jsonl" --shots "$HERE/shots/goals.jsonl"
   for t in 2 8; do e "embed-goals-t$t" --cases "$HERE/cases_goals.jsonl" --shots "$HERE/shots/goals.jsonl" --threads $t; done ;;
