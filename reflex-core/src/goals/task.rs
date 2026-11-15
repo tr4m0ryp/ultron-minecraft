@@ -1,10 +1,15 @@
 //! The contract every goal implements: a resumable state machine stepped once per tick.
 
+<<<<<<< HEAD
 use super::ledger::Ledger;
 use super::ports::{Navigator, World};
+=======
+use super::ports::{FurnaceJob, Navigator, World};
+>>>>>>> 8eed7d9 (feat(goals): add craft station goal and share recipe fakes)
 use super::runner::Reporter;
 use crate::behaviour::Ctx;
 use crate::channels::{Commands, LegsCmd, MainCmd};
+use crate::crafting::Recipe;
 use crate::knobs::Knobs;
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::Snapshot;
@@ -14,9 +19,14 @@ use crate::snapshot::Snapshot;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Intent {
     Craft {
-        item: String,
+        recipe: Recipe,
         crafts: u32,
         table: Option<BlockPos>,
+    },
+    /// One furnace visit (collect, load, close).
+    Furnace {
+        pos: BlockPos,
+        job: FurnaceJob,
     },
     Toss {
         item: String,

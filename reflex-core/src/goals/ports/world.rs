@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use crate::crafting::{Recipe, RecipeBook};
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{Slot, Snapshot};
 
@@ -22,13 +25,20 @@ pub enum ToolNeed {
     Missing(String),
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Recipe {
-    pub ingredients: Vec<(String, u32)>,
-    /// Items produced by one craft.
-    pub yields: u32,
-    /// Needs a 3x3 grid, so a crafting table.
-    pub needs_table: bool,
+/// One visit to a furnace: the output is always taken first, then `input` and `fuel` are
+/// loaded (a foreign item in the input slot is taken out to make room).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FurnaceJob {
+    pub input: Option<(String, u32)>,
+    pub fuel: Option<(String, u32)>,
+}
+
+/// A furnace's three slots as the last visit left them.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FurnaceSlots {
+    pub input: Option<(String, u32)>,
+    pub fuel: Option<(String, u32)>,
+    pub output: Option<(String, u32)>,
 }
 
 /// An item entity lying on the ground.
@@ -65,13 +75,16 @@ pub trait World {
     ) -> Option<BlockPos>;
     fn tool_for(&self, block: &str, snap: &Snapshot) -> ToolNeed;
     fn count_item(&self, item: &str) -> u32;
+    /// Main inventory and hotbar by exact item name, counts summed per name.
+    fn inventory(&self) -> Vec<(String, u32)>;
     /// Items held in the main inventory and hotbar, all kinds together.
     fn total_items(&self) -> u32;
     /// Slot of a stack whose name matches `item`, hotbar first.
     fn item_slot(&self, item: &str) -> Option<Slot>;
     /// Empty main-inventory and hotbar slots.
     fn free_slots(&self) -> u32;
-    fn recipe(&self, item: &str) -> Option<Recipe>;
+    /// The recipe book (empty when the recipe data could not be loaded).
+    fn recipe_book(&self) -> Arc<RecipeBook>;
     /// Item entities within `radius` of `around` whose name matches `item` (all when `None`).
     fn item_drops(&self, item: Option<&str>, around: Vec3, radius: f64) -> Vec<ItemDrop>;
     /// The player is lying in a bed.
@@ -80,9 +93,17 @@ pub trait World {
     fn open_sky(&self, _feet: BlockPos) -> bool {
         true
     }
-    /// Start crafting `crafts` times; `table` is the crafting table to use for 3x3 recipes.
-    fn start_craft(&mut self, item: &str, crafts: u32, table: Option<BlockPos>);
+    /// Start crafting `recipe` `crafts` times; `table` is the crafting table for 3x3 recipes.
+    /// The adapter picks concrete held items for tag ingredients and may craft fewer times
+    /// when no single kind covers a cell (the goal re-plans and goes again).
+    fn start_craft(&mut self, recipe: &Recipe, crafts: u32, table: Option<BlockPos>);
     fn craft_status(&mut self) -> MenuStatus;
+    /// Open the furnace at `pos`, collect its output, load the job and close it again: the
+    /// furnace cooks with its menu closed.
+    fn start_furnace(&mut self, pos: BlockPos, job: &FurnaceJob);
+    fn furnace_status(&mut self) -> MenuStatus;
+    /// The slots the last finished furnace visit saw.
+    fn furnace_seen(&self) -> Option<FurnaceSlots>;
     /// Throw up to `count` of `item` the way the player is facing. Returns how many left
     /// the inventory.
     fn toss(&mut self, item: &str, count: u32) -> u32;

@@ -16,8 +16,8 @@ pub mod travel;
 
 pub use ledger::{Keep, Ledger};
 pub use ports::{
-    kind_matches, ItemDrop, MenuStatus, NavFailure, NavStatus, NavTarget, Navigator, Recipe, Steer,
-    ToolNeed, Work, World,
+    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, NavFailure, NavStatus, NavTarget,
+    Navigator, Steer, ToolNeed, Work, World,
 };
 pub use runner::{GoalHandle, GoalRunner, GoalState, GoalStatus, Reporter};
 pub use spec::{parse, AttackTarget, GoalSpec, Person};
@@ -38,6 +38,7 @@ pub fn build(spec: &GoalSpec) -> Box<dyn GoalTask> {
         GoalSpec::Attack(t) => Box::new(combat::Attack::new(t)),
         GoalSpec::Guard(who) => Box::new(combat::Guard::new(who)),
         GoalSpec::Craft { item, count } => Box::new(items::Craft::new(item, count)),
+        GoalSpec::Smelt { item, count } => Box::new(items::Craft::smelt(item, count)),
         GoalSpec::Give { who, item, count } => Box::new(items::Give::new(who, item, count)),
         GoalSpec::Place {
             block,

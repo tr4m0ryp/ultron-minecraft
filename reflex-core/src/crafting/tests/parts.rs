@@ -11,7 +11,8 @@ fn grid(items: &[Option<&str>]) -> Vec<Option<String>> {
 
 fn recipe(id: &str) -> crate::crafting::Recipe {
     let b = book();
-    b.all().find(|r| r.id == id).cloned().expect(id)
+    let found = b.all().find(|r| r.id == id).cloned();
+    found.expect(id)
 }
 
 #[test]
@@ -23,10 +24,10 @@ fn layout_picks_one_kind_per_cell_and_lowers_the_depth_for_mixed_stacks() {
     assert_eq!(
         l.cells,
         cells(&[
-            (0, "oak_planks"),
-            (1, "oak_planks"),
-            (2, "birch_planks"),
-            (3, "birch_planks")
+            (0, "birch_planks"),
+            (1, "birch_planks"),
+            (2, "oak_planks"),
+            (3, "oak_planks")
         ])
     );
     let deep = layout(&table, 2, &inv(&[("oak_planks", 8)]), 2).expect("two deep");

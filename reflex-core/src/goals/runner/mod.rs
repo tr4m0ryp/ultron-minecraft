@@ -201,10 +201,11 @@ impl Behaviour for GoalRunner {
         };
         match &intent {
             Intent::Craft {
-                item,
+                recipe,
                 crafts,
                 table,
-            } => self.world.start_craft(item, *crafts, *table),
+            } => self.world.start_craft(recipe, *crafts, *table),
+            Intent::Furnace { pos, job } => self.world.start_furnace(*pos, job),
             Intent::Toss { item, count } => {
                 self.world.toss(item, *count);
             }

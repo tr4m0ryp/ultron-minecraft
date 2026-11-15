@@ -3,6 +3,7 @@
 //! while the goal runner owns the boxed port.
 
 mod nav;
+pub mod recipes;
 mod world;
 
 pub use nav::{FakeNav, FakeNavState};

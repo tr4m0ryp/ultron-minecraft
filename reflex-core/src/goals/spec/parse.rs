@@ -56,6 +56,10 @@ pub fn parse(spec: &str, target: Option<Vec3>) -> Result<GoalSpec, String> {
             item: word(0, "an item")?,
             count: count(1)?,
         },
+        "smelt" | "cook" => GoalSpec::Smelt {
+            item: word(0, "an item")?,
+            count: count(1)?,
+        },
         "give" => give(args)?,
         "place" => {
             let block = word(0, "a block")?;

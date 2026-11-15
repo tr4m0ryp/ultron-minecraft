@@ -44,6 +44,11 @@ pub enum GoalSpec {
         item: String,
         count: u32,
     },
+    /// Smelt `count` of the furnace product `item` (iron_ingot, charcoal, glass).
+    Smelt {
+        item: String,
+        count: u32,
+    },
     Give {
         who: Person,
         item: String,
@@ -96,6 +101,7 @@ impl GoalSpec {
             GoalSpec::Attack(_) => "attack",
             GoalSpec::Guard(_) => "guard",
             GoalSpec::Craft { .. } => "craft",
+            GoalSpec::Smelt { .. } => "smelt",
             GoalSpec::Give { .. } => "give",
             GoalSpec::Place { .. } => "place",
             GoalSpec::Break(_) => "break",
