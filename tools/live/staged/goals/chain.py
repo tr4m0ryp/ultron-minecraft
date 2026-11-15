@@ -62,7 +62,9 @@ def shelter():
 
 
 def broken():
-    return [c for c in SHELL if not is_block(*c, WALL)]
+    """Shelter cells without their plank, each miss read twice (an RCON hiccup is no hole)."""
+    miss = [c for c in SHELL if not is_block(*c, WALL)]
+    return [c for c in miss if not is_block(*c, WALL)]
 
 
 def summon(kind, spots):
