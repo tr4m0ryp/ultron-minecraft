@@ -1,0 +1,54 @@
+{
+ "label": "smol135-shots-volatile",
+ "model": "SmolLM2-135M-Instruct-f16.gguf",
+ "cases": "cases.jsonl",
+ "n_cases": 20,
+ "threads": 4,
+ "reps": 3,
+ "shuffled": true,
+ "label_by": "letter",
+ "shots": 8,
+ "volatile": true,
+ "wrong": [
+  "c01:attack",
+  "c07:throw_pearl",
+  "c10:eat",
+  "c19:sleep",
+  "c25:pick_up",
+  "c37:no",
+  "c43:yes",
+  "c46:2",
+  "c49:1",
+  "c52:1",
+  "c58:pufferfish"
+ ],
+ "correct_argmax": 9,
+ "correct_calib": null,
+ "correct_generate": null,
+ "deterministic": true,
+ "prompt_tokens_mean": 1168.0,
+ "suffix_tokens_mean": 36.6,
+ "cold_ms": null,
+ "cached_ms": {
+  "p50": 189.4,
+  "p90": 229.2,
+  "mean": 192.1,
+  "n": 60
+ },
+ "generate_ms": null,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.51,
+  "busy_cores": 1.2,
+  "java_cpu_pct": 0.0,
+  "compilers": [],
+  "waited_s": 53
+ },
+ "during": {
+  "foreign_cores_mean": 0.79,
+  "foreign_cores_max": 1.02,
+  "compilers_seen": [],
+  "samples": 16
+ }
+}
