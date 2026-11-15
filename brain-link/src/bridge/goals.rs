@@ -9,7 +9,7 @@ use reflex_core::{Snapshot, Vec3};
 use crate::wire::{Ack, GoalName, GoalParams};
 
 /// Every goal name the executor runs.
-pub const SUPPORTED_GOALS: [GoalName; 15] = GoalName::ALL;
+pub const SUPPORTED_GOALS: [GoalName; 16] = GoalName::ALL;
 
 const FOLLOW_DEFAULT: f64 = 3.0;
 
