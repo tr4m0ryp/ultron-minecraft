@@ -47,7 +47,12 @@ class Rcon:
         self.req += 1
         data = struct.pack("<ii", self.req, kind) + payload.encode() + b"\x00\x00"
         self.sock.sendall(struct.pack("<i", len(data)) + data)
-        return self._read_packet()
+        # The server splits a long response into several packets; the tail of an earlier
+        # one arrives first and would answer this command. Skip packets for older requests.
+        while True:
+            rid, body = self._read_packet()
+            if rid == self.req or rid == -1:
+                return rid, body
 
     def cmd(self, command: str) -> str:
         return self._send(2, command)[1]

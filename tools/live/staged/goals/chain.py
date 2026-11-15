@@ -116,7 +116,8 @@ def bed(tool):
     rc("time set midnight")
     time.sleep(1.0)
     steps.append(step("sleep_in_bed", 60))
-    sleeping = "sleeping_pos" in rc(f"data get entity {NAME}")
+    # The path alone: the whole player record is split over several RCON packets.
+    sleeping = "has the following" in rc(f"data get entity {NAME} sleeping_pos")
     # Wake: a teleport takes the player out of bed; then the clock goes back to noon.
     rc(f"tp {NAME} {CX + 0.5} {Y + 1} {CZ + 0.5}", "time set noon")
     gone = broken()
