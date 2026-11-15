@@ -176,3 +176,42 @@ fn a_fill_takes_down_the_scaffold_its_walks_put_up() {
     assert!(text.contains("took down 1 scaffold blocks"), "{text}");
     assert_eq!(s.world.state().blocks.get(&scaffold), None);
 }
+
+#[test]
+fn a_roof_is_never_laid_from_under_it() {
+    // Live: laying a hut roof the body stood inside the walls, was roofed in, and dug out
+    // under its own wall to reach the edge cells. Every spot it walks to is now outside the
+    // footprint or on top of the roof.
+    let mut s = Sim::new();
+    for x in 2..=6 {
+        for z in 2..=6 {
+            if x == 2 || x == 6 || z == 2 || z == 6 {
+                s.block(BlockPos::new(x, 64, z), "dirt");
+                s.block(BlockPos::new(x, 65, z), "dirt");
+            }
+        }
+    }
+    s.item("dirt", 64, Some(13));
+    s.place_on_top = true;
+    s.goal("place dirt 2 66 2 6 66 6", true);
+    let mut spots = Vec::new();
+    for _ in 0..4000 {
+        s.step();
+        if let Some(reflex_core::goals::NavTarget::Block { pos, .. }) = s.nav.state().last {
+            if spots.last() != Some(&pos) {
+                spots.push(pos);
+            }
+        }
+        if s.has_event("goal_done") || s.has_event("goal_failed") {
+            break;
+        }
+    }
+    assert!(!spots.is_empty(), "the body walks to a spot");
+    let under: Vec<_> = spots
+        .iter()
+        .filter(|p| (2..=6).contains(&p.x) && (2..=6).contains(&p.z) && p.y < 66)
+        .collect();
+    assert!(under.is_empty(), "stood under the roof at {under:?}");
+    assert!(s.has_event("goal_done"), "{}", s.goal_text("goal_failed"));
+    assert!(s.goal_text("goal_done").contains("placed 25 dirt"));
+}
