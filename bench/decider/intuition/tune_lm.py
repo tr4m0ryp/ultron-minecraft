@@ -4,6 +4,8 @@
 
 The prompt is the pair text and nothing else: no option list and no solved examples, the adapter carries them.
 The loss and the decision are both taken over the first token of each label at the answer position (argmax).
+To fit this CPU the adapter sits on the top --top layers only (no gradient below them) and the output layer is
+applied to the label tokens only; with all 30 layers adapted one epoch over 362 pairs took over 10 minutes.
 """
 import argparse, json, os, random, sys, time
 import torch
@@ -28,9 +30,10 @@ def label_ids(tok, labels):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--set", choices=("real", "real+vary", "real+vary+rules"), default="real")
+    ap.add_argument("--set", choices=("real", "real+rules", "real+vary+rules"), default="real")
     ap.add_argument("--epochs", type=int, default=8); ap.add_argument("--lr", type=float, default=5e-4)
     ap.add_argument("--rank", type=int, default=16); ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--top", type=int, default=8, help="adapt only the top N transformer layers")
     ap.add_argument("--out", required=True); ap.add_argument("--save", default=None)
     a = ap.parse_args()
     from peft import LoraConfig, get_peft_model
@@ -43,14 +46,18 @@ def main():
     tok = AutoTokenizer.from_pretrained(BASE); tok.padding_side = "left"
     tok.pad_token = tok.pad_token or tok.eos_token
     ids = label_ids(tok, labels)
-    model = get_peft_model(AutoModelForCausalLM.from_pretrained(BASE, torch_dtype=torch.float32), LoraConfig(
+    base = AutoModelForCausalLM.from_pretrained(BASE, dtype=torch.float32)
+    n_layers = base.config.num_hidden_layers
+    model = get_peft_model(base, LoraConfig(
         r=a.rank, lora_alpha=2 * a.rank, lora_dropout=0.05, task_type="CAUSAL_LM",
+        layers_to_transform=list(range(n_layers - a.top, n_layers)),
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
+    body, out_w = model.base_model.model.model, model.base_model.model.lm_head.weight
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr)
 
     def logits(ps):
         x = tok([prompt(p) for p in ps], padding=True, truncation=True, max_length=320, return_tensors="pt")
-        return model(**x).logits[:, -1, ids]
+        return body(**x).last_hidden_state[:, -1] @ out_w[ids].T      # left-padded: the last position is 'Answer:'
 
     order = sorted(range(len(train)), key=lambda i: len(prompt(train[i])))   # similar lengths per batch
     chunks = [order[i:i + 16] for i in range(0, len(order), 16)]
@@ -71,7 +78,7 @@ def main():
         P = torch.cat([torch.softmax(logits(ps[i:i + 16]), -1) for i in range(0, len(ps), 16)])
         return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1)]
 
-    res = {"arm": "d 135M + low-rank adapter", "set": a.set, "epochs": a.epochs, "rank": a.rank, "n_train": len(train),
+    res = {"arm": "d 135M + low-rank adapter", "set": a.set, "epochs": a.epochs, "rank": a.rank, "top_layers": a.top, "n_train": len(train),
            "train_s": round(time.time() - t0), "labels": labels,
            "prompt_tokens_mean": round(sum(len(tok.encode(prompt(p))) for p in test_real) / len(test_real), 1)}
     for name, ps in (("test_real", test_real), ("test_hand", hand)):

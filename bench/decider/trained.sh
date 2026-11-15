@@ -23,10 +23,9 @@ classic)   step classic "$EPY" -u "$I/classic.py"; step classic-detail "$EPY" -u
 plan)      INTUITION_PLAN=1 step classic-plan "$EPY" -u "$I/classic.py" ;;
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
 encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 10
-           step encoder-ft-all "$EPY" -u "$I/tune_encoder.py" --set real+vary+rules --epochs 4 ;;
-lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 8
-           step lm135-lora-all "$EPY" -u "$I/tune_lm.py" --set real+vary+rules --epochs 3
-           INTUITION_PLAN=1 step lm135-lora-real-plan "$EPY" -u "$I/tune_lm.py" --set real --epochs 8 ;;
+           step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 6 ;;
+lora)      step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 5
+           step lm135-lora-rules "$EPY" -u "$I/tune_lm.py" --set real+rules --epochs 3 ;;
 untrained) old untrained-smol135-real $S135 lm_test_real; old untrained-smol135-hand $S135 lm_test_hand
            old untrained-qwen15-real $Q15 lm_test_real; old untrained-qwen15-hand $Q15 lm_test_hand ;;
 latency)   step latency-classic "$EPY" -u "$I/latency.py" classic --gate-wait "${GATE_WAIT:-300}"

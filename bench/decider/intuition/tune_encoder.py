@@ -18,7 +18,7 @@ def batches(n, size, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--set", choices=("real", "real+vary", "real+vary+rules"), default="real")
+    ap.add_argument("--set", choices=("real", "real+rules", "real+vary+rules"), default="real")
     ap.add_argument("--epochs", type=int, default=10); ap.add_argument("--lr", type=float, default=5e-5)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--out", required=True)
     ap.add_argument("--save", default=None, help="directory for the trained weights (outside the repository)")
