@@ -1,0 +1,49 @@
+{
+ "label": "laya-421M-t8-r1",
+ "backend": "laya",
+ "threads": 8,
+ "accuracy": 0.4,
+ "correct": 8,
+ "n_cases": 20,
+ "by_kind": {
+  "choice": "4/9",
+  "yesno": "3/6",
+  "score": "0/3",
+  "rank": "1/2"
+ },
+ "single_ms": {
+  "p50": 1816.5,
+  "p90": 2215.8,
+  "p95": 2362.6,
+  "mean": 1882.6,
+  "n": 20
+ },
+ "batch5_ms": {
+  "p50": 7901.7,
+  "p90": 8336.7,
+  "p95": 8336.7,
+  "mean": 7846.8,
+  "n": 3
+ },
+ "load_s": 3.88,
+ "first_call_s": 1.84,
+ "rss_gb": 2.06,
+ "peak_rss_gb": 2.81,
+ "errors": [],
+ "n_errors": 0,
+ "idle": {
+  "gate": "load limit not met",
+  "limit": 0.5,
+  "load1": 2.42,
+  "busy_cores": 1.22,
+  "java_cpu_pct": 0.0,
+  "compilers": [],
+  "waited_s": 68
+ },
+ "during": {
+  "foreign_cores_mean": 0.92,
+  "foreign_cores_max": 1.93,
+  "compilers_seen": [],
+  "samples": 29
+ }
+}
