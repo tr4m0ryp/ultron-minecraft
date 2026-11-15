@@ -12,6 +12,12 @@ def load(name):
     return json.load(open(p)) if os.path.exists(p) else None
 
 
+def tuned():
+    """Result files of the fine-tuned arms that were scored on the two test sets."""
+    fs = sorted(glob.glob(os.path.join(OUT, "encoder-ft-*.json")) + glob.glob(os.path.join(OUT, "lm135-lora-*.json")))
+    return [v for v in (json.load(open(f)) for f in fs) if "test_real" in v]
+
+
 def cell(r):
     return f"{r['k']}/{r['n']} ({r['ci95'][0]} to {r['ci95'][1]})" if r else "n/a"
 
@@ -55,16 +61,14 @@ def main():
             parts = [x.strip() for x in k.split("|")]
             print(f"| {parts[0]}{tag} | {parts[1]} | {cell(v['test_real'])} | {cell(v['test_hand'])} | "
                   f"{cell(v.get('loso'))} | {cov(v['test_real'])} | {cov(v['test_real'], 'cov95_train_threshold')} |")
-    for f in sorted(glob.glob(os.path.join(OUT, "encoder-ft-*.json")) + glob.glob(os.path.join(OUT, "lm135-lora-*.json"))):
-        v = json.load(open(f))
+    for v in tuned():
         print(f"| {v['arm']} | {v['set']} ({v['epochs']} epochs, {v['train_s']} s) | {cell(v['test_real'])} | "
               f"{cell(v['test_hand'])} | n/a | {cov(v['test_real'])} | n/a |")
     print("\naccuracy when acting only above a confidence, test_real (taken: precision %)\n| arm | " +
           " | ".join(f"t={t}" for t in (0.5, 0.6, 0.7, 0.8, 0.9, 0.95)) + " |\n|---|---|---|---|---|---|---|")
     rows = [(k, v["test_real"]) for k, v in (cl or {"arms": {}})["arms"].items() if k.endswith("| real")]
     rows += [(k, v["test_real"]) for k, v in (hb or {"arms": {}})["arms"].items() if k.endswith("real | label")]
-    rows += [(json.load(open(f))["arm"] + " | " + json.load(open(f))["set"], json.load(open(f))["test_real"])
-             for f in sorted(glob.glob(os.path.join(OUT, "*-ft-*.json")) + glob.glob(os.path.join(OUT, "lm135-lora-*.json")))]
+    rows += [(v["arm"] + " | " + v["set"], v["test_real"]) for v in tuned()]
     for k, t in rows:
         print(f"| {k} | " + " | ".join(f"{c['taken']}: {c['precision'] if c['taken'] else '-'}" for c in t["curve"][1:]) + " |")
     if cl:
@@ -85,6 +89,15 @@ def main():
             h = hb["arms"]["c3 habit table | real | label"]["test_real"]["pred"]
             print("encoder-ft-real vs habit table", mcnemar(load("encoder-ft-real")["test_real"]["pred"], h, gold))
             print("a1 vs habit table", mcnemar(a["test_real"]["pred"], h, gold))
+    f3, a4 = load("folds3"), load("encoder-ft-folds3")
+    if f3:
+        print("\n3 folds of whole sessions, all 470 real decisions\n| arm | correct (95 % interval) | a4 only right, arm only right, p |"
+              "\n|---|---|---|")
+        for k, v in f3["arms"].items():
+            pair = mcnemar(a4["all_real"]["pred"], v["pred"], f3["gold"]) if a4 else "n/a"
+            print(f"| {k} | {cell(v)} | {pair} |")
+        if a4:
+            print(f"| {a4['arm']} | {cell(a4['all_real'])} | - |")
     wf = load("wake-filter")
     if wf:
         print(f"\nwake filter, test_real ({wf['waits']['test_real']} waits in 108)\n| arm | threshold from training day | "
