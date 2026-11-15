@@ -778,6 +778,42 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   planned by the goals themselves, none failed. Idle: no goal 2.2 s per minute at night (6.2
   minutes) and 3.7 by day (10.6), waiting with no goal 0.0. Against the 20-minute relay
   above: 25 failures in 65 goals, 15 of them crafts.
+- Wakes on a blocked goal (tools/live/staged/goals/wakes.py, 5 trials per case, WAKE lines
+  counted in the bot log between the goal and its outcome, the outcome checked on the
+  server). In the recorded play Thought answered a goal_blocked wake by waiting in 46 of
+  52 cases (9.7). The 6 others: in 4 the goal ended by itself 4 to 16 ticks later (a done or
+  failed event, which wakes anyway), 1 was a body standing in the cell it had to fill for
+  750 ticks, and 2 were answered by inhibiting the edge guard R5. The rule now: a block the
+  body is working around (a re-plan, a skipped block, a step aside) is a digest line; a
+  wake follows only when blocks keep coming for 200 ticks with no progress in between, when
+  the reason is one only Thought can clear (nobody to follow, monsters round the bed, a
+  target that cannot be reached), or when R5 has held a goal's legs for 60 ticks. Before
+  and after: a go_to into a bedrock shell 10 wakes and 5 (5 blocked wakes became 5 digest
+  lines; the 5 failures still wake), mining with two ore blocks sealed in bedrock and two
+  in the open 15 and 5 (10 blocked wakes became 10 digest lines, 2 of 2 open ores mined
+  5/5 on both builds), follow with the companion out of sight 5 and 5. 30 wakes became 15
+  over the 15 trials. The 200-tick rule and the R5 rule are covered by unit tests only: no
+  staged case holds a block that long.
+- Decision log (brain-link decisions; tools/live/staged/goals/decisions.py over the real
+  tool path). Every set_goal, set_mode, set_gain, inhibit, arm, say and protect that
+  arrives is one JSON line in logs/play/decisions.jsonl (a staged run writes its own file):
+  the tick, the state taken from that tick's snapshot before the call changes anything
+  (health, food, position, time of day, mode, entities, companion, the whole inventory by
+  item name, the running goal with its progress and plan step, the queued goals, the last
+  12 wake and digest events), the call with every parameter, and the body's answer. Live:
+  8 calls gave 8 lines, 28 of 28 checks against the server (position within 1 block of
+  RCON at each call, inventory equal to the server's at 7 of 7 calls compared, the stone
+  pickaxe absent before the craft and present in the first line after it, the running
+  craft goal shown with its plan). Cost on the tick thread, measured by the bot: median
+  71 and 93 us over two runs of 8, at most 125 us, about 1.0 to 1.2 kB a line; a full line
+  (40 entities in range, 43 item kinds) costs 46 us on average in a release build. The log
+  is flushed to the operating system per line and not synced.
+- Ledger timing (tools/live/staged/goals/ledger_kill.py: one dirt block placed by a goal,
+  the bot killed with SIGKILL the instant it prints the confirmation, 10 trials). The file
+  was written only at the audit every 20 ticks: the placed cell was in the file after the
+  kill 0 of 10. Written in the tick the server confirms the block: 10 of 10. A write
+  rewrites and syncs the whole file: 6.3 ms with 2000 cells in it (debug build), on ticks
+  that confirm a block only.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 
@@ -1151,6 +1187,9 @@ that judgement in the recorded play.
   pairs above carry the last observe line Thought saw, often thousands of ticks old), the
   inventory, the running plan step, and the full call with its parameters. Without the
   inventory and the plan the next craft or mine step cannot be predicted by anything.
+  Built the same day (section 8, "Decision log"); no model has been trained on it yet.
+- The wake filter of 9.7 is in the body's event reporting now (section 8, "Wakes on a
+  blocked goal").
 - The fast judgements themselves as the target (mode, gains, arming, inhibiting, fight or
   run): 10 of the 470 recorded decisions. They need play with the companion and with danger,
   which the two recorded days do not contain. Never tested.
