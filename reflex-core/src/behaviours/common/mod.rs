@@ -3,7 +3,7 @@
 mod sight;
 mod terrain;
 
-pub use sight::{cover_spot, line_of_sight, sees, COVER_RADIUS};
+pub use sight::{cover_spot, line_of_sight, ray_clear, sees, COVER_RADIUS};
 pub use terrain::{
     clearance, knockback_room, nearest_ledge, nearest_shore, unsafe_drop, Bound, Ledge, SAFE_FALL,
 };

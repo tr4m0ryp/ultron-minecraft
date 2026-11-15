@@ -144,8 +144,9 @@ impl GoalTask for Fill {
                 }
                 _ => {
                     let rest = self.cells[self.next + 1..].to_vec();
-                    let place =
-                        Place::in_fill(self.block.clone(), pos, rest).replacing(self.replace);
+                    let place = Place::in_fill(self.block.clone(), pos, rest)
+                        .replacing(self.replace)
+                        .over_scaffold(self.cleanup.pending());
                     self.current = Some(place);
                 }
             }
@@ -153,7 +154,12 @@ impl GoalTask for Fill {
         let place = self.current.as_mut().expect("set above");
         let step = place.step(cx);
         if !matches!(step, Step::Bid(_) | Step::Idle) {
-            self.cleanup.add(place.take_scaffold());
+            // A scaffold block a route put into one of the fill's own cells is part of the
+            // build, not something to take down again.
+            let scaffold = place.take_scaffold();
+            let cells = &self.cells;
+            self.cleanup
+                .add(scaffold.into_iter().filter(|b| !cells.contains(b)));
         }
         match step {
             Step::Done(_) => {

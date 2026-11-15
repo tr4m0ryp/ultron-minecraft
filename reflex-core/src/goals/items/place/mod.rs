@@ -3,32 +3,31 @@
 //! (the route planner builds the pillar), places against that face, and takes its
 //! scaffold down afterwards.
 
+mod approach;
 mod cleanup;
 mod clear;
 mod footprint;
+mod in_way;
 mod stand;
 
 pub use cleanup::Cleanup;
 pub use clear::{clearance, Clearance};
 pub use stand::Spot;
+pub(crate) use stand::{eye_at, free, onto_centre};
 
 use super::equip::equip;
 use super::surfaces::replaceable;
-use crate::behaviours::common::away_from;
-use crate::channels::{Commands, LegsCmd, MainCmd, Speed};
-use crate::goals::ports::{kind_matches, NavTarget, Navigator};
+use crate::channels::{Commands, LegsCmd, MainCmd};
+use crate::goals::ports::{kind_matches, Navigator};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
-use crate::goals::travel::route::SCAFFOLD;
-use crate::goals::travel::{Walk, Walker};
+use crate::goals::travel::Walker;
 use crate::math::BlockPos;
 use footprint::{two_cells, AIM_SETTLE};
-use stand::{eye_at, face_point, supports, visible_support, CLICK_MARGIN};
+use stand::{face_point, supports, visible_support, CLICK_MARGIN};
 
 /// Ticks between placement attempts, so the server's answer arrives before a retry.
 const RETRY_GAP: u32 = 5;
 const MAX_ATTEMPTS: u32 = 8;
-/// Standing spots tried before the cell counts as out of reach.
-const MAX_SPOTS: u32 = 3;
 
 pub struct Place {
     block: String,
@@ -40,6 +39,13 @@ pub struct Place {
     aimed: u32,
     spot: Option<Spot>,
     spots_tried: u32,
+    /// Ticks spent stepping onto the middle of the current spot.
+    settle: u32,
+    /// Spots the face was hidden from after all, or that could not be reached.
+    tried: Vec<BlockPos>,
+    in_way: in_way::InWay,
+    /// Scaffold earlier placements of the same fill left standing.
+    scaffold: Vec<BlockPos>,
     /// Cells a fill still has to place: never stand in them or pillar through them.
     keep_clear: Vec<BlockPos>,
     /// The goal said `replace`: clear a placed block or a protected cell too.
@@ -67,6 +73,10 @@ impl Place {
             aimed: 0,
             spot: None,
             spots_tried: 0,
+            settle: 0,
+            tried: Vec::new(),
+            in_way: in_way::InWay::default(),
+            scaffold: Vec::new(),
             keep_clear,
             replace: false,
             clear_ticks: 0,
@@ -81,6 +91,12 @@ impl Place {
         self
     }
 
+    /// Scaffold still standing from earlier placements of the same fill.
+    pub fn over_scaffold(mut self, blocks: &[BlockPos]) -> Self {
+        self.scaffold = blocks.to_vec();
+        self
+    }
+
     /// Scaffold blocks this placement's walks put down.
     pub fn take_scaffold(&mut self) -> Vec<BlockPos> {
         std::mem::take(&mut self.walker.placed)
@@ -90,55 +106,19 @@ impl Place {
         format!("{} {} {}", self.pos.x, self.pos.y, self.pos.z)
     }
 
+    /// A lone placement takes its scaffold down before it reports. In a fill the scaffold
+    /// stays listed for the fill to collect: live, it was taken here and dropped, so the fill
+    /// never took it down and the next cell did not know the block under its feet.
     fn conclude(&mut self, cx: &mut GoalCx, step: Step) -> Step {
-        let scaffold = self.take_scaffold();
-        match self.cleanup.as_mut() {
-            Some(c) if !scaffold.is_empty() => {
-                c.add(scaffold);
-                self.outcome = Some(step);
-                self.step(cx)
-            }
-            _ => step,
-        }
-    }
-
-    fn scaffold_held(cx: &GoalCx) -> u32 {
-        SCAFFOLD.iter().map(|b| cx.world.count_item(b)).sum()
-    }
-
-    /// Walk to a spot that sees a face of a support.
-    fn position(&mut self, cx: &mut GoalCx) -> Step {
-        if self.spot.is_none() {
-            if self.spots_tried >= MAX_SPOTS {
-                return Step::Failed(format!("no spot found that sees a face at {}", self.at()));
-            }
-            let held = Self::scaffold_held(cx);
-            self.spot = stand::find(cx, &self.block, self.pos, &self.keep_clear, held);
-            self.spots_tried += 1;
-            if self.spot.is_none() {
-                return Step::Failed(format!(
-                    "nowhere to stand within reach of {} that sees a face to place against",
-                    self.at()
-                ));
-            }
-        }
-        let spot = self.spot.expect("set above");
-        let t = NavTarget::Block {
-            pos: spot.feet,
-            radius: 0.5,
+        let Some(c) = self.cleanup.as_mut() else {
+            return step;
         };
-        match self.walker.walk(cx, t, "goal_place_walk") {
-            Walk::Moving(p) => Step::Bid(p),
-            // Arrived but the face is still hidden (the world changed): pick another spot.
-            Walk::Arrived => {
-                self.spot = None;
-                Step::Bid(Plan::hold("goal_place"))
-            }
-            Walk::Failed(_) => {
-                self.spot = None;
-                Step::Bid(Plan::hold("goal_place"))
-            }
+        if self.walker.placed.is_empty() {
+            return step;
         }
+        c.add(std::mem::take(&mut self.walker.placed));
+        self.outcome = Some(step);
+        self.step(cx)
     }
 }
 
@@ -187,10 +167,11 @@ impl GoalTask for Place {
         let me = cx.snap().me.clone();
         let feet = me.pos.block();
         if stand::body_overlaps(me.pos, self.pos) {
-            cx.blocked("standing in the spot to fill");
-            let legs = LegsCmd::toward(away_from(me.pos, self.pos.feet_centre()), Speed::Walk);
-            return Step::Bid(Plan::new("goal_place", Commands::default().legs(legs)));
+            let (mine, earlier) = (&self.walker.placed, &self.scaffold);
+            let scaffold = |b| mine.contains(&b) || earlier.contains(&b);
+            return Step::Bid(self.in_way.step(cx, self.pos, scaffold));
         }
+        self.in_way.reset();
         let eye = if me.on_ground { me.eye() } else { eye_at(feet) };
         let Some(support) = visible_support(cx, &self.block, eye, self.pos, &sup, CLICK_MARGIN)
         else {

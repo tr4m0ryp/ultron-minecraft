@@ -32,6 +32,11 @@ impl Cleanup {
         self.left.sort_by_key(|b| b.y);
     }
 
+    /// Scaffold blocks still to take down.
+    pub fn pending(&self) -> &[BlockPos] {
+        &self.left
+    }
+
     pub fn reset_walk(&mut self) {
         self.walker.reset();
     }

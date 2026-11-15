@@ -155,3 +155,24 @@ fn place_climbs_to_see_a_roof_support_above_the_eyes() {
     let spot = raised.unwrap_or_else(|| panic!("walks to a spot: {:?}", s.events("goal_failed")));
     assert!(spot.y >= 65, "eye above the wall top: {spot:?}");
 }
+
+#[test]
+fn a_fill_takes_down_the_scaffold_its_walks_put_up() {
+    // Live: a placement inside a fill dropped its scaffold list when it finished, so the
+    // fill never took the scaffold down and the next cell did not know what it stood on.
+    let mut s = Sim::new();
+    s.item("oak_planks", 8, Some(13));
+    s.place_on_top = true;
+    let scaffold = BlockPos::new(8, 64, 5);
+    s.block(scaffold, "dirt");
+    s.nav.state().placed.push(scaffold);
+    s.goal("place oak_planks 9 64 2 10 64 2", true);
+    assert!(
+        s.run_until(1500, |s| s.has_event("goal_done")),
+        "{}",
+        s.goal_text("goal_failed")
+    );
+    let text = s.goal_text("goal_done");
+    assert!(text.contains("took down 1 scaffold blocks"), "{text}");
+    assert_eq!(s.world.state().blocks.get(&scaffold), None);
+}

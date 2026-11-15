@@ -1,10 +1,14 @@
 //! Where to stand to place a block: a spot whose eye sees a face of a support of the cell
 //! and is within reach, on the floor if one works, else on a short pillar the route
 //! planner builds (one or more scaffold blocks under the feet). Live, every roof block of
-//! the hut was refused with "stand higher" and nothing acted on it.
+//! the hut was refused with "stand higher" and nothing acted on it. "Sees" is a clear
+//! line from the eye to the middle of the face, not only the right side of its plane.
 
+use super::super::sight::hand_sees;
 use super::super::surfaces::{face_visible, opens_on_click, replaceable};
 use super::footprint::{extra_cell, Extra};
+use crate::behaviours::common::heading_to;
+use crate::channels::{Commands, LegsCmd, Speed};
 use crate::goals::task::GoalCx;
 use crate::math::{BlockPos, Vec3};
 
@@ -52,6 +56,18 @@ pub fn body_overlaps(pos: Vec3, cell: BlockPos) -> bool {
         && pos.y < y + 1.0
 }
 
+/// A walk ends up to half a block off its spot, and from there a face the spot's middle
+/// sees can sit behind a corner. The legs command for the last steps onto the middle, or
+/// `None` once the body is there.
+pub fn onto_centre(me: Vec3, feet: BlockPos) -> Option<Commands> {
+    const CLOSE: f64 = 0.12;
+    let centre = feet.feet_centre();
+    let off = (centre - me).horizontal().len();
+    let level = (me.y - centre.y).abs() < 0.6;
+    (level && off > CLOSE)
+        .then(|| Commands::default().legs(LegsCmd::toward(heading_to(me, centre), Speed::Sneak)))
+}
+
 pub fn eye_at(feet: BlockPos) -> Vec3 {
     feet.feet_centre() + Vec3::new(0.0, 1.62, 0.0)
 }
@@ -59,6 +75,14 @@ pub fn eye_at(feet: BlockPos) -> Vec3 {
 pub fn face_point(cell: BlockPos, support: BlockPos) -> Vec3 {
     let c = |b: BlockPos| b.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
     (c(cell) + c(support)) * 0.5
+}
+
+/// The eye has a clear line to the face `support` offers `cell` (aimed a hair inside the
+/// cell, so the support itself is never in the way).
+fn face_in_sight(cx: &GoalCx, eye: Vec3, cell: BlockPos, support: BlockPos) -> bool {
+    let c = |b: BlockPos| b.feet_centre() + Vec3::new(0.0, 0.5, 0.0);
+    let point = c(cell) * 0.51 + c(support) * 0.49;
+    hand_sees(&*cx.world, eye, point, &[])
 }
 
 /// Non-replaceable neighbours of `cell` that take a block on a click.
@@ -88,6 +112,7 @@ pub fn visible_support(
         .iter()
         .copied()
         .filter(|&s| face_visible(eye, s, cell) && eye.dist(face_point(cell, s)) <= REACH)
+        .filter(|&s| face_in_sight(cx, eye, cell, s))
         .filter(|&s| match extra_cell(block, eye, cell, s, margin) {
             Extra::Nothing => true,
             Extra::Cell(p) => free(cx, p),
@@ -107,19 +132,22 @@ pub fn opener_beside(cx: &GoalCx, cell: BlockPos) -> Option<String> {
         .find(|k| opens_on_click(k))
 }
 
-fn free(cx: &GoalCx, p: BlockPos) -> bool {
+/// Open for a body or a block: air or a plant, never water or lava.
+pub fn free(cx: &GoalCx, p: BlockPos) -> bool {
     cx.world
         .block_at(p)
         .is_some_and(|k| replaceable(&k) && k != "water" && k != "lava")
 }
 
 /// The best spot to place into `cell`, never with the body or a pillar in `cell` or in any
-/// of `keep_clear` (cells still to fill).
+/// of `keep_clear` (cells still to fill), and none of `tried` (spots the face turned out
+/// hidden from once the body stood there).
 pub fn find(
     cx: &GoalCx,
     block: &str,
     cell: BlockPos,
     keep_clear: &[BlockPos],
+    tried: &[BlockPos],
     scaffold: u32,
 ) -> Option<Spot> {
     let sup = supports(cx, cell);
@@ -134,7 +162,8 @@ pub fn find(
             for dz in -3..=3 {
                 let feet = cell.offset(dx, dy, dz);
                 let body = [feet, feet.above()];
-                if body.contains(&cell) || body.iter().any(|b| keep_clear.contains(b)) {
+                let barred = tried.contains(&feet) || body.iter().any(|b| keep_clear.contains(b));
+                if body.contains(&cell) || barred {
                     continue;
                 }
                 if visible_support(cx, block, eye_at(feet), cell, &sup, PLAN_MARGIN).is_none() {

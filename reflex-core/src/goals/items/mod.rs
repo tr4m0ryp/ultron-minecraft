@@ -7,6 +7,7 @@ mod equip;
 mod fill;
 mod give;
 pub(crate) mod place;
+mod sight;
 pub(crate) mod surfaces;
 
 pub use break_at::BreakAt;
@@ -16,4 +17,5 @@ pub use equip::equip;
 pub use fill::{Fill, FILL_MAX};
 pub use give::Give;
 pub use place::Place;
+pub use sight::hand_sees;
 pub use surfaces::{opens_on_click, replaceable, soft_natural};

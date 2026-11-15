@@ -12,9 +12,16 @@ fn blocks_sight(k: BlockKind) -> bool {
     k.supports() && k != BlockKind::Cushion
 }
 
-/// True when no sight-blocking block lies on the segment from `a` to `b` (voxel walk,
-/// Amanatides and Woo). The cells holding the two end points are not tested.
+/// True when no sight-blocking block lies on the segment from `a` to `b`. The cells holding
+/// the two end points are not tested.
 pub fn line_of_sight(blocks: &LocalBlocks, a: Vec3, b: Vec3) -> bool {
+    ray_clear(a, b, |cell| !blocks_sight(blocks.get(cell)))
+}
+
+/// Walks the cells the segment from `a` to `b` crosses (voxel walk, Amanatides and Woo) and
+/// asks `open` about each one strictly between the cells of the two end points; false at
+/// the first that is not open.
+pub fn ray_clear(a: Vec3, b: Vec3, mut open: impl FnMut(BlockPos) -> bool) -> bool {
     let d = b - a;
     let len = d.len();
     if len < 1e-9 {
@@ -50,7 +57,7 @@ pub fn line_of_sight(blocks: &LocalBlocks, a: Vec3, b: Vec3) -> bool {
         if cell == end {
             return true;
         }
-        if blocks_sight(blocks.get(cell)) {
+        if !open(cell) {
             return false;
         }
     }

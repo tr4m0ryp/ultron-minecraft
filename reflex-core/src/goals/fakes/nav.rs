@@ -28,6 +28,8 @@ pub struct FakeNavState {
     pub current: Option<NavTarget>,
     /// The last target requested, kept after the request ends.
     pub last: Option<NavTarget>,
+    /// Scaffold blocks to report as placed by the path, handed out on the next poll.
+    pub placed: Vec<BlockPos>,
     planning_left: u32,
     follower: PathFollower,
 }
@@ -125,6 +127,10 @@ impl Navigator for FakeNav {
 
     fn keep(&mut self, cells: Keep) {
         self.0.borrow_mut().keep = cells;
+    }
+
+    fn take_placed(&mut self) -> Vec<BlockPos> {
+        std::mem::take(&mut self.0.borrow_mut().placed)
     }
 
     fn pause(&mut self) {

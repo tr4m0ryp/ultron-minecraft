@@ -11,6 +11,7 @@ mod hunt;
 mod items;
 mod protect;
 mod runner;
+mod sight;
 mod sim;
 mod spec;
 mod trace;
