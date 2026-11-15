@@ -17,6 +17,10 @@ const INPUT: usize = 0;
 const FUEL: usize = 1;
 const OUTPUT: usize = 2;
 const OPEN_TIMEOUT: u32 = 40;
+/// Polls the menu stays open before the first click. The server sends the furnace's slots
+/// after the open; a click on the first open tick saw an empty output, so a collect visit
+/// left three cooked_beef in the furnace and the goal counted the empty input as done.
+const OPEN_SETTLE: u32 = 3;
 /// Polls to keep the menu open after the clicks, for the server's corrections to land (see
 /// `craft::SETTLE_POLLS`).
 const SETTLE_POLLS: u32 = 10;
@@ -26,10 +30,13 @@ enum Job {
     Opening {
         job: FurnaceJob,
         polls: u32,
+        open_for: u32,
     },
     Settling {
         result: Result<(), String>,
         polls: u32,
+        /// The output was still full after the clicks and was taken once more.
+        retook: bool,
     },
     Finished(MenuStatus),
 }
@@ -69,6 +76,7 @@ impl Furnacer {
         self.job = Job::Opening {
             job: job.clone(),
             polls: 0,
+            open_for: 0,
         };
     }
 
@@ -76,10 +84,22 @@ impl Furnacer {
         match &mut self.job {
             Job::Idle => MenuStatus::Idle,
             Job::Finished(s) => s.clone(),
-            Job::Opening { job, polls } => {
+            Job::Opening {
+                job,
+                polls,
+                open_for,
+            } => {
                 if furnace_open(bot) {
+                    *open_for += 1;
+                    if *open_for < OPEN_SETTLE {
+                        return MenuStatus::Busy;
+                    }
                     let result = run(bot, job);
-                    self.job = Job::Settling { result, polls: 0 };
+                    self.job = Job::Settling {
+                        result,
+                        polls: 0,
+                        retook: false,
+                    };
                     return MenuStatus::Busy;
                 }
                 *polls += 1;
@@ -88,12 +108,27 @@ impl Furnacer {
                 }
                 MenuStatus::Busy
             }
-            Job::Settling { result, polls } => {
+            Job::Settling {
+                result,
+                polls,
+                retook,
+            } => {
                 *polls += 1;
                 if *polls < SETTLE_POLLS {
                     return MenuStatus::Busy;
                 }
                 let handle = bot.get_inventory().ok();
+                let menu = handle.as_ref().and_then(|h| clicks::menu(h).ok());
+                if let (Some(h), Some(m)) = (handle.as_ref(), menu.as_ref()) {
+                    if !*retook && clicks::slot(m, OUTPUT).is_some() {
+                        h.click(QuickMoveClick::Left {
+                            slot: OUTPUT as u16,
+                        });
+                        *retook = true;
+                        *polls = 0;
+                        return MenuStatus::Busy;
+                    }
+                }
                 self.seen = handle.and_then(|h| clicks::menu(&h).ok()).map(|m| read(&m));
                 clicks::close(bot);
                 self.job = Job::Finished(match result.clone() {
