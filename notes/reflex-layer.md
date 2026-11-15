@@ -643,6 +643,27 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   (tools/live/staged/batch.py: up to five bots, one walled arena each, 100 blocks apart, at
   20 Hz; server about 10 ms per tick and bot tick gaps unchanged with four running).
 - Mindcraft profile defaults for cowardice vs self_defense were not checked.
+- Movement that changes the world, measured on the goal site (tools/live/staged/goals/
+  terrain.py, iron pickaxe and 32 dirt, 5 trials per case, old build against new). The
+  old planner (Azalea's A* with mining off and walking moves only) reached 0 of 35:
+  every case ended "Unreachable" within 2 to 8 s. The new route planner
+  (reflex-core goals/travel/route: walk, step, drop, dig through natural blocks, staircase
+  up and down, pillar, bridge by sneaking to the edge; walking-only search first, so a
+  walkable route always wins) reached 40 of 40: sealed 2-high pocket with a go_to 5/5
+  (10.6 s), the same pocket with no goal at all 5/5 by the escape drive (14 to 16 s; the
+  old build has no escape), 6-deep pit 5/5 (9 to 13 s), 4-block gap 5/5 (2.5 to 4 s),
+  6-high ledge 5/5 (5 to 6.5 s), 3-thick wall 5/5 (8.6 s), come_here to the companion 38
+  blocks away over a ditch, a 4-high wall and a mound 5/5 (15 to 17 s), give across the
+  same terrain 5/5 (3 of 3 planks arrived each time).
+- Mining yield (tools/live/staged/goals/building.py: dirt over stone, `mine stone 16`, 5
+  trials): the old goal dug down into the stone under it and picked up 0 of 80 broken
+  stone (server mined statistic against cobblestone in the inventory); mining level with
+  the body and stepping into each gap picked up 80 of 80 (30 s per goal).
+- Roof above reach (same script: 5x5 plank room, walls 2 high, roof cells 3 above the
+  floor, one fill goal): the old build placed 0 of 25 per trial ("no face ... is
+  visible"); the new place skill, which stands where its eye sees a support face and
+  pillars there when needed, placed 25 of 25 in 5 of 5 trials (13 to 14 s) and left no
+  scaffold standing.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 
