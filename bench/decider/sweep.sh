@@ -9,7 +9,8 @@ PY="${PY:-$HOME/models/intuition/venv/bin/python}"
 EPY="${EPY:-$HERE/../../third_party/decider/kev/.venv/bin/python}"   # any environment with torch and transformers
 OUT="$HERE/results/sweep"; mkdir -p "$OUT"
 S135=SmolLM2-135M-Instruct; S360=SmolLM2-360M-Instruct; Q05=qwen2.5-0.5b-instruct
-BEST135="${BEST135:-$S135-Q4_K_M}"; BEST360="${BEST360:-$S360-Q4_K_M}"; BEST05="${BEST05:-$Q05-q4_k_m}"
+# 16-bit float weights are the fastest format on this CPU (AVX without AVX2), see the quant phase
+BEST135="${BEST135:-$S135-f16}"; BEST360="${BEST360:-$S360-f16}"; BEST05="${BEST05:-$Q05-fp16}"
 
 run() {  # label file-stem extra args...
   local label=$1 stem=$2; shift 2
@@ -31,8 +32,8 @@ quant)    # (a) 4-bit, 5-bit, 8-bit and 16-bit float weights; (b) argmax against
 threads)  # (d)
   for t in 2 8; do run "smol135-best-t$t" "$BEST135" $M20 --threads $t; run "qwen05-best-t$t" "$BEST05" $M20 --threads $t; done ;;
 small)    # (e) other small models, and one larger model as an accuracy reference
-  run gemma270-Q4_K_M gemma-3-270m-it-Q4_K_M $M20; run lfm350-Q4_K_M LFM2-350M-Q4_K_M $M20
-  run qwen3-06-Q4_K_M Qwen3-0.6B-Q4_K_M $M20; run qwen15-Q4_K_M Qwen2.5-1.5B-Instruct-Q4_K_M --stride 3 --reps 1 ;;
+  run gemma270-f16 gemma-3-270m-it-F16 $M20; run lfm350-f16 LFM2-350M-F16 $M20
+  run qwen3-06-Q8_0 Qwen3-0.6B-Q8_0 $M20; run qwen15-Q4_K_M Qwen2.5-1.5B-Instruct-Q4_K_M --stride 3 --reps 1 ;;
 layout)   # solved examples in the cached prefix; only the volatile state fields evaluated per decision
   for m in "smol135 $BEST135" "smol360 $BEST360" "qwen05 $BEST05"; do set -- $m
     run "$1-shots" "$2" $M20 --shots "$HERE/shots/mixed.jsonl"
