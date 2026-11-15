@@ -103,7 +103,10 @@ if __name__ == "__main__":
                 n0 = len(log_lines())
                 r = CASES[name]()
                 if name == "sealed":
-                    r["ok"] = r["outcome"] == "goal_failed" and bool(trace_lines(n0))
+                    dump = trace_lines(n0)
+                    r["ok"] = r["outcome"] == "goal_failed" and bool(dump)
+                    r["trace_lines"] = len(dump)
+                    r["dump_reason"] = next((l for l in dump if "dump" in l.lower()), None)
                 if not r["ok"]:
                     r["trace"] = trace_lines(n0)
                 print(json.dumps(dict(case=name, trial=k, **r)), flush=True)
