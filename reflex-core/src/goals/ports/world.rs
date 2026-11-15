@@ -41,6 +41,25 @@ pub struct FurnaceSlots {
     pub output: Option<(String, u32)>,
 }
 
+/// Which menu a station visit expects to open.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StationMenu {
+    BrewingStand,
+    Smithing,
+}
+
+/// One visit to a brewing stand or a smithing table, in menu slot numbers (brewing: bottles
+/// 0..=2, reagent 3, fuel 4; smithing: template 0, base 1, addition 2, result 3). The
+/// `take` slots are emptied into the inventory first, then each `put` moves that many of an
+/// item into its slot, then the `result` slots are taken once the server has filled them.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StationJob {
+    pub menu: StationMenu,
+    pub take: Vec<usize>,
+    pub put: Vec<(usize, String, u32)>,
+    pub result: Vec<usize>,
+}
+
 /// An item entity lying on the ground.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ItemDrop {
@@ -104,6 +123,9 @@ pub trait World {
     fn furnace_status(&mut self) -> MenuStatus;
     /// The slots the last finished furnace visit saw.
     fn furnace_seen(&self) -> Option<FurnaceSlots>;
+    /// Open the brewing stand or smithing table at `pos`, run the job and close it again.
+    fn start_station(&mut self, pos: BlockPos, job: &StationJob);
+    fn station_status(&mut self) -> MenuStatus;
     /// Throw up to `count` of `item` the way the player is facing. Returns how many left
     /// the inventory.
     fn toss(&mut self, item: &str, count: u32) -> u32;

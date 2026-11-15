@@ -1,7 +1,7 @@
 //! The contract every goal implements: a resumable state machine stepped once per tick.
 
 use super::ledger::Ledger;
-use super::ports::{FurnaceJob, Navigator, World};
+use super::ports::{FurnaceJob, Navigator, StationJob, World};
 use super::runner::{Block, Reporter};
 use crate::behaviour::Ctx;
 use crate::channels::{Commands, LegsCmd, MainCmd};
@@ -23,6 +23,11 @@ pub enum Intent {
     Furnace {
         pos: BlockPos,
         job: FurnaceJob,
+    },
+    /// One brewing stand or smithing table visit.
+    Station {
+        pos: BlockPos,
+        job: StationJob,
     },
     Toss {
         item: String,

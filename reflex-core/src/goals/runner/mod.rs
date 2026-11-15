@@ -275,6 +275,7 @@ impl Behaviour for GoalRunner {
                 table,
             } => self.world.start_craft(recipe, *crafts, *table),
             Intent::Furnace { pos, job } => self.world.start_furnace(*pos, job),
+            Intent::Station { pos, job } => self.world.start_station(*pos, job),
             Intent::Toss { item, count } => {
                 self.world.toss(item, *count);
             }
