@@ -24,8 +24,7 @@ use companion::CompanionWatch;
 pub const LEDGER_ENV: &str = "ULTRON_LEDGER";
 const DEFAULT_PATH: &str = "logs/play/placed.txt";
 
-/// Ticks between audits of remembered cells near the body (a forgotten cell is written
-/// then; a placed one in the tick it is confirmed).
+/// Ticks between audits of remembered cells near the body.
 const AUDIT_EVERY: u64 = 20;
 const AUDIT_RADIUS: i32 = 24;
 /// Ticks a click may take before the server's answer is given up on.
@@ -96,21 +95,19 @@ impl Watch {
                 _ => true,
             }
         });
-        // Written in the tick the server confirms it, not at the next audit: a bot killed
-        // in between (up to 20 ticks) forgot the block and was free to dig it later. The
-        // line is printed after the write, so it means "on disk".
-        if !confirmed.is_empty() {
-            flush(ledger);
-        }
-        for (c, name) in &confirmed {
-            println!("LEDGER own {} {} {} {name} t={now}", c.x, c.y, c.z);
-        }
         let pending: Vec<BlockPos> = self.clicks.iter().map(|(c, _)| *c).collect();
         self.companion.tick(bot, ledger, snap, &pending);
         if now.is_multiple_of(AUDIT_EVERY) {
             let feet = snap.me.pos.block();
             ledger.audit(feet, AUDIT_RADIUS, |p| block_at(bot, p));
-            flush(ledger);
+        }
+        // Written in the tick the server confirms a block, not at the next audit: a bot
+        // killed in between (up to 20 ticks) forgot the block and was free to dig it later.
+        // Nothing is written on a tick that changed nothing. The line is printed after the
+        // write, so it means "on disk".
+        flush(ledger);
+        for (c, name) in &confirmed {
+            println!("LEDGER own {} {} {} {name} t={now}", c.x, c.y, c.z);
         }
     }
 }
