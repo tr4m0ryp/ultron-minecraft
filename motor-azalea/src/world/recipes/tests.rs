@@ -109,3 +109,77 @@ fn vanilla_book_plans_the_staged_cases() {
         t.elapsed()
     );
 }
+
+#[test]
+fn vanilla_book_plans_brewing_and_smithing() {
+    let path = super::jar_path();
+    if !path.exists() {
+        eprintln!("skipped: no server jar at {}", path.display());
+        return;
+    }
+    let (book, _, skipped) = super::load(&path).expect("jar reads");
+    let at = |station: &str| book.all().filter(|r| r.station() == Some(station)).count();
+    println!(
+        "book {} recipes: brewing {}, smithing {}; skipped {skipped:?}",
+        book.len(),
+        at("brewing_stand"),
+        at("smithing_table")
+    );
+    assert_eq!((at("brewing_stand"), at("smithing_table")), (279, 12));
+    let none = Stations::default();
+    let steps = |item: &str, n: u32, kit: &[(&str, u32)], near: Stations| {
+        plan(&book, &inv(kit), item, n, near, false)
+            .map(|p| p.steps.iter().map(PlanStep::describe).collect::<Vec<_>>())
+    };
+    let upgrade = [
+        ("diamond_pickaxe", 1),
+        ("netherite_upgrade_smithing_template", 1),
+        ("netherite_ingot", 1),
+        ("iron_ingot", 2),
+        ("oak_log", 2),
+    ];
+    let s = steps("netherite_pickaxe", 1, &upgrade, none).expect("upgrade plans");
+    assert_eq!(
+        s.last().map(String::as_str),
+        Some("smith 1 netherite_pickaxe")
+    );
+    assert!(s.contains(&"craft 1 smithing_table".to_string()), "{s:?}");
+    let brew = [
+        ("water_potion", 3),
+        ("nether_wart", 1),
+        ("glistering_melon_slice", 1),
+        ("blaze_powder", 1),
+        ("brewing_stand", 1),
+    ];
+    assert_eq!(
+        steps("healing_potion", 3, &brew, none).expect("brew plans"),
+        ["brew 3 awkward_potion", "brew 3 healing_potion"]
+    );
+    // The two lists the live impossible cases must return, word for word.
+    assert_eq!(
+        steps(
+            "netherite_pickaxe",
+            1,
+            &[("diamond_pickaxe", 1), ("smithing_table", 1)],
+            none
+        )
+        .unwrap_err(),
+        "cannot craft netherite_pickaxe: need 1 netherite_upgrade_smithing_template, have 0; \
+         need 1 netherite_ingot, have 0. Get 1 netherite_upgrade_smithing_template, \
+         1 netherite_ingot."
+    );
+    assert_eq!(
+        steps(
+            "healing_potion",
+            1,
+            &[
+                ("water_potion", 1),
+                ("brewing_stand", 1),
+                ("blaze_powder", 1)
+            ],
+            none
+        )
+        .unwrap_err(),
+        "x"
+    );
+}
