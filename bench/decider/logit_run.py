@@ -95,20 +95,25 @@ class Scorer:
         self.llm._ctx.kv_cache_seq_rm(-1, n, -1)
         self.llm.n_tokens = n
 
+    def row(self):
+        """Logits of the last evaluated token, read from the context (the binding keeps none without logits_all)."""
+        return np.ctypeslib.as_array(self.llm._ctx.get_logits(), shape=(self.llm.n_vocab(),))
+
     def logits(self, ids):
-        row = np.array(self.llm.scores[self.llm.n_tokens - 1], dtype=np.float32)
-        return row[ids]
+        return self.row()[ids].astype(np.float32)
 
     def generate(self, tags, max_new=6):
         """Greedy text answer after the prompt already in context, parsed afterwards. -> option index or None."""
         out = b""
         for _ in range(max_new):
-            t = int(np.argmax(self.llm.scores[self.llm.n_tokens - 1]))
+            t = int(np.argmax(self.row()))
             if t == self.llm.token_eos():
                 break
             out += self.llm.detokenize([t])
             self.llm.eval([t])
         words = out.decode(errors="ignore").strip().replace(".", " ").replace(":", " ").split()
+        if os.environ.get("DEBUG_GEN"):
+            print(repr(out), file=sys.stderr)
         return tags.index(words[0]) if words and words[0] in tags else None
 
 
