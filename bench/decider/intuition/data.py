@@ -56,6 +56,11 @@ def text(p, plan=None):
     return f"plan: {p.get('plan') or 'none'} | {s}" if use else s
 
 
+def prompt(p):
+    """What the adapted language model reads: the pair text and an answer slot."""
+    return f"{text(p)}\nAnswer:"
+
+
 def detail_label(p):
     """Goal plus item, without counts or coordinates: 'craft stick', 'place oak_planks', 'go_to'."""
     d = p.get("detail", p["label"]).split()

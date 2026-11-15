@@ -18,8 +18,7 @@ BASE = os.path.expanduser("~/models/intuition/hf/SmolLM2-135M-Instruct")
 ALIAS = {"set_mode": "mode", "sleep_in_bed": "bed", "eat_now": "eat", "go_to": "go", "come_here": "come"}
 
 
-def prompt(p):
-    return f"{data.text(p)}\nAnswer:"
+prompt = data.prompt
 
 
 def label_ids(tok, labels):

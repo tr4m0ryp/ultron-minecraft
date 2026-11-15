@@ -50,7 +50,7 @@ def classic(a, cases):
 
 def lm(a, cases):
     from logit_run import Scorer
-    from tune_lm import prompt
+    prompt = data.prompt
     sc = Scorer(a.model, a.threads)
     toks = {id(p): sc.tok(prompt(p), True) for p in cases}
 
