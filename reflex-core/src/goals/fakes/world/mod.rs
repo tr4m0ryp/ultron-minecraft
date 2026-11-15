@@ -152,6 +152,17 @@ impl World for FakeWorld {
         self.0.borrow().furnace_seen.clone()
     }
 
+    fn start_station(&mut self, pos: BlockPos, job: &StationJob) {
+        let mut s = self.0.borrow_mut();
+        let ticks = s.craft_ticks;
+        s.station_job = Some((pos, job.clone(), ticks));
+        s.station_status = Some(MenuStatus::Busy);
+    }
+
+    fn station_status(&mut self) -> MenuStatus {
+        self.0.borrow_mut().station_status()
+    }
+
     fn toss(&mut self, item: &str, count: u32) -> u32 {
         let mut s = self.0.borrow_mut();
         let n = s.take_item(item, count);

@@ -4,7 +4,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::crafting::{Recipe, RecipeBook};
-use crate::goals::ports::{kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, ToolNeed};
+use super::stations::Stand;
+use crate::goals::ports::{
+    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed,
+};
 use crate::math::BlockPos;
 use crate::snapshot::Slot;
 
@@ -36,6 +39,10 @@ pub struct FakeWorldState {
     /// Furnace visits that leave the output in the furnace (live: clicks before the
     /// server sent the slots).
     pub furnace_output_missed: u32,
+    /// Brewing stands by position.
+    pub stands: HashMap<BlockPos, Stand>,
+    pub(super) station_job: Option<(BlockPos, StationJob, u32)>,
+    pub(super) station_status: Option<MenuStatus>,
     pub(super) craft: Option<(Recipe, u32, u32)>,
     pub(super) status: Option<MenuStatus>,
     pub(super) furnace_job: Option<(BlockPos, FurnaceJob, u32)>,
