@@ -15,8 +15,9 @@ TOP = Y + 16
 
 def clear():
     """The plain site: its 4-thick floor, open air above it, below it and on either side
-    of it where the walls run past the floor."""
-    rc(f"fill {X0} {Y + 1} 985 {X1} {TOP} 1055 air",
+    of it where the walls run past the floor. The air above goes in three fills: as one
+    (46,576 blocks) it was over the server's 32,768 limit and silently did nothing."""
+    rc(*[f"fill {X0} {Y + 1} {a} {X1} {TOP} {b} air" for a, b in ((985, 1008), (1009, 1032), (1033, 1055))],
        f"fill {X0} {Y - 4} 985 {X1} {Y} {Z0 - 1} air",
        f"fill {X0} {Y - 4} {Z1 + 1} {X1} {Y} 1055 air",
        f"fill {X0} {Y - 4} {Z0} {X1} {Y - 4} {Z1} air",
