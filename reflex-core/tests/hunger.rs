@@ -83,6 +83,40 @@ fn raw_meat_waits_for_the_furnace_until_the_emergency() {
 }
 
 #[test]
+fn raw_meals_at_the_emergency_do_not_wake_thought_again() {
+    // Live: every raw meal at food 6 lifted the bar to 9 and woke thought anew.
+    let mut s = flat();
+    let mut h = Hunger::default();
+    give(&mut s, 2, raw_beef(), 8);
+    let told = |h: &mut Hunger, s: &reflex_core::Snapshot| -> Vec<EventClass> {
+        let (_, ev) = eval(h, s, &knobs());
+        let raw = ev.into_iter().filter(|e| e.kind == "hungry_raw_food");
+        raw.map(|e| e.class).collect()
+    };
+    s.me.food = 10;
+    assert_eq!(told(&mut h, &s), [EventClass::Wake]);
+    for meal in 0..6 {
+        s.tick += 200;
+        s.me.food = 6;
+        assert!(told(&mut h, &s).is_empty(), "meal {meal}: emergency");
+        s.me.food = 9;
+        assert!(told(&mut h, &s).is_empty(), "meal {meal}: same spell");
+    }
+    // Fed, then hungry again soon after: a digest line, not a wake.
+    s.me.food = 20;
+    assert!(told(&mut h, &s).is_empty());
+    s.tick += 1000;
+    s.me.food = 10;
+    assert_eq!(told(&mut h, &s), [EventClass::Digest]);
+    // And a wake again once the quiet time has passed.
+    s.me.food = 20;
+    assert!(told(&mut h, &s).is_empty());
+    s.tick += reflex_core::behaviours::homeostasis::RAW_RETELL_TICKS;
+    s.me.food = 10;
+    assert_eq!(told(&mut h, &s), [EventClass::Wake]);
+}
+
+#[test]
 fn ready_food_is_eaten_before_raw_and_raw_is_kept() {
     let mut s = flat();
     let mut h = Hunger::default();

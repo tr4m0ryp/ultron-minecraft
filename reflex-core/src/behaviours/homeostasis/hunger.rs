@@ -17,12 +17,19 @@ pub struct Hunger {
     low_stock_reported: bool,
     /// Hungry with nothing to eat was told to thought; `Some(true)` once it was an emergency.
     no_food_told: Option<bool>,
-    /// Hungry with only raw food was told to thought.
+    /// Hungry with only raw food: this spell of it was reported.
     raw_told: bool,
+    /// Tick of the last time that woke thought.
+    raw_woke: Option<u64>,
 }
 
 const EMERGENCY_FOOD: u8 = 6;
 const LOW_STOCK: u32 = 5;
+/// Ticks (5 minutes) before "only raw food" may wake thought again; sooner than that a new
+/// spell goes into the digest. Each raw meal at the emergency level lifts the food bar
+/// back over it with raw food still the only food, and every one of those used to be a
+/// fresh wake: one per meal.
+pub const RAW_RETELL_TICKS: u64 = 6000;
 
 impl Behaviour for Hunger {
     fn id(&self) -> &'static str {
@@ -93,25 +100,32 @@ impl Hunger {
         ctx.emit(ev);
     }
 
-    /// Hungry, not yet an emergency, and the only food is raw: the reflex leaves it for the
-    /// furnace, so thought hears once that a smelt (or an explicit meal) is up to it.
+    /// Hungry and the only food is raw: the reflex leaves it for the furnace, so thought
+    /// hears that a smelt (or an explicit meal) is up to it. One spell lasts until the body
+    /// is fed, the raw food is gone or ready food turns up; the emergency meals in between
+    /// do not end it. It wakes thought once per `RAW_RETELL_TICKS`; a new spell before that
+    /// is a digest line.
     fn tell_raw_only(&mut self, ctx: &Ctx, floor: u8) {
         let me = &ctx.snap.me;
         let raw = raw_servings(me);
-        let waiting = me.food <= floor
-            && me.food > EMERGENCY_FOOD
-            && raw > 0
-            && best_ready_food(me).is_none();
-        if !waiting {
+        if me.food > floor || raw == 0 || best_ready_food(me).is_some() {
             self.raw_told = false;
             return;
         }
-        if self.raw_told {
+        if self.raw_told || me.food <= EMERGENCY_FOOD {
             return;
         }
         self.raw_told = true;
+        let now = ctx.snap.tick;
+        let quiet = self.raw_woke.is_some_and(|t| now < t + RAW_RETELL_TICKS);
+        let class = if quiet {
+            EventClass::Digest
+        } else {
+            self.raw_woke = Some(now);
+            EventClass::Wake
+        };
         let ev = ctx
-            .report(EventClass::Wake, "hungry_raw_food", "")
+            .report(class, "hungry_raw_food", "")
             .magnitude(f32::from(20 - me.food.min(20)))
             .text(format!(
                 "food {}/20 and only raw food ({raw}); kept for the furnace: smelt it \
