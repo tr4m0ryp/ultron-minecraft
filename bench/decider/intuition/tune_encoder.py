@@ -16,13 +16,64 @@ def batches(n, size, rng):
     return [idx[i:i + size] for i in range(0, n, size)]
 
 
+def folds(pairs, k):
+    """Whole sessions to k folds, round-robin in time order. -> list of (train, test)."""
+    names = sorted({p["session"] for p in pairs})
+    part = {n: i % k for i, n in enumerate(names)}
+    return [([p for p in pairs if part[p["session"]] != f], [p for p in pairs if part[p["session"]] == f]) for f in range(k)]
+
+
+def fit(train, a, tok_enc, rng):
+    """Train a fresh encoder and head on `train`. -> predict(pairs) -> (labels, confidences), label list."""
+    from transformers import AutoModel
+    tok, enc = tok_enc, AutoModel.from_pretrained(MODEL)
+    labels = sorted({p["label"] for p in train})
+    head = torch.nn.Linear(enc.config.hidden_size, len(labels))
+    opt = torch.optim.AdamW([{"params": enc.parameters(), "lr": a.lr}, {"params": head.parameters(), "lr": 1e-3}])
+
+    def logits(ps):
+        x = tok([data.text(p) for p in ps], padding=True, truncation=True, max_length=256, return_tensors="pt")
+        return head(enc(**x).last_hidden_state[:, 0])
+
+    for ep in range(a.epochs):
+        enc.train()
+        for b in batches(len(train), 16, rng):
+            loss = torch.nn.functional.cross_entropy(logits([train[i] for i in b]),
+                                                     torch.tensor([labels.index(train[i]["label"]) for i in b]))
+            opt.zero_grad(); loss.backward(); opt.step()
+    enc.eval()
+
+    @torch.inference_mode()
+    def predict(ps):
+        P = torch.cat([torch.softmax(logits(ps[i:i + 32]), -1) for i in range(0, len(ps), 32)])
+        return [labels[i] for i in P.argmax(1)], [float(c) for c in P.max(1).values]
+    return predict
+
+
+def cross(a):
+    """--folds K: K-fold over all real sessions, so the trained encoder has a view beside the one test day."""
+    from transformers import AutoTokenizer
+    torch.set_num_threads(a.threads); torch.manual_seed(0); rng = random.Random(0)
+    tr, te = data.real()
+    pred, conf, gold, sess = [], [], [], []
+    for i, (train, test) in enumerate(folds(tr + te, a.folds)):
+        pr, cf = fit(train, a, AutoTokenizer.from_pretrained(MODEL), rng)(test)
+        pred += pr; conf += cf; gold += [p["label"] for p in test]; sess += [(p["session"], p["i"]) for p in test]
+        print("fold", i, len(train), len(test), sum(x == y for x, y in zip(pr, [p["label"] for p in test])), flush=True)
+    res = {"arm": "a4 encoder trained end to end", "folds": a.folds, "epochs": a.epochs, "cases": sess,
+           "all_real": score(pred, conf, gold, None)}
+    json.dump(res, open(a.out, "w"), indent=1)
+
+
 def main():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(); ap.add_argument("--folds", type=int, default=0)
     ap.add_argument("--set", choices=("real", "real+rules", "real+vary+rules"), default="real")
     ap.add_argument("--epochs", type=int, default=10); ap.add_argument("--lr", type=float, default=5e-5)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--out", required=True)
     ap.add_argument("--save", default=None, help="directory for the trained weights (outside the repository)")
     a = ap.parse_args()
+    if a.folds:
+        return cross(a)
     from transformers import AutoModel, AutoTokenizer
     torch.set_num_threads(a.threads); torch.manual_seed(0); rng = random.Random(0)
     train, test_real = data.real()

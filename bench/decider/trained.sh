@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Trained-Intuition measurement: pairs from recorded Thought decisions, then every arm, in sequence.
-#   bench/decider/trained.sh data floors classic plan habit probe encoder latency untrained_small untrained_large \
+#   bench/decider/trained.sh data floors classic plan habit probe encoder folds latency untrained_small untrained_large \
 #                            lora_real lora_rules
 # Weights live outside the repository ($GGUF, $HF); pairs and logs are ignored by git (data/, logs/).
 set -u
@@ -26,6 +26,7 @@ plan)      INTUITION_PLAN=1 step classic-plan "$EPY" -u "$I/classic.py" ;;
 probe)     step classic-lm135-probe "$EPY" -u "$I/classic.py" --encoder lm135 --arms a1,a2,b5 --sets real ;;
 floors)    step floors "$EPY" -u "$I/floors.py"; step wake-filter "$EPY" -u "$I/wake_filter.py" ;;
 habit)     step habit "$EPY" -u "$I/habit.py" ;;
+folds)     step folds3 "$EPY" -u "$I/folds.py"; step encoder-ft-folds3 "$EPY" -u "$I/tune_encoder.py" --folds 3 --epochs 6 ;;
 encoder)   step encoder-ft-real "$EPY" -u "$I/tune_encoder.py" --set real --epochs 6
            step encoder-ft-rules "$EPY" -u "$I/tune_encoder.py" --set real+rules --epochs 3 ;;
 lora_real)  step lm135-lora-real "$EPY" -u "$I/tune_lm.py" --set real --epochs 8 --lr 1e-3 --save "$TRAINED/lm135-lora-real" ;;
