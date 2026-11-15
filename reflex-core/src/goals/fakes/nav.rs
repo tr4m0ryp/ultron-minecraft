@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::goals::ledger::Keep;
 use crate::goals::ports::{NavFailure, NavStatus, NavTarget, Navigator, Steer};
 use crate::goals::travel::route::Cell;
 use crate::goals::travel::PathFollower;
@@ -19,6 +20,8 @@ pub struct FakeNavState {
     pub shut_in: bool,
     /// Ticks spent in `Planning` after each request.
     pub plan_ticks: u32,
+    /// Cells the last request said never to break (the ledger's keep set).
+    pub keep: Keep,
     pub requests: u32,
     pub pauses: u32,
     pub cancels: u32,
@@ -118,6 +121,10 @@ impl Navigator for FakeNav {
                 NavStatus::Moving(Steer::walk(pos, false, d > 8.0))
             }
         }
+    }
+
+    fn keep(&mut self, cells: Keep) {
+        self.0.borrow_mut().keep = cells;
     }
 
     fn pause(&mut self) {

@@ -5,7 +5,8 @@ use crate::snapshot::EntityKind;
 const DEFAULT_FOLLOW: f64 = 3.0;
 
 /// Parses a spec such as `mine iron_ore 3`, `mine(iron_ore, 3)`, `give Steve bread 2`,
-/// `place cobblestone 10 64 -3` or `attack #42`. `target` is the goal's knob target and
+/// `place cobblestone 10 64 -3` (a trailing `replace` clears a placed block or a protected
+/// cell first), `break 10 64 -3` or `attack #42`. `target` is the goal's knob target and
 /// stands in for missing coordinates. Returns a human-readable error on bad input.
 pub fn parse(spec: &str, target: Option<Vec3>) -> Result<GoalSpec, String> {
     let cleaned: String = spec
@@ -63,6 +64,10 @@ pub fn parse(spec: &str, target: Option<Vec3>) -> Result<GoalSpec, String> {
                 .ok_or("place needs x y z")?
                 .block();
             let to = args.get(4..).and_then(coords).map(Vec3::block);
+            let replace = args
+                .iter()
+                .skip(4)
+                .any(|w| w.eq_ignore_ascii_case("replace"));
             if let Some(t) = to {
                 let cells = super::box_cells(pos, t);
                 if cells > crate::goals::items::FILL_MAX as u64 {
@@ -72,7 +77,15 @@ pub fn parse(spec: &str, target: Option<Vec3>) -> Result<GoalSpec, String> {
                     ));
                 }
             }
-            GoalSpec::Place { block, pos, to }
+            GoalSpec::Place {
+                block,
+                pos,
+                to,
+                replace,
+            }
+        }
+        "break" | "remove" => {
+            GoalSpec::Break(coords(args).or(target).ok_or("break needs x y z")?.block())
         }
         "sleep" | "sleep_in_bed" => GoalSpec::SleepInBed,
         "eat" | "eat_now" => GoalSpec::EatNow,

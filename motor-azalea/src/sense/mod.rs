@@ -1,6 +1,6 @@
 //! Azalea client state -> `reflex_core::snapshot::Snapshot`.
 
-mod block_kind;
+pub(crate) mod block_kind;
 mod blocks;
 mod body;
 mod cadence;

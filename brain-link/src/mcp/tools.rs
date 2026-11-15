@@ -49,7 +49,11 @@ pub fn tool_list() -> Vec<Value> {
         tool("wait_event", "Block until something needs you (chat to you, goal reached or interrupted, danger, an armed response fired, a reflex overridden) or the timeout passes. This is your idle loop: call it whenever you have nothing to decide.".into(), json!({
             "timeout_s": {"type": "number", "minimum": 0, "maximum": 300, "default": 30},
         }), &[]),
+<<<<<<< HEAD
         tool("set_goal", format!("Replace your active goal; the old one is queued (up to 3) and resumes after. The body moves, mines and fights on its own. Goals: {}. follow/guard: the companion. go_to/place: pos. place with to as well fills every open cell of the box from pos to to (a wall, floor or roof, at most 64 blocks) in one goal. come_here: to the companion. mine/collect/craft/give: kind and count (give tosses to the companion). attack: kind (zombie, sheep) or #id. sleep_in_bed at night; eat_now. end drops the goal. Outcomes arrive as goal_done/goal_failed events; observe shows status and progress.", runnable.join(", ")), json!({
+=======
+        tool("set_goal", format!("Replace your active goal; the old one is queued (up to 3) and resumes after. The body moves, mines and fights on its own. Goals: {}. follow/guard: the companion. go_to/place/break: pos. place with to as well fills every open cell of the box from pos to to (a wall, floor or roof, at most 64 blocks) in one goal. come_here: to the companion. mine/collect/craft/give: kind and count (give tosses to the companion). attack: kind (zombie) or #id. sleep_in_bed at night; eat_now. end drops the goal. Outcomes arrive as goal_done/goal_failed events; observe shows status and progress.", runnable.join(", ")), json!({
+>>>>>>> d483c5c (feat(goals): remember placed blocks, clear soft cells before placing, add break goal)
             "goal": {"type": "string", "enum": goals},
             "params": {"type": "object", "additionalProperties": false, "properties": {
                 "companion": {"type": "string", "description": "player name, default your companion"},
@@ -58,6 +62,7 @@ pub fn tool_list() -> Vec<Value> {
                 "to": xyz(),
                 "kind": {"type": "string", "description": "block, item or entity id, e.g. iron_ore. collect with no drops near hunts the animal (beef, porkchop, mutton, chicken, wool; shears in the inventory shear sheep)"},
                 "count": {"type": "integer", "minimum": 1},
+                "replace": {"type": "boolean", "description": "place: it digs leaves, dirt, grass, sand, snow and flowers out of its cell by itself, but refuses a cell holding a block you placed or inside a protected box unless replace is true. The break goal (pos) digs exactly that block, even one you placed: the only way to take your own build down"},
             }},
             "priority": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
         }), &["goal"]),
@@ -78,7 +83,7 @@ pub fn tool_list() -> Vec<Value> {
             "strength": {"type": "number", "minimum": 0, "maximum": 1, "default": 1},
             "ttl_s": {"type": "number", "exclusiveMinimum": 0, "description": "omit for no expiry"},
         }), &["reflex"]),
-        tool("protect", "Mark a box the body must never break while it digs its way around (your base, the companion's builds, a farm), with min and max corners. Builds made of planks, cobblestone, glass and the like are never dug anyway; protect natural-block builds (a dirt hut) and anything precious. clear: lift protection from every box containing that point.".into(), json!({
+        tool("protect", "Mark a box the body must never break while it digs its way around (your base, the companion's builds, a farm), with min and max corners. Builds made of planks, cobblestone, glass and the like are never dug anyway; blocks you place yourself are remembered and never dug by routes or escapes (across restarts), and so is the area within two blocks of blocks you see the companion place; protect the rest: natural-block builds you did not place, the companion's older builds, anything precious. clear: lift protection from every box containing that point.".into(), json!({
             "min": xyz(), "max": xyz(), "clear": xyz(),
         }), &[]),
         tool("arm", "Prepare an if-then response the body runs instantly without asking you. Arm ahead of predictable danger, e.g. creeper near companion: place_block_between creeper.".into(), json!({

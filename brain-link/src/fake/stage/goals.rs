@@ -144,7 +144,7 @@ impl GoalSim {
 }
 
 fn label_of(spec: &str) -> &'static str {
-    const LABELS: [&str; 13] = [
+    const LABELS: [&str; 14] = [
         "follow",
         "go_to",
         "come_here",
@@ -156,6 +156,7 @@ fn label_of(spec: &str) -> &'static str {
         "craft",
         "give",
         "place",
+        "break",
         "sleep_in_bed",
         "eat_now",
     ];

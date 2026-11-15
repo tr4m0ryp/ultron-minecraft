@@ -4,9 +4,11 @@
 //! scaffold down afterwards.
 
 mod cleanup;
+mod clear;
 mod stand;
 
 pub use cleanup::Cleanup;
+pub use clear::{clearance, Clearance};
 pub use stand::Spot;
 
 use super::equip::equip;
@@ -36,6 +38,9 @@ pub struct Place {
     spots_tried: u32,
     /// Cells a fill still has to place: never stand in them or pillar through them.
     keep_clear: Vec<BlockPos>,
+    /// The goal said `replace`: clear a placed block or a protected cell too.
+    replace: bool,
+    clear_ticks: u32,
     /// A lone place goal takes its own scaffold down; a fill does it once at the end.
     cleanup: Option<Cleanup>,
     outcome: Option<Step>,
@@ -58,9 +63,17 @@ impl Place {
             spot: None,
             spots_tried: 0,
             keep_clear,
+            replace: false,
+            clear_ticks: 0,
             cleanup: None,
             outcome: None,
         }
+    }
+
+    /// `replace` lets the placement clear whatever is in the cell, placed or protected.
+    pub fn replacing(mut self, replace: bool) -> Self {
+        self.replace = replace;
+        self
     }
 
     /// Scaffold blocks this placement's walks put down.
@@ -137,16 +150,20 @@ impl GoalTask for Place {
             return out;
         }
         let current = cx.world.block_at(self.pos);
-        if current
-            .as_deref()
-            .is_some_and(|n| kind_matches(&self.block, n))
-        {
+        if let Some(n) = current.as_deref().filter(|n| kind_matches(&self.block, n)) {
+            // Seen standing after this goal's own click: the server took it, so it is the
+            // player's own block from now on (the ledger).
+            if self.attempts > 0 {
+                cx.ledger.remember(self.pos, n);
+            }
             let done = Step::Done(format!("placed {} at {}", self.block, self.at()));
             return self.conclude(cx, done);
         }
         if let Some(n) = current.as_deref().filter(|n| !replaceable(n)) {
-            let failed = Step::Failed(format!("{} is occupied by {n}", self.at()));
-            return self.conclude(cx, failed);
+            return match clearance(cx, self.pos, n, self.replace) {
+                Clearance::Refuse(why) => self.conclude(cx, Step::Failed(why)),
+                _ => self.clear(cx, n),
+            };
         }
         let Some(slot) = cx.world.item_slot(&self.block) else {
             return self.conclude(cx, Step::Failed(format!("no {} to place", self.block)));

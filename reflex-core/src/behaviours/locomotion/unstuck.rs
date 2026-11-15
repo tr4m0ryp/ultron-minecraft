@@ -93,10 +93,16 @@ impl Behaviour for Unstuck {
                 } else {
                     ahead.above()
                 };
-                Commands::default()
-                    .legs(LegsCmd::toward(h, Speed::Walk))
-                    .look_at(target.feet_centre() + Vec3::new(0.0, 0.5, 0.0))
-                    .main(MainCmd::Dig(target))
+                let legs = LegsCmd::toward(h, Speed::Walk);
+                if ctx.knobs.kept.contains(target) {
+                    // The player's own block (a hut wall): never dug, wait for thought.
+                    Commands::default().legs(legs)
+                } else {
+                    Commands::default()
+                        .legs(legs)
+                        .look_at(target.feet_centre() + Vec3::new(0.0, 0.5, 0.0))
+                        .main(MainCmd::Dig(target))
+                }
             }
         };
         let urgency = (self.stuck as f32 / WAKE_AFTER_TICKS as f32).min(1.0);

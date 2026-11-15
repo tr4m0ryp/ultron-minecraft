@@ -32,6 +32,9 @@ pub struct Knobs {
     pub report_tokens: usize,
     /// Builds the body must never break, marked by the thought layer.
     pub protected: Vec<Region>,
+    /// Cells of blocks the player placed (and the margin around the companion's), refreshed
+    /// by the adapter each tick from the goal layer's ledger; reflexes never dig them.
+    pub kept: crate::goals::Keep,
     next_id: u64,
 }
 

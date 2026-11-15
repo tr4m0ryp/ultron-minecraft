@@ -7,12 +7,14 @@ pub mod combat;
 pub mod fakes;
 pub mod gather;
 pub mod items;
+pub mod ledger;
 pub mod ports;
 pub mod runner;
 pub mod spec;
 pub mod task;
 pub mod travel;
 
+pub use ledger::{Keep, Ledger};
 pub use ports::{
     kind_matches, ItemDrop, MenuStatus, NavFailure, NavStatus, NavTarget, Navigator, Recipe, Steer,
     ToolNeed, Work, World,
@@ -41,12 +43,15 @@ pub fn build(spec: &GoalSpec) -> Box<dyn GoalTask> {
             block,
             pos,
             to: None,
-        } => Box::new(items::Place::new(block, pos)),
+            replace,
+        } => Box::new(items::Place::new(block, pos).replacing(replace)),
         GoalSpec::Place {
             block,
             pos,
             to: Some(to),
-        } => Box::new(items::Fill::new(block, pos, to)),
+            replace,
+        } => Box::new(items::Fill::new(block, pos, to).replacing(replace)),
+        GoalSpec::Break(pos) => Box::new(items::BreakAt::new(pos)),
         GoalSpec::SleepInBed => Box::new(care::SleepInBed::new()),
         GoalSpec::EatNow => Box::new(care::EatNow::default()),
     }

@@ -19,12 +19,14 @@ pub enum GoalName {
     Craft,
     Give,
     Place,
+    /// Break the one block at `pos`: the explicit removal, even of a block the body placed.
+    Break,
     SleepInBed,
     EatNow,
 }
 
 impl GoalName {
-    pub const ALL: [GoalName; 14] = [
+    pub const ALL: [GoalName; 15] = [
         GoalName::End,
         GoalName::Follow,
         GoalName::GoTo,
@@ -37,6 +39,7 @@ impl GoalName {
         GoalName::Craft,
         GoalName::Give,
         GoalName::Place,
+        GoalName::Break,
         GoalName::SleepInBed,
         GoalName::EatNow,
     ];
@@ -55,6 +58,7 @@ impl GoalName {
             GoalName::Craft => "craft",
             GoalName::Give => "give",
             GoalName::Place => "place",
+            GoalName::Break => "break",
             GoalName::SleepInBed => "sleep_in_bed",
             GoalName::EatNow => "eat_now",
         }
@@ -63,7 +67,7 @@ impl GoalName {
     /// Parameters a goal cannot do without.
     pub fn required(self) -> &'static [&'static str] {
         match self {
-            GoalName::GoTo => &["pos"],
+            GoalName::GoTo | GoalName::Break => &["pos"],
             GoalName::Mine | GoalName::Collect | GoalName::Craft => &["kind"],
             GoalName::Place => &["kind", "pos"],
             GoalName::Attack => &["kind"],
@@ -92,6 +96,10 @@ pub struct GoalParams {
     pub kind: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<u32>,
+    /// place: clear a block the body placed, or a protected cell, that already holds the
+    /// target cell (otherwise such a placement is refused).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replace: Option<bool>,
 }
 
 impl GoalParams {
@@ -103,6 +111,7 @@ impl GoalParams {
             "to" => self.to.is_some(),
             "kind" => self.kind.as_deref().is_some_and(|k| !k.trim().is_empty()),
             "count" => self.count.is_some(),
+            "replace" => self.replace.is_some(),
             _ => false,
         }
     }
@@ -142,6 +151,9 @@ impl GoalParams {
         }
         if let Some(n) = self.count {
             s.push_str(&format!(" count={n}"));
+        }
+        if self.replace == Some(true) {
+            s.push_str(" replace");
         }
         s
     }

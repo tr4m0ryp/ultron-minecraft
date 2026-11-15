@@ -131,9 +131,13 @@ impl Behaviour for GoalRunner {
             self.retire_active(ctx, false);
             self.suspended.clear();
             let preempted = self.preempted;
-            let bid = self
-                .escape
-                .tick(ctx, self.nav.as_mut(), self.world.as_mut(), preempted);
+            let bid = self.escape.tick(
+                ctx,
+                self.nav.as_mut(),
+                self.world.as_mut(),
+                self.handle.ledger(),
+                preempted,
+            );
             self.bid_last = bid.is_some();
             return bid;
         };
@@ -156,6 +160,7 @@ impl Behaviour for GoalRunner {
             nav: self.nav.as_mut(),
             world: self.world.as_mut(),
             rep: &mut a.rep,
+            ledger: self.handle.ledger(),
             preempted: self.preempted,
         };
         let step = task.step(&mut cx);

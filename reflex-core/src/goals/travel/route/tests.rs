@@ -213,3 +213,82 @@ fn natural_terrain_is_told_from_builds() {
     assert_eq!(drop_of("stone"), "cobblestone");
     assert_eq!(drop_of("oak_log"), "oak_log");
 }
+
+/// A 5x5 hut of dirt, floor at 63, walls 64..65 and a roof at 66, the body inside at 64;
+/// `door` opens one wall cell. Returns every wall cell, the ledger's keep set.
+fn hut(g: &Grid, door: bool) -> crate::goals::Keep {
+    let mut cells = Vec::new();
+    for x in 0..=4 {
+        for z in 0..=4 {
+            for y in 64..=66 {
+                let wall = x == 0 || x == 4 || z == 0 || z == 4 || y == 66;
+                if wall {
+                    g.set(p(x, y, z), Cell::STONE);
+                    cells.push(p(x, y, z));
+                }
+            }
+        }
+    }
+    if door {
+        g.set(p(4, 64, 2), Cell::Open);
+        g.set(p(4, 65, 2), Cell::Open);
+        cells.retain(|c| *c != p(4, 64, 2) && *c != p(4, 65, 2));
+    }
+    cells.into_iter().collect()
+}
+
+fn dug_by(r: &Route, kept: &crate::goals::Keep) -> usize {
+    r.hops
+        .iter()
+        .flat_map(|h| h.dig.iter())
+        .filter(|d| kept.contains(**d))
+        .count()
+}
+
+#[test]
+fn a_sealed_dirt_hut_is_dug_only_when_nothing_remembers_it() {
+    let g = Grid::new(G);
+    let kept = hut(&g, false);
+    let goal = near(p(9, 64, 2), 0.5);
+    // Control: with no memory of who placed the walls the planner tunnels straight out.
+    let free = plan(&g, p(2, 64, 2), &goal, &opts(0));
+    assert!(
+        !free.partial && dug_by(&free, &kept) > 0,
+        "control digs the hut"
+    );
+    let mut o = opts(0);
+    o.kept = kept.clone();
+    o.max_nodes = 6_000;
+    let r = plan(&g, p(2, 64, 2), &goal, &o);
+    assert_eq!(
+        dug_by(&r, &kept),
+        0,
+        "never breaks a remembered block: {:?}",
+        r.hops
+    );
+    never_digs_down(&r);
+}
+
+#[test]
+fn a_hut_with_a_door_is_left_by_the_door_and_the_sky_escape_never_breaks_the_walls() {
+    let g = Grid::new(G);
+    let kept = hut(&g, true);
+    let mut o = opts(0);
+    o.kept = kept.clone();
+    let r = plan(&g, p(2, 64, 2), &near(p(9, 64, 2), 0.5), &o);
+    assert!(!r.partial);
+    assert_eq!(r.digs(), 0, "walks out of the door gap");
+
+    let g = Grid::new(G);
+    let kept = hut(&g, false);
+    let mut o = opts(0);
+    o.kept = kept.clone();
+    o.max_nodes = 6_000;
+    let r = plan(&g, p(2, 64, 2), &RouteGoal::Sky { hint: p(2, 80, 2) }, &o);
+    assert_eq!(
+        dug_by(&r, &kept),
+        0,
+        "sky escape leaves the walls: {:?}",
+        r.hops
+    );
+}

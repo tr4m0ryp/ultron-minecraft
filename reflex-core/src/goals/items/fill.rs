@@ -3,7 +3,7 @@
 //! one model call each, which roughly doubled the stretch's cost per minute. A wall, floor
 //! or roof is now one goal.
 
-use super::place::{Cleanup, Place};
+use super::place::{clearance, Cleanup, Clearance, Place};
 use super::surfaces::replaceable;
 use crate::goals::ports::{kind_matches, Navigator};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
@@ -23,6 +23,7 @@ pub struct Fill {
     current: Option<Place>,
     placed: u32,
     occupied: u32,
+    replace: bool,
     failures: Vec<String>,
     cleanup: Cleanup,
     outcome: Option<Step>,
@@ -60,10 +61,17 @@ impl Fill {
             current: None,
             placed: 0,
             occupied: 0,
+            replace: false,
             failures: Vec::new(),
             cleanup: Cleanup::default(),
             outcome: None,
         }
+    }
+
+    /// `replace` lets every cell clear what is in it, placed or protected.
+    pub fn replacing(mut self, replace: bool) -> Self {
+        self.replace = replace;
+        self
     }
 
     fn summary(&self) -> String {
@@ -117,9 +125,16 @@ impl GoalTask for Fill {
             let Some(&pos) = self.cells.get(self.next) else {
                 return self.finish(cx, true);
             };
-            match cx.world.block_at(pos) {
+            let held = cx.world.block_at(pos);
+            // Soft natural blocks are cleared by the cell's own placement; a placed block,
+            // a protected cell or hard ground is left, and counted as held.
+            let refused = held.as_deref().is_some_and(|k| {
+                !replaceable(k)
+                    && matches!(clearance(cx, pos, k, self.replace), Clearance::Refuse(_))
+            });
+            match held {
                 Some(k) if kind_matches(&self.block, &k) => self.next += 1,
-                Some(k) if !replaceable(&k) => {
+                Some(_) if refused => {
                     self.occupied += 1;
                     self.next += 1;
                 }
@@ -129,7 +144,8 @@ impl GoalTask for Fill {
                 }
                 _ => {
                     let rest = self.cells[self.next + 1..].to_vec();
-                    let place = Place::in_fill(self.block.clone(), pos, rest);
+                    let place =
+                        Place::in_fill(self.block.clone(), pos, rest).replacing(self.replace);
                     self.current = Some(place);
                 }
             }

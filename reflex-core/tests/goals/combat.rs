@@ -123,6 +123,7 @@ fn attack_step(
         nav: &mut nav,
         world: &mut world,
         rep: &mut rep,
+        ledger: &reflex_core::goals::Ledger::new(),
         preempted: false,
     };
     reflex_core::goals::combat::Attack::new(AttackTarget::Id(5)).step(&mut cx)

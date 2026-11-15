@@ -8,6 +8,7 @@
 
 use crate::behaviour::{Bid, Ctx, Priority};
 use crate::events::EventClass;
+use crate::goals::ledger::Ledger;
 use crate::goals::ports::{NavStatus, NavTarget, Navigator, World};
 use crate::goals::runner::Reporter;
 use crate::goals::task::GoalCx;
@@ -77,6 +78,7 @@ impl Escape {
         ctx: &Ctx,
         nav: &mut dyn Navigator,
         world: &mut dyn World,
+        ledger: &Ledger,
         preempted: bool,
     ) -> Option<Bid> {
         let feet = ctx.snap.me.pos.block();
@@ -126,6 +128,7 @@ impl Escape {
             nav: &mut *nav,
             world,
             rep: &mut self.rep,
+            ledger,
             preempted,
         };
         let walk = self

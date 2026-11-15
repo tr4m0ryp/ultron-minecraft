@@ -16,7 +16,7 @@ use reflex_core::{
             route::{Region, RouteGoal, RouteOpts},
             PathFollower,
         },
-        NavFailure, NavStatus, NavTarget, Navigator,
+        Keep, NavFailure, NavStatus, NavTarget, Navigator,
     },
     math::{BlockPos, Vec3},
     snapshot::Snapshot,
@@ -37,6 +37,7 @@ pub struct AzaleaNav {
     partial: bool,
     aimed_at: Option<Vec3>,
     protected: Vec<Region>,
+    kept: Keep,
     placed: Vec<BlockPos>,
 }
 
@@ -50,6 +51,7 @@ impl AzaleaNav {
             partial: false,
             aimed_at: None,
             protected: Vec::new(),
+            kept: Keep::default(),
             placed: Vec::new(),
         }
     }
@@ -90,6 +92,7 @@ impl AzaleaNav {
             max_drop: max_drop(),
             scaffold: crate::world::scaffold_count(&self.bot),
             protected: self.protected.clone(),
+            kept: self.kept.clone(),
             ..RouteOpts::default()
         }
     }
@@ -190,6 +193,10 @@ impl Navigator for AzaleaNav {
 
     fn protect(&mut self, regions: &[Region]) {
         self.protected = regions.to_vec();
+    }
+
+    fn keep(&mut self, cells: Keep) {
+        self.kept = cells;
     }
 
     fn take_placed(&mut self) -> Vec<BlockPos> {

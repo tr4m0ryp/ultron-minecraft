@@ -18,6 +18,7 @@ struct Local {
     inbox: Inbox,
     trace: Trace,
     goals: reflex_core::goals::GoalHandle,
+    ledger_watch: crate::ledger::Watch,
     link: Option<super::Link>,
 }
 
@@ -72,11 +73,14 @@ impl State {
                     inbox: Inbox::spawn_stdin(),
                     trace: Trace::default(),
                     goals,
+                    ledger_watch: Default::default(),
                     link: super::Link::mount(),
                 }
             });
             let mut say = l.inbox.drain(&mut l.exec);
+            l.exec.knobs.kept = l.goals.ledger().keep();
             let out = l.exec.tick(&snap);
+            l.ledger_watch.tick(bot, l.goals.ledger(), &snap, &out);
             crate::nav::set_max_drop(l.exec.knobs.gains.safe_drop());
             l.goals.settle(&mut l.exec.knobs);
             l.trace.tick(&snap, &l.exec, sensed);

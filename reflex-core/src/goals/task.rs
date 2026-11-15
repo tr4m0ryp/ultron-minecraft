@@ -1,5 +1,6 @@
 //! The contract every goal implements: a resumable state machine stepped once per tick.
 
+use super::ledger::Ledger;
 use super::ports::{Navigator, World};
 use super::runner::Reporter;
 use crate::behaviour::Ctx;
@@ -97,6 +98,8 @@ pub struct GoalCx<'a> {
     pub nav: &'a mut dyn Navigator,
     pub world: &'a mut dyn World,
     pub rep: &'a mut Reporter,
+    /// Blocks the player placed: never dug by a route, never cleared by a placement.
+    pub ledger: &'a Ledger,
     /// The goal bid last tick and lost: a reflex holds the body. Timers should not run.
     pub preempted: bool,
 }

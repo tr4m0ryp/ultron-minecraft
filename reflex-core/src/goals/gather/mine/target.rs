@@ -1,7 +1,7 @@
 //! Which block to mine next: one level with the body (head height first, then feet) in a
 //! neighbouring column, so mining advances a walkable tunnel; otherwise the nearest one,
 //! reached from the side by the route planner. Never a block that would let water or lava
-//! in, never one inside a protected region.
+//! in, never one inside a protected region or one the player placed.
 
 use crate::goals::ports::kind_matches;
 use crate::goals::task::GoalCx;
@@ -18,7 +18,7 @@ fn liquid(name: &str) -> bool {
 
 /// Breaking `p` keeps water and lava out and leaves protected builds alone.
 pub fn safe(cx: &GoalCx, p: BlockPos) -> bool {
-    if cx.knobs().protected.iter().any(|r| r.contains(p)) {
+    if cx.ledger.blocks_dig(p) || cx.knobs().protected.iter().any(|r| r.contains(p)) {
         return false;
     }
     [

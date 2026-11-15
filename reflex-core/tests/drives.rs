@@ -8,7 +8,7 @@ use reflex_core::channels::{Channel, InvCmd, MainCmd};
 use reflex_core::knobs::GainName;
 use reflex_core::predict::Efference;
 use reflex_core::snapshot::{ChatEvent, Companion, EntityKind, ItemKind, ItemStack};
-use reflex_core::{EventClass, Executor, Priority, Vec3};
+use reflex_core::{BlockPos, EventClass, Executor, Priority, Vec3};
 
 #[test]
 fn h1_hunger_eats_below_floor_only_when_safe() {
@@ -296,6 +296,39 @@ fn c6_unstuck_escalates_then_wakes_over_a_tick_sequence() {
             "moving, not stuck"
         );
     }
+}
+
+/// Digs `C6` commands over a long stuck spell, with `kept` marking the cells ahead.
+fn unstuck_digs(kept: bool) -> usize {
+    let mut s = flat();
+    let mut ex = Executor::with_behaviours(
+        BOT,
+        vec![
+            Box::new(Unstuck::default()),
+            Box::new(reflex_core::behaviours::GoalExecutor::default()),
+        ],
+    );
+    if kept {
+        // The player's own wall: every cell in front of the body, at both heights.
+        ex.knobs.kept = (0..4)
+            .flat_map(|dx| (0..3).map(move |dy| BlockPos::new(dx, 63 + dy, 0)))
+            .collect();
+    }
+    ex.knobs
+        .set_goal("walk east", 0.8, Some(Vec3::new(20.0, 64.0, 0.5)), false);
+    let mut digs = 0;
+    for t in 0..330 {
+        s.tick = 1000 + t;
+        let out = ex.tick(&s);
+        digs += usize::from(matches!(out.main, Some(MainCmd::Dig(_))));
+    }
+    digs
+}
+
+#[test]
+fn c6_unstuck_never_digs_the_players_own_blocks() {
+    assert!(unstuck_digs(false) > 0, "control: the last stage digs");
+    assert_eq!(unstuck_digs(true), 0, "a kept block is waited at, not dug");
 }
 
 #[test]

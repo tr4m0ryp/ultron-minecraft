@@ -6,6 +6,7 @@
 #   tools/play.sh stop                                 stop the bot
 #   tools/play.sh status                               is it running, which socket
 # Stdin commands for the bot (task <spec>, goal-end, say <text>) go to logs/play/bot.in.
+# The blocks the bot placed are remembered in logs/play/placed.txt (override: ULTRON_LEDGER).
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 RUN="$REPO/logs/play"
@@ -42,7 +43,7 @@ echo "building release (no-op when up to date)..."
 : > "$RUN/bot.in"
 cd "$REPO"
 setsid bash -c "tail -f '$RUN/bot.in' | RUST_LOG=\${RUST_LOG:-warn} \
-  target/release/motor-azalea '$ADDR' '$NAME' '$COMPANION' > '$RUN/bot.log' 2>&1" \
+  ULTRON_LEDGER='\${ULTRON_LEDGER:-$RUN/placed.txt}' target/release/motor-azalea '$ADDR' '$NAME' '$COMPANION' > '$RUN/bot.log' 2>&1" \
   < /dev/null > /dev/null 2>&1 &
 echo $! > "$PID"
 

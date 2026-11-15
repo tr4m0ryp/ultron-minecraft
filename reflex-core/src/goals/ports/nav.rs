@@ -1,3 +1,4 @@
+use crate::goals::ledger::Keep;
 use crate::goals::travel::route::{Placement, Region};
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::Snapshot;
@@ -90,6 +91,8 @@ pub trait Navigator {
     fn cancel(&mut self);
     /// Regions the path must never break (the thought layer's protected builds).
     fn protect(&mut self, _regions: &[Region]) {}
+    /// Cells the path must never break (blocks the player placed); sent with each request.
+    fn keep(&mut self, _cells: Keep) {}
     /// Scaffold blocks the path placed since the last call, for a goal to clean up.
     fn take_placed(&mut self) -> Vec<BlockPos> {
         Vec::new()

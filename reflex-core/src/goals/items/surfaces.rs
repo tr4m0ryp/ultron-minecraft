@@ -39,6 +39,51 @@ pub fn replaceable(name: &str) -> bool {
     )
 }
 
+/// Natural blocks a placement may dig out of its way first: leaves, loose and soft ground,
+/// snow and flora. Stone, ores and anything a player builds with stay: a placement into
+/// those fails unless the goal says `replace`.
+pub fn soft_natural(name: &str) -> bool {
+    const EXACT: [&str; 36] = [
+        "dirt",
+        "coarse_dirt",
+        "rooted_dirt",
+        "grass_block",
+        "podzol",
+        "mycelium",
+        "dirt_path",
+        "farmland",
+        "mud",
+        "clay",
+        "sand",
+        "red_sand",
+        "gravel",
+        "snow_block",
+        "moss_block",
+        "moss_carpet",
+        "pale_moss_block",
+        "pale_moss_carpet",
+        "dandelion",
+        "poppy",
+        "blue_orchid",
+        "allium",
+        "azure_bluet",
+        "oxeye_daisy",
+        "cornflower",
+        "lily_of_the_valley",
+        "torchflower",
+        "sunflower",
+        "lilac",
+        "rose_bush",
+        "peony",
+        "pink_petals",
+        "wildflowers",
+        "sweet_berry_bush",
+        "brown_mushroom",
+        "red_mushroom",
+    ];
+    EXACT.contains(&name) || name.ends_with("_leaves") || name.ends_with("_tulip")
+}
+
 /// Blocks whose right click opens a menu or toggles them, so a click on them never places.
 pub fn opens_on_click(name: &str) -> bool {
     const EXACT: [&str; 24] = [
@@ -113,6 +158,33 @@ mod tests {
         let side = BlockPos::new(8, 73, 6);
         assert!(face_visible(Vec3::new(8.5, 72.62, 7.5), side, roof));
         assert!(!face_visible(inside_eye, side, roof));
+    }
+
+    #[test]
+    fn soft_natural_blocks_are_leaves_ground_and_flora_not_stone_or_builds() {
+        for b in [
+            "oak_leaves",
+            "dirt",
+            "grass_block",
+            "sand",
+            "gravel",
+            "snow_block",
+            "poppy",
+            "red_tulip",
+            "mud",
+        ] {
+            assert!(soft_natural(b), "{b}");
+        }
+        for b in [
+            "stone",
+            "iron_ore",
+            "oak_planks",
+            "cobblestone",
+            "bedrock",
+            "air",
+        ] {
+            assert!(!soft_natural(b), "{b}");
+        }
     }
 
     #[test]

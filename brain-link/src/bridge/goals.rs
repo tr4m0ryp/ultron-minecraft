@@ -9,7 +9,7 @@ use reflex_core::{Snapshot, Vec3};
 use crate::wire::{Ack, GoalName, GoalParams};
 
 /// Every goal name the executor runs.
-pub const SUPPORTED_GOALS: [GoalName; 14] = GoalName::ALL;
+pub const SUPPORTED_GOALS: [GoalName; 15] = GoalName::ALL;
 
 const FOLLOW_DEFAULT: f64 = 3.0;
 
@@ -88,8 +88,22 @@ pub fn layer_spec(
             let v = pos.ok_or("goal place needs param 'pos'")?;
             let to =
                 p.to.map(|[x, y, z]| format!(" {}", xyz(Vec3::new(x, y, z))));
-            let spec = format!("place {} {}{}", kind(), xyz(v), to.unwrap_or_default());
+            let replace = if p.replace == Some(true) {
+                " replace"
+            } else {
+                ""
+            };
+            let spec = format!(
+                "place {} {}{}{replace}",
+                kind(),
+                xyz(v),
+                to.unwrap_or_default()
+            );
             (spec, Some(v), true)
+        }
+        GoalName::Break => {
+            let v = pos.ok_or("goal break needs param 'pos'")?;
+            (format!("break {}", xyz(v)), Some(v), true)
         }
         GoalName::SleepInBed => ("sleep_in_bed".into(), None, true),
         GoalName::EatNow => ("eat_now".into(), None, false),

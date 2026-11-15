@@ -76,6 +76,8 @@ impl Cleanup {
             };
         }
         self.walker.stop(cx);
+        // Taking its own scaffold down is explicit: the ledger lets go of it first.
+        cx.ledger.forget(b);
         let name = cx.world.block_at(b).unwrap_or_default();
         if let ToolNeed::Have(slot) = cx.world.tool_for(&name, cx.snap()) {
             if let Some(c) = equip(&me, slot) {

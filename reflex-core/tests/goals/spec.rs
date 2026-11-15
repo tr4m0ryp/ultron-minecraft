@@ -81,7 +81,8 @@ fn parses_every_goal_form() {
         GoalSpec::Place {
             block: "cobblestone".into(),
             pos: BlockPos::new(2, 64, -1),
-            to: None
+            to: None,
+            replace: false
         }
     );
     assert_eq!(
@@ -89,7 +90,8 @@ fn parses_every_goal_form() {
         GoalSpec::Place {
             block: "oak_planks".into(),
             pos: BlockPos::new(2, 64, -1),
-            to: Some(BlockPos::new(6, 66, -1))
+            to: Some(BlockPos::new(6, 66, -1)),
+            replace: false
         }
     );
     assert!(parse("place dirt 0 64 0 9 64 9", None)

@@ -36,6 +36,10 @@ pub fn work_plan(
     let base = Commands::default().legs(legs);
     match w {
         Work::Dig(c) => {
+            // The path was planned before this block was placed or seen placed.
+            if cx.ledger.blocks_dig(c) {
+                return Err(NavFailure::Unreachable);
+            }
             let tool = cx
                 .world
                 .block_at(c)

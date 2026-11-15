@@ -2,12 +2,14 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use super::status::GoalStatus;
+use crate::goals::ledger::Ledger;
 use crate::knobs::Knobs;
 
 #[derive(Debug, Default)]
 struct Inner {
     finished: Cell<Option<u64>>,
     status: RefCell<Option<GoalStatus>>,
+    ledger: Ledger,
 }
 
 /// Shared between the goal runner and the adapter's tick loop. The runner records the id of
@@ -18,6 +20,18 @@ struct Inner {
 pub struct GoalHandle(Rc<Inner>);
 
 impl GoalHandle {
+    /// A handle whose goals share `ledger`, the record of blocks the player placed.
+    pub fn with_ledger(ledger: Ledger) -> Self {
+        Self(Rc::new(Inner {
+            ledger,
+            ..Inner::default()
+        }))
+    }
+
+    pub fn ledger(&self) -> &Ledger {
+        &self.0.ledger
+    }
+
     pub(super) fn finish(&self, goal_id: u64) {
         self.0.finished.set(Some(goal_id));
     }

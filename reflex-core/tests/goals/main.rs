@@ -7,6 +7,7 @@ mod escape;
 mod gather;
 mod hunt;
 mod items;
+mod protect;
 mod runner;
 mod sim;
 mod spec;

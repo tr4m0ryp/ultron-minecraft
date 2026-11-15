@@ -96,6 +96,7 @@ impl Walker {
             }
             let snap = cx.ctx.snap;
             cx.nav.protect(&cx.ctx.knobs.protected);
+            cx.nav.keep(cx.ledger.keep());
             cx.nav.request(target, snap);
             self.target = Some(target);
             self.paused = false;

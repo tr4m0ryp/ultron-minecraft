@@ -49,12 +49,18 @@ pub enum GoalSpec {
         item: String,
         count: u32,
     },
-    /// One block at `pos`, or every open cell of the box from `pos` to `to`.
+    /// One block at `pos`, or every open cell of the box from `pos` to `to`. Cells held by
+    /// soft natural blocks (leaves, dirt, grass, sand, flowers) are cleared first; cells
+    /// held by a block the player placed or inside a protected region are left alone unless
+    /// `replace` is set.
     Place {
         block: String,
         pos: BlockPos,
         to: Option<BlockPos>,
+        replace: bool,
     },
+    /// Break the one block at `pos`, even one the player placed: the explicit removal.
+    Break(BlockPos),
     SleepInBed,
     EatNow,
 }
@@ -92,6 +98,7 @@ impl GoalSpec {
             GoalSpec::Craft { .. } => "craft",
             GoalSpec::Give { .. } => "give",
             GoalSpec::Place { .. } => "place",
+            GoalSpec::Break(_) => "break",
             GoalSpec::SleepInBed => "sleep_in_bed",
             GoalSpec::EatNow => "eat_now",
         }

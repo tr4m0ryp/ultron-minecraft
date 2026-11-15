@@ -7,6 +7,7 @@ mod walk;
 
 use super::cell::{Cell, Region, Terrain};
 use super::hop::{Hop, HopKind};
+use crate::goals::ledger::Keep;
 use crate::math::BlockPos;
 
 pub const WALK: f32 = 4.63;
@@ -35,6 +36,8 @@ pub struct RouteOpts {
     pub dig: bool,
     /// Never break anything inside these.
     pub protected: Vec<Region>,
+    /// Never break these cells: blocks the player placed (the ledger's keep set).
+    pub kept: Keep,
     /// Nodes expanded before the search returns its best partial route.
     pub max_nodes: usize,
     /// Heuristic weight: above 1 the search heads for the goal greedily, which keeps it
@@ -49,6 +52,7 @@ impl Default for RouteOpts {
             scaffold: 0,
             dig: true,
             protected: Vec::new(),
+            kept: Keep::default(),
             max_nodes: 30_000,
             weight: 2.5,
         }
@@ -80,7 +84,7 @@ pub struct Moves<'a> {
 
 impl Moves<'_> {
     fn may_dig(&self, p: BlockPos) -> bool {
-        self.o.dig && !self.o.protected.iter().any(|r| r.contains(p))
+        self.o.dig && !self.o.kept.contains(p) && !self.o.protected.iter().any(|r| r.contains(p))
     }
 
     /// Breaking `p` must not open water or lava onto the body: no liquid above or beside.
