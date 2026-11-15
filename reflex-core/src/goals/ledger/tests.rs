@@ -72,3 +72,39 @@ fn the_file_round_trips_and_a_missing_file_is_empty() {
     assert!(!Ledger::open(&path).is_placed(p(-3, 70, 4)));
     let _ = std::fs::remove_dir_all(dir);
 }
+
+#[test]
+fn protected_boxes_survive_a_restart_and_follow_the_knobs() {
+    let dir = std::env::temp_dir().join(format!("ledger-regions-{}", std::process::id()));
+    let path = dir.join("placed.txt");
+    let base = Region::new(p(10, 60, 10), p(0, 70, 0));
+    let farm = Region::new(p(20, 64, 20), p(24, 65, 24));
+    let l = Ledger::open(&path);
+    let mut live = vec![base];
+    l.sync_regions(&mut live);
+    l.remember(p(1, 64, 1), "dirt");
+    l.flush().unwrap();
+
+    let again = Ledger::open(&path);
+    assert_eq!(again.regions(), vec![base]);
+    assert!(
+        again.is_placed(p(1, 64, 1)),
+        "cells and boxes share the file"
+    );
+    let mut live = vec![farm];
+    again.sync_regions(&mut live);
+    assert_eq!(
+        live,
+        vec![farm, base],
+        "restored boxes join one marked before"
+    );
+    live.retain(|r| *r != base);
+    again.sync_regions(&mut live);
+    again.flush().unwrap();
+    assert_eq!(
+        Ledger::open(&path).regions(),
+        vec![farm],
+        "a lifted box is gone"
+    );
+    let _ = std::fs::remove_dir_all(dir);
+}
