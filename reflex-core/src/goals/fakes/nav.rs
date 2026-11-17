@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::goals::ledger::Keep;
-use crate::goals::ports::{NavFailure, NavStatus, NavTarget, Navigator, Steer};
+use crate::goals::ports::{NavFailure, NavStatus, NavTarget, Navigator, Steer, Work};
 use crate::goals::travel::route::Cell;
 use crate::goals::travel::PathFollower;
 use crate::math::BlockPos;

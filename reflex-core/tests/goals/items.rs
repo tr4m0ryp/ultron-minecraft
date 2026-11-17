@@ -1,4 +1,5 @@
 use crate::sim::Sim;
+use reflex_core::channels::MainCmd;
 use reflex_core::BlockPos;
 
 #[test]
