@@ -250,3 +250,32 @@ fn mine_tunnels_level_with_the_body_and_walks_over_the_drops() {
     );
     assert!(s.goal_text("goal_done").contains("picked up 6 cobblestone"));
 }
+
+#[test]
+fn an_ore_the_route_broke_on_the_way_counts_as_mined() {
+    // Live: two ores in bedrock boxes open underneath were reached by a tunnel up through
+    // them; the route's hand broke each, and the goal said "mined 0 iron_ore, picked up 2
+    // raw_iron".
+    let mut s = Sim::new();
+    let ores = [BlockPos::new(8, 64, 0), BlockPos::new(9, 64, 3)];
+    for p in ores {
+        s.block(p, "iron_ore");
+    }
+    s.hotbar(2, ItemKind::Pickaxe, 1);
+    s.world
+        .state()
+        .tools
+        .insert("iron_ore".into(), ToolNeed::Have(2));
+    s.nav.state().digs_target = ores.to_vec();
+    s.goal("mine iron_ore 2", true);
+    assert!(
+        s.run_until(1500, |s| s.has_event("goal_done")),
+        "{}",
+        s.goal_text("goal_failed")
+    );
+    let text = s.goal_text("goal_done");
+    assert!(
+        text.contains("mined 2 iron_ore, picked up 2 raw_iron"),
+        "{text}"
+    );
+}

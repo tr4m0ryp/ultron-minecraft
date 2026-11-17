@@ -30,6 +30,9 @@ pub struct FakeNavState {
     pub last: Option<NavTarget>,
     /// Scaffold blocks to report as placed by the path, handed out on the next poll.
     pub placed: Vec<BlockPos>,
+    /// `Beside` targets the path reaches by breaking the target block itself (an ore the
+    /// only way to which is a tunnel up through it): the path's hand digs at it.
+    pub digs_target: Vec<BlockPos>,
     planning_left: u32,
     follower: PathFollower,
 }
@@ -98,6 +101,11 @@ impl Navigator for FakeNav {
             NavTarget::Block { pos, .. } | NavTarget::Beside { block: pos } => {
                 if s.unreachable.contains(&pos) {
                     return NavStatus::Failed(NavFailure::Unreachable);
+                }
+                if s.digs_target.contains(&pos) && matches!(target, NavTarget::Beside { .. }) {
+                    let mut steer = Steer::walk(snap.me.pos, false, false);
+                    steer.work = Some(Work::Dig(pos));
+                    return NavStatus::Moving(steer);
                 }
                 match s.follower.steer(snap, &|_| Cell::Open) {
                     None => NavStatus::Arrived,
