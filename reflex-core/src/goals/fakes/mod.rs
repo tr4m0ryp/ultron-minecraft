@@ -2,6 +2,7 @@
 //! its state behind a shared handle so a test (or a simulator) can inspect and change it
 //! while the goal runner owns the boxed port.
 
+mod deep;
 mod nav;
 pub mod recipes;
 mod stations;
