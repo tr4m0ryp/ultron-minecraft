@@ -46,12 +46,17 @@ pub enum Shape {
         base: Ingredient,
         addition: Ingredient,
     },
+    /// One empty bottle used on a water source gives one water bottle. Not in the data
+    /// pack: the game has it as the bottle's own use.
+    Fill { input: Ingredient },
 }
 
 pub const TABLE: &str = "crafting_table";
 pub const FURNACE: &str = "furnace";
 pub const BREWING_STAND: &str = "brewing_stand";
 pub const SMITHING_TABLE: &str = "smithing_table";
+/// The "station" of a bottle fill: a water source block, found and never made.
+pub const WATER: &str = "water";
 /// Brewing stand fuel; one powder lasts `BREWS_PER_POWDER` batches.
 pub const BLAZE_POWDER: &str = "blaze_powder";
 pub const BREWS_PER_POWDER: u32 = 20;
@@ -88,16 +93,18 @@ impl Recipe {
             Shape::Smelt { .. } => Some(FURNACE),
             Shape::Brew { .. } => Some(BREWING_STAND),
             Shape::Smith { .. } => Some(SMITHING_TABLE),
+            Shape::Fill { .. } => Some(WATER),
             _ => self.needs_table().then_some(TABLE),
         }
     }
 
-    /// "craft", "smelt", "brew" or "smith".
+    /// "craft", "smelt", "brew", "smith" or "fill".
     pub fn verb(&self) -> &'static str {
         match &self.shape {
             Shape::Smelt { .. } => "smelt",
             Shape::Brew { .. } => "brew",
             Shape::Smith { .. } => "smith",
+            Shape::Fill { .. } => "fill",
             _ => "craft",
         }
     }
@@ -122,7 +129,7 @@ impl Recipe {
         let all: Vec<&Ingredient> = match &self.shape {
             Shape::Shaped { cells, .. } => cells.iter().flatten().collect(),
             Shape::Shapeless(v) => v.iter().collect(),
-            Shape::Smelt { input, .. } => vec![input],
+            Shape::Smelt { input, .. } | Shape::Fill { input } => vec![input],
             Shape::Brew { input, reagent } => vec![input, reagent],
             Shape::Smith {
                 template,
@@ -163,6 +170,18 @@ pub struct RecipeBook {
     tags: Vec<(String, Vec<String>)>,
     in_hand: HashSet<String>,
     fetched: HashSet<String>,
+}
+
+/// The water bottle from an empty bottle at a water source, for a book to add.
+pub fn bottle_fill() -> Recipe {
+    Recipe {
+        id: "water_potion_from_glass_bottle".into(),
+        result: "water_potion".into(),
+        count: 1,
+        shape: Shape::Fill {
+            input: Ingredient::one("glass_bottle"),
+        },
+    }
 }
 
 impl RecipeBook {
