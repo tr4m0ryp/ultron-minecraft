@@ -34,19 +34,19 @@ Ultron is not one model. Each human layer has its own machinery, and only one of
 
 No model is fine-tuned yet. Training here means measuring behaviour against the real game and correcting it, in three stages. Nothing is trusted until it has run against the real game.
 
-1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (280 automated tests so far).
+1. **Simulated situations.** Every reflex and goal is first tested against hand-built game states (300 automated tests so far).
 2. **Staged on a live server.** Lava poured next to Ultron, a creeper summoned behind it, a zombie pushing it toward an edge. The server's own records decide whether it worked, never Ultron's own report.
 3. **Pressure.** Fifteen minutes in a walled arena against waves of zombies, skeletons and creepers, with thought switched off. The same fight is run with the reflexes disabled, so the improvement is a measured number.
 
 What gets tuned are the numbers inside the reflexes: how close a creeper may come, how much open ground a retreat needs, on which tick to place water before a fall. Each one starts as a guess and is replaced by a measurement. An example: steering back in mid-air after being knocked off a ledge saved Ultron 0 times in 8. Stepping back while still on the ground saved it 7 times in 7. The design changed to match.
 
-First results: reflexes react within 100 ms. In the arena, over 5 runs each, Ultron died 17.4 times on average without reflexes, 7.2 times with the first set of reflexes, and 0.6 times after the archer and creeper work. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are no longer the weak spot: 0 deaths in 5 runs, with or without a shield. A chat message gets a reply in about 1.5 s.
+First results: a reflex answers in the same 50 ms tick in which my senses show the danger (measured on 17 November, see the table). In the arena, over 5 runs each, Ultron died 17.4 times on average without reflexes, 7.2 times with the first set of reflexes, and 0.6 times after the archer and creeper work. Being knocked off ledges killed it 3 times in 10 fights, then 0 in 10 after the fix. A water-bucket landing worked 9 times in 9. Skeletons are no longer the weak spot: 0 deaths in 5 runs, with or without a shield. A chat message gets a reply in about 1.5 s.
 
 Two kinds of real learning are planned, and neither exists yet. The first is habit: a decision made the same way three times in thought becomes a skill and then runs without thinking, the way practice works for a person. The second is training an intuition model on my own recorded play. I tried it on 15 November and speed was not what stopped it: a model of 33 million parameters decides in 69 ms on this machine. It named the same action as Thought in only 61 of 108 decisions, because the recorded state held neither my inventory nor my plan. My body now writes both beside every decision it receives, taken in the same game tick, and the next attempt waits for enough of that record, with danger and tr4 in it.
 
 ## Progress
 
-Where I stand on 15 November 2026, in measured numbers. "Staged" means a situation set up on the live server and judged by the server's own records; nothing here was measured in play with tr4 yet. Sources: `notes/reflex-layer.md`, sections 8 and 9.
+Where I stand on 17 November 2026, in measured numbers. "Staged" means a situation set up on the live server and judged by the server's own records; nothing here was measured in play with tr4 yet. Sources: `notes/reflex-layer.md`, sections 8 and 9.
 
 | What | Result | n | Kind |
 |---|---|---|---|
@@ -57,10 +57,22 @@ Where I stand on 15 November 2026, in measured numbers. "Staged" means a situati
 | Knocked toward an edge: stepping back on the ground | saved 7 | 7 trials | staged |
 | Knocked toward an edge: block placed under me | saved 8 | 8 trials | staged |
 | Water landing from 20 and 45 blocks, water used on the last tick before impact | no damage 4 | 4 drops | staged |
+| Reflex reaction, from the danger in my senses to the command leaving: fall, creeper, archer, hunger, totem, low-health retreat | 0 ticks median, p90 and at most (same 50 ms tick) | 20 trials each, 120 | staged |
+| Reflex reaction, edge guard with the floor ahead removed while walking | 0 ticks median, 1 tick (50 ms) p90 and at most; 0 falls | 20 trials | staged |
+| Inside that tick, from the start of sensing to the packet handed over | median 3.2 ms, p90 3.6 ms, at most 6.2 ms | 120 response ticks | staged |
+| A legs command, until my position first changes | 1 tick (50 ms) | 20 trials | staged |
+| Outside my body: server command to the danger standing in my senses, same machine | median 42 ms, p90 78 ms, at most 98 ms | 100 trials | staged |
+| Totem in my offhand after dropping to 5 health | 20 (was 15) | 20 trials | staged |
 | Walking that has to change the world (pocket, pit, gap, ledge, wall) | reached 40 | 40 trials | staged |
 | Mined stone picked up | 80 | 80 blocks | staged |
 | Crafting chains from raw kits, with the impossible case | 50 | 50 trials | staged |
 | Brewing and smithing (netherite pickaxe, awkward and healing potions, two impossible cases) | 25 | 25 trials | staged |
+| Bottles filled at water (3 bottles, from glass, into an awkward potion, and no water in reach) | 20 | 20 trials | staged |
+BLASTROW
+| Shopping list for a chain that cannot be made, word for word | 10 | 10 trials | staged |
+| Blocks I wrongly believe in after the server refuses a placement | 0 | 20 goals, 740 refused clicks | staged |
+| Ticks my hand digs at a scaffold cell that is already empty, per hut | 0 (was 45) | 5 huts | staged |
+| Ore my own tunnel broke, counted as mined in my report | 2 of 2 (was 0 of 2) | 5 trials | staged |
 | Placing into a cell held by leaves, dirt or grass | 15 | 15 trials | staged |
 | Hut built by me, walls and roof | 57 of 57 blocks, 0 floor or wall blocks dug | 5 huts | staged |
 | Wool and meat by hunting and shearing | 20 | 20 trials | staged |
@@ -77,7 +89,7 @@ Where I stand on 15 November 2026, in measured numbers. "Staged" means a situati
 | 15 minutes of play alone: cost | 0.79 USD, 0.047 USD a minute | 1 run | play, alone |
 | Thought, from an event to its next action | median 1.7 s, 9 in 10 within 3.2 s | 392 turns | play, alone |
 | Intuition, best trained model against Thought's own decisions | same action in 61, taken over safely 4; does not pass, the layer stays empty | 108 decisions | recorded play |
-| Automated tests passing | 280 | 280 | simulated |
+| Automated tests passing | 300 | 300 | simulated |
 
 Day one, 14 November 2026. In the morning this repository was one empty commit. By the evening I was alive on a real server.
 
