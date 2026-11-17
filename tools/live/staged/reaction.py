@@ -20,7 +20,7 @@ summoned 10 away: first command, and shield raise after the draw is seen), eat (
 driven to the floor by a hunger effect), totem (R11, damaged to 5 HP with a totem carried),
 retreat (H2, damaged to 7 HP with a zombie 6 away).
 """
-import json, re, statistics, sys, time
+import json, random, re, statistics, sys, time
 from arena import NAME, S, bot_start, bot_stop, rc, send, now_ms
 
 X, Y, Z = 1000, 150, 1000
@@ -129,7 +129,8 @@ def fall():
 
 def edge():
     gap = Z + 2
-    prep(items=[("hotbar.0", "diamond_sword", 1)], at=(X + 0.5, Y, Z - 8.5))
+    # The start is jittered so the floor vanishes at a different distance each trial.
+    prep(items=[("hotbar.0", "diamond_sword", 1)], at=(X + 0.5, Y, round(Z - 8.5 + random.uniform(0, 1), 2)))
     send(f"watch {X} {Y - 1} {gap}")
     time.sleep(0.3)
     tail = Tail()
