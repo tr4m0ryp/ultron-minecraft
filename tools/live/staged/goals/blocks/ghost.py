@@ -1,6 +1,6 @@
 """Ghost blocks: does the body come to believe in a block the server refused?
 
-Usage: python3 ghost.py <binary|-> <trials> [case ...]
+Usage: python3 blocks/ghost.py <binary|-> <trials> [case ...]
 
 Each trial forces the server to refuse placements and then compares, cell by cell, what the
 client's world holds (`probe` lines in the bot log) with what the server holds (RCON). A
@@ -18,6 +18,9 @@ Cases:
           is already air on the server
 """
 import json, sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kit import *
 
 WELL = (CX + 6, CZ + 6)
