@@ -143,11 +143,17 @@ fn an_impossible_upgrade_fails_once_with_the_shopping_list() {
     s.item("diamond_pickaxe", 1, Some(1));
     s.goal("craft netherite_pickaxe", true);
     assert!(s.run_until(40, |s| s.has_event("goal_failed")));
-    assert_eq!(
-        said(&s, "goal_failed"),
-        "cannot craft netherite_pickaxe: need 1 netherite_upgrade_smithing_template, have 0; \
-         need 1 netherite_ingot, have 0. Get 1 netherite_upgrade_smithing_template, \
-         1 netherite_ingot."
+    let e = said(&s, "goal_failed");
+    assert!(
+        e.contains(
+            "need 1 netherite_upgrade_smithing_template, have 0; need 1 netherite_ingot, \
+             have 0: craft 1 from 4 netherite_scrap and 4 gold_ingot"
+        ),
+        "{e}"
+    );
+    assert!(
+        e.ends_with("1 netherite_upgrade_smithing_template, 4 ancient_debris, 4 raw_gold, 1 coal."),
+        "{e}"
     );
     assert_eq!(s.events("goal_failed").len(), 1);
 }
