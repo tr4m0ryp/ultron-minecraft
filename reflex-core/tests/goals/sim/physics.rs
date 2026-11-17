@@ -91,6 +91,7 @@ impl Sim {
                 }
             }
             Some(MainCmd::Interact(id)) => self.interact(id),
+            Some(MainCmd::Use) if self.fills_bottle() => {}
             Some(MainCmd::Use) => {
                 self.eat_ticks += 1;
                 self.snap.me.using_item = true;

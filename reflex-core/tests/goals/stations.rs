@@ -157,3 +157,33 @@ fn an_impossible_upgrade_fails_once_with_the_shopping_list() {
     );
     assert_eq!(s.events("goal_failed").len(), 1);
 }
+
+#[test]
+fn empty_bottles_are_filled_at_water_one_use_each() {
+    let mut s = sim();
+    s.block(BlockPos::new(6, 63, 0), "water");
+    s.item("glass_bottle", 3, Some(4));
+    s.goal("craft water_potion 3", true);
+    assert!(
+        s.run_until(600, |s| s.has_event("goal_done")),
+        "{}",
+        said(&s, "goal_failed")
+    );
+    assert_eq!(said(&s, "goal_done"), "filled 3 water_potion");
+    assert_eq!((held(&s, "water_potion"), held(&s, "glass_bottle")), (3, 0));
+}
+
+#[test]
+fn bottles_with_no_water_near_fail_once_saying_so() {
+    let mut s = sim();
+    s.item("glass_bottle", 3, Some(4));
+    s.goal("craft water_potion 3", true);
+    assert!(s.run_until(60, |s| s.has_event("goal_failed")));
+    assert_eq!(
+        said(&s, "goal_failed"),
+        "cannot craft water_potion: no water source within 16 blocks to fill 3 glass_bottle \
+         at. Go to water, or carry a water_bucket and pour it out."
+    );
+    assert_eq!(s.events("goal_failed").len(), 1);
+    assert_eq!(held(&s, "glass_bottle"), 3);
+}

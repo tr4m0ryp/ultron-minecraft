@@ -174,3 +174,22 @@ impl Sim {
             .unwrap_or_default()
     }
 }
+
+impl Sim {
+    /// A use with the empty bottles selected and a water block within reach fills one, as
+    /// the server does; returns whether the use was that.
+    pub(crate) fn fills_bottle(&mut self) -> bool {
+        let mut w = self.world.state();
+        let selected = w.slots.get("glass_bottle") == Some(&self.snap.me.selected_slot);
+        let me = self.snap.me.pos;
+        let water = w
+            .blocks
+            .iter()
+            .any(|(p, n)| n == "water" && p.feet_centre().dist(me) <= 4.5);
+        if !(selected && water) || w.take_item("glass_bottle", 1) == 0 {
+            return false;
+        }
+        w.add_item("water_potion", 1);
+        true
+    }
+}
