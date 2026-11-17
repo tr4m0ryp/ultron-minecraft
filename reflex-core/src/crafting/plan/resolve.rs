@@ -178,7 +178,7 @@ impl State {
         let mut order: Vec<usize> = (0..rs.len()).collect();
         order.sort_by_key(|i| std::cmp::Reverse(keys[*i]));
         rs = order.into_iter().map(|i| rs[i]).collect();
-        let mut closest: Option<((u32, bool, u32), State, Need)> = None;
+        let mut closest: Option<((bool, u32, u32), State, Need)> = None;
         for r in rs {
             let mut trial = self.clone();
             let node = trial.apply(book, r, n);
@@ -192,9 +192,9 @@ impl State {
             if r.inputs().iter().any(|(i, _)| i.accepts(&r.result)) {
                 continue;
             }
-            // Shopping advice names the route that is cheapest to come by, then one that
-            // chains over one that needs its input held.
-            let key = (node.cost(), book.in_hand_only(r), node.missing());
+            // Shopping advice prefers a recipe that chains over one that needs its input
+            // held, then the route that is cheapest to come by.
+            let key = (book.in_hand_only(r), node.cost(), node.missing());
             if closest.as_ref().is_none_or(|(k, _, _)| key < *k) {
                 closest = Some((key, trial, node));
             }
