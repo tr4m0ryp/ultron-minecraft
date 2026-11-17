@@ -23,6 +23,7 @@ use reflex_core::{
     snapshot::{Slot, Snapshot},
 };
 
+pub use blocks::block_at as block_name_at;
 pub use recipes::{book as recipe_book, load as load_recipes, JAR_ENV};
 
 /// Scaffold blocks (the route planner's throwaway kinds) held in the inventory.
