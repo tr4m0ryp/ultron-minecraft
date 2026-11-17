@@ -72,6 +72,9 @@ if __name__ == "__main__":
     names = sys.argv[3:] or list(CASES)
     build_site()
     start(binary, companion=False)
+    # The body joins far from the site; its first teleport there takes a moment to load.
+    prep()
+    time.sleep(4)
     try:
         for name in names:
             rs = []
