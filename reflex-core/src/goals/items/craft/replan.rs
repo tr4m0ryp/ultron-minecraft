@@ -44,25 +44,25 @@ impl Craft {
             stand_fuelled: stand.is_some() && !self.stand_empty,
         };
         let inv = cx.world.inventory();
-        let mut p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
-        if furnace.is_none() {
-            // Planned as if a furnace stood near: holds when every furnace step has a
-            // faster station to go to. Else the plan makes or asks for a furnace.
-            let lent = Stations {
-                furnace: true,
-                ..near
-            };
-            if let Ok(q) = plan(&book, &inv, &self.item, wanted, lent, self.smelt_only) {
-                let smelts = |s: &&PlanStep| matches!(s, PlanStep::Smelt { .. });
-                if q.steps
-                    .iter()
-                    .filter(smelts)
-                    .all(|s| quick(cx, s.recipe()).is_some())
-                {
-                    p = q;
-                }
-            }
-        }
+        let plain = plan(&book, &inv, &self.item, wanted, near, self.smelt_only);
+        // Planned as if a furnace stood near: holds when every furnace step has a faster
+        // station to go to. Else the plan makes or asks for a furnace.
+        let lent = Stations {
+            furnace: true,
+            ..near
+        };
+        let smelts = |s: &&PlanStep| matches!(s, PlanStep::Smelt { .. });
+        let quick_only = plan(&book, &inv, &self.item, wanted, lent, self.smelt_only)
+            .ok()
+            .filter(|_| furnace.is_none())
+            .filter(|q| {
+                let mut steps = q.steps.iter().filter(smelts);
+                steps.all(|s| quick(cx, s.recipe()).is_some())
+            });
+        let p = match quick_only {
+            Some(q) => q,
+            None => plain?,
+        };
         // Water is found, never made: a plan that fills bottles ends here without any.
         let water = cx.world.water_source(cx.me_pos().block(), TABLE_RADIUS);
         let fills = |s: &PlanStep| s.recipe().station() == Some(WATER);

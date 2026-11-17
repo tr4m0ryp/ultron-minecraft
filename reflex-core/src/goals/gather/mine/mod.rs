@@ -103,16 +103,24 @@ impl Mine {
         Step::Bid(Plan::hold("goal_mine"))
     }
 
-    /// Counts the block being dug once it is gone.
+    /// Counts the block being dug once it is gone: by the dig, or by the route's own hand
+    /// on the way to it (an ore reached from below is part of its own tunnel). Live, two
+    /// such ores were reported as "mined 0 iron_ore, picked up 2 raw_iron".
     fn settle(&mut self, cx: &mut GoalCx) {
-        let Phase::Dig { pos, .. } = self.phase else {
-            return;
-        };
-        if self.is_target(cx, pos) {
-            return;
+        match self.phase {
+            Phase::Dig { pos, .. } if !self.is_target(cx, pos) => {
+                self.count_broken(cx);
+                self.phase = Phase::Advance { pos, ticks: 0 };
+            }
+            Phase::Approach(pos) if self.path_dug == Some(pos) && !self.is_target(cx, pos) => {
+                self.path_dug = None;
+                self.walker.stop(cx);
+                self.count_broken(cx);
+                self.pickup.arm();
+                self.phase = Phase::Pickup(pos);
+            }
+            _ => {}
         }
-        self.count_broken(cx);
-        self.phase = Phase::Advance { pos, ticks: 0 };
     }
 
     fn count_broken(&mut self, cx: &mut GoalCx) {
@@ -177,18 +185,8 @@ impl GoalTask for Mine {
             Phase::Find => Step::Bid(Plan::hold("goal_mine")),
             Phase::Approach(pos) => {
                 if !self.is_target(cx, pos) {
-                    // Gone before the body stood beside it. When the route itself broke it
-                    // (an ore reached from below is part of its own tunnel) it was mined
-                    // all the same: live, two such ores were reported as "mined 0
-                    // iron_ore, picked up 2 raw_iron".
-                    if self.path_dug.take() == Some(pos) {
-                        self.walker.stop(cx);
-                        self.count_broken(cx);
-                        self.pickup.arm();
-                        self.phase = Phase::Pickup(pos);
-                    } else {
-                        self.phase = Phase::Find;
-                    }
+                    self.path_dug = None;
+                    self.phase = Phase::Find;
                     return Step::Bid(Plan::hold("goal_mine"));
                 }
                 if target::beside(cx.me_pos().block(), pos) {
