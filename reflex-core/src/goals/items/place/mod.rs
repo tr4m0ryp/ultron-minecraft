@@ -18,7 +18,7 @@ pub(crate) use stand::{eye_at, free, onto_centre};
 use super::equip::equip;
 use super::surfaces::replaceable;
 use crate::channels::{Commands, LegsCmd, MainCmd};
-use crate::goals::ports::{kind_matches, Navigator};
+use crate::goals::ports::Navigator;
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::Walker;
 use crate::math::BlockPos;
@@ -156,7 +156,10 @@ impl GoalTask for Place {
             return out;
         }
         let current = cx.world.block_at(self.pos);
-        if let Some(n) = current.as_deref().filter(|n| kind_matches(&self.block, n)) {
+        if let Some(n) = current
+            .as_deref()
+            .filter(|n| cx.world.matches(&self.block, n))
+        {
             // Seen standing after this goal's own click: the server took it, so it is the
             // player's own block from now on (the ledger).
             if self.attempts > 0 {

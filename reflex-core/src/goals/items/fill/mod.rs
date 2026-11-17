@@ -7,7 +7,7 @@ mod stray;
 
 use super::place::{clearance, Cleanup, Clearance, Place};
 use super::surfaces::replaceable;
-use crate::goals::ports::{kind_matches, Navigator};
+use crate::goals::ports::Navigator;
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::math::BlockPos;
 
@@ -137,7 +137,7 @@ impl GoalTask for Fill {
                     && matches!(clearance(cx, pos, k, self.replace), Clearance::Refuse(_))
             });
             match held {
-                Some(k) if kind_matches(&self.block, &k) => self.next += 1,
+                Some(k) if cx.world.matches(&self.block, &k) => self.next += 1,
                 Some(_) if refused => {
                     self.occupied += 1;
                     self.next += 1;

@@ -5,13 +5,27 @@ use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{Slot, Snapshot};
 
 /// Block and item kinds are registry names without the namespace ("iron_ore", "oak_log").
-/// A query kind matches a name that equals it or ends with `_<kind>`, so "bed" matches
-/// "red_bed" and "iron_ore" matches "deepslate_iron_ore".
+/// A family word matches a name that equals it or ends with `_<kind>`: "bed" matches
+/// "red_bed", "log" matches "oak_log". Only for kinds that are not a name themselves; see
+/// `name_matches`.
 pub fn kind_matches(kind: &str, name: &str) -> bool {
     name == kind
         || (name.len() > kind.len()
             && name.ends_with(kind)
             && name.as_bytes()[name.len() - kind.len() - 1] == b'_')
+}
+
+/// Whether `name` is what the query `kind` asks for. `full` says `kind` is itself the name
+/// of a block or an item: then only that name matches, plus the deepslate form of an ore
+/// ("iron_ore" also takes "deepslate_iron_ore", the same ore in other rock). Live, a count
+/// of healing_potion took strong_healing_potion along, "furnace" found a blast furnace
+/// and "beef" counted cooked beef. A family word ("bed", "log", "planks") keeps matching
+/// by its last words.
+pub fn name_matches(kind: &str, name: &str, full: bool) -> bool {
+    if !full {
+        return kind_matches(kind, name);
+    }
+    name == kind || (kind.ends_with("_ore") && name.strip_prefix("deepslate_") == Some(kind))
 }
 
 /// What breaking a block needs from the inventory.
@@ -84,6 +98,13 @@ pub enum MenuStatus {
 /// World model, recipes and menu actions port. Queries are synchronous and cheap; menu
 /// actions start on the tick the goal holds its channels and finish later.
 pub trait World {
+    /// `kind` is itself the registry name of a block or an item (a potion by its
+    /// contents included), not a family word such as "bed" or "log".
+    fn full_name(&self, kind: &str) -> bool;
+    /// Whether a block or item called `name` is what the query `kind` asks for.
+    fn matches(&self, kind: &str, name: &str) -> bool {
+        name_matches(kind, name, self.full_name(kind))
+    }
     /// Registry name of the block at `p`, `None` when unloaded.
     fn block_at(&self, p: BlockPos) -> Option<String>;
     /// Nearest loaded block whose name matches `kind`, within `radius` blocks of `from`,
