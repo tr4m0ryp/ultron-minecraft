@@ -184,6 +184,7 @@ pub fn book() -> RecipeBook {
         b.add(r);
     }
     super::stations::add(&mut b);
+    super::deep::add(&mut b);
     b.finish();
     b
 }
