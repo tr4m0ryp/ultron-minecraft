@@ -1,10 +1,12 @@
 //! Crafting and smelting along a planned dependency chain. Every round plans afresh from
 //! the inventory and runs the plan's first step: a 2x2 craft in the inventory grid, a 3x3
 //! craft at a crafting table (walked to when one stands near, else a held one is put down
-//! beside the player), a furnace visit, a batch at a brewing stand or one item at a smithing
-//! table. Missing raw materials end the goal once, with the planner's shopping list.
+//! beside the player), a furnace visit, a batch at a brewing stand, one item at a smithing
+//! table or empty bottles filled at water. Missing raw materials end the goal once, with
+//! the planner's shopping list.
 
 mod brew;
+mod fill;
 mod furnace;
 mod replan;
 mod smith;
@@ -17,6 +19,7 @@ use crate::goals::task::{GoalCx, GoalTask, Intent, Plan, Step};
 use crate::goals::travel::{Walk, Walker};
 use crate::math::{BlockPos, Vec3};
 use brew::{Brewed, Brewing};
+use fill::{Filled, Filling};
 use furnace::{Smelted, Smelting};
 use smith::{Smithed, Smithing};
 use station::{Placed, Placing};
@@ -44,6 +47,7 @@ enum Phase {
     Smelt(Smelting),
     Brew(Brewing),
     Smith(Smithing),
+    Fill(Filling),
 }
 
 pub struct Craft {
@@ -56,7 +60,8 @@ pub struct Craft {
     steps: u32,
     fails: u32,
     placed: Vec<String>,
-    /// How the last step was made ("craft", "smelt", "brew", "smith"), for the outcome.
+    /// How the last step was made ("craft", "smelt", "brew", "smith", "fill"), for the
+    /// outcome.
     made_by: &'static str,
     /// A brewing stand this goal found without fuel: the next plan asks for blaze powder.
     stand_empty: bool,
@@ -92,6 +97,7 @@ impl Craft {
             (true, _) => "smelted",
             (_, "brew") => "brewed",
             (_, "smith") => "smithed",
+            (_, "fill") => "filled",
             _ => "crafted",
         };
         let mut s = format!("{verb} {got} {}", self.item);
@@ -224,6 +230,14 @@ impl GoalTask for Craft {
                 }
                 Smithed::Failed(e) => self.adapter_failed(e),
             },
+            Phase::Fill(f) => match f.step(cx, &mut self.walker) {
+                Filled::Bid(p) => Step::Bid(p),
+                Filled::Done => {
+                    self.phase = Phase::Settle(SETTLE_TICKS);
+                    hold()
+                }
+                Filled::Failed(e) => Step::Failed(e),
+            },
         }
     }
 
@@ -244,6 +258,7 @@ impl GoalTask for Craft {
             Phase::Smelt(s) => s.reset(),
             // A stand keeps brewing with nobody at it: come back to it.
             Phase::Brew(b) => b.reset(),
+            Phase::Fill(f) => f.reset(),
             Phase::Place(p) => {
                 p.stop(nav);
                 self.phase = Phase::Plan;

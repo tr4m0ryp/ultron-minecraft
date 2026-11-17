@@ -85,6 +85,10 @@ impl World for AzaleaWorld {
         blocks::nearest(&self.bot, kind, from, radius, exclude)
     }
 
+    fn water_source(&self, from: BlockPos, radius: i32) -> Option<BlockPos> {
+        blocks::water_source(&self.bot, from, radius)
+    }
+
     fn tool_for(&self, block: &str, _snap: &Snapshot) -> ToolNeed {
         tools::tool_for(&self.bot, block)
     }

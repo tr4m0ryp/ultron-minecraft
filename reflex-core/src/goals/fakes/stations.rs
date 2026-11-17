@@ -34,7 +34,9 @@ pub fn add(b: &mut RecipeBook) {
     let one = Ingredient::one;
     let stone = tag(&["cobblestone", "blackstone", "cobbled_deepslate"]);
     let planks = tag(&["oak_planks", "birch_planks", "spruce_planks"]);
+    b.add(crate::crafting::bottle_fill());
     for r in [
+        shaped("glass_bottle", 3, &["# #", " # "], &[('#', one("glass"))]),
         brew("water_potion", "nether_wart", "awkward_potion"),
         brew("awkward_potion", "glistering_melon_slice", "healing_potion"),
         brew("healing_potion", "glowstone_dust", "strong_healing_potion"),

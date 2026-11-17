@@ -15,8 +15,8 @@ mod plan;
 mod tests;
 
 pub use book::{
-    Ingredient, Recipe, RecipeBook, Shape, BLAZE_POWDER, BREWING_STAND, BREWS_PER_POWDER,
-    BREW_BOTTLES, FURNACE, SMITHING_TABLE, TABLE,
+    bottle_fill, Ingredient, Recipe, RecipeBook, Shape, BLAZE_POWDER, BREWING_STAND,
+    BREWS_PER_POWDER, BREW_BOTTLES, FURNACE, SMITHING_TABLE, TABLE, WATER,
 };
 pub use fuel::{choose as choose_fuel, quarters as fuel_quarters};
 pub use label::name_set;

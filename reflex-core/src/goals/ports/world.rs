@@ -116,6 +116,9 @@ pub trait World {
         radius: i32,
         exclude: &[BlockPos],
     ) -> Option<BlockPos>;
+    /// Nearest water source block with nothing over it (its surface can be looked at),
+    /// within `radius` blocks of `from`.
+    fn water_source(&self, from: BlockPos, radius: i32) -> Option<BlockPos>;
     fn tool_for(&self, block: &str, snap: &Snapshot) -> ToolNeed;
     fn count_item(&self, item: &str) -> u32;
     /// Main inventory and hotbar by exact item name, counts summed per name.

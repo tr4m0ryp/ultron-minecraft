@@ -125,6 +125,8 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, Skipped), Stri
             None => skip(bare(v["type"].as_str().unwrap_or("unreadable"))),
         }
     }
+    // The one recipe the data pack does not hold: a bottle filled at water.
+    book.add(reflex_core::crafting::bottle_fill());
     for (name, items) in &tags {
         book.add_tag(name, items.clone());
     }

@@ -65,6 +65,10 @@ impl World for FakeWorld {
             })
     }
 
+    fn water_source(&self, from: BlockPos, radius: i32) -> Option<BlockPos> {
+        self.nearest_block("water", from, radius, &[])
+    }
+
     fn tool_for(&self, block: &str, _snap: &Snapshot) -> ToolNeed {
         let s = self.0.borrow();
         s.tools

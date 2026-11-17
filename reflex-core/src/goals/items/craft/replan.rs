@@ -2,11 +2,14 @@
 //! up as a phase (a grid craft, a walk to a station, a station to put down first).
 
 use super::brew::Brewing;
+use super::fill::Filling;
 use super::furnace::Smelting;
 use super::smith::Smithing;
 use super::station::{self, Placing};
-use super::{Craft, Phase, MAX_STEPS};
-use crate::crafting::{plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE};
+use super::{Craft, Phase, MAX_STEPS, TABLE_RADIUS};
+use crate::crafting::{
+    plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE, WATER,
+};
 use crate::goals::task::GoalCx;
 
 impl Craft {
@@ -36,6 +39,17 @@ impl Craft {
         };
         let inv = cx.world.inventory();
         let p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
+        // Water is found, never made: a plan that fills bottles ends here without any.
+        let water = cx.world.water_source(cx.me_pos().block(), TABLE_RADIUS);
+        let fills = |s: &PlanStep| s.recipe().station() == Some(WATER);
+        if water.is_none() && p.steps.iter().any(fills) {
+            let n: u32 = p.steps.iter().filter(|s| fills(s)).map(PlanStep::makes).sum();
+            return Err(format!(
+                "cannot craft {}: no water source within {TABLE_RADIUS} blocks to fill {n} \
+                 glass_bottle at. Go to water, or carry a water_bucket and pour it out.",
+                self.item
+            ));
+        }
         let steps: Vec<String> = p.steps.iter().map(PlanStep::describe).collect();
         cx.doing(format!("plan: {}", steps.join(", then ")));
         let held = |cx: &GoalCx, b: &str| cx.world.count_item(b) > 0;
@@ -59,6 +73,10 @@ impl Craft {
                     Some(BREWING_STAND) => match at(cx, stand, BREWING_STAND, &recipe.result)? {
                         Ok(p) => Phase::Brew(Brewing::new(p, recipe, crafts)),
                         Err(place) => place,
+                    },
+                    Some(WATER) => match water {
+                        Some(w) => Phase::Fill(Filling::new(w, crafts)),
+                        None => return Err(format!("{} needs water", recipe.result)),
                     },
                     Some(SMITHING_TABLE) => match at(cx, smithing, SMITHING_TABLE, &recipe.result)?
                     {
