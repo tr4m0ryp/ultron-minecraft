@@ -13,9 +13,9 @@ Cases:
   pillar  the body shut in a one-cell bedrock well 4 deep with an armour stand in it and a
           go_to outside: the only way is a pillar, and the server refuses the blocks the
           armour stand overlaps
-  stray   a roof laid from inside a room (the fill's scaffold pillar ends up under the
-          roof and is dug from above): counts the ticks the hand digs at a pillar cell that
-          is already air on the server
+  stray   the 5x5 hut built by five fill goals (a scaffold pillar ends up under the roof
+          and is dug from on top): counts the ticks the hand digs at a cell inside the
+          room that the client already shows as air
 """
 import json, sys
 from pathlib import Path
@@ -101,23 +101,31 @@ def pillar():
 
 
 def stray():
-    """A 3x3 room, walls 2 high, the body inside, one roof fill: it pillars out and takes
-    the pillar down from on top. Dig ticks at a pillar cell are split by whether the watch
-    on that cell had already shown it as air."""
+    """The hut of protect_hut.py built by the body: four walls and the roof by five fill
+    goals. Laying the roof it stands on scaffold pillars inside the walls and digs them
+    from on top before the roof closes. Dig ticks at a cell inside the room are split by
+    whether the watch on that cell had already shown it as air."""
     x0, x1, z0, z1 = CX - 2, CX + 2, CZ - 2, CZ + 2
-    rc(f"fill {x0} {Y + 1} {z0} {x1} {Y + 6} {z1} air", f"fill {x0} {Y + 1} {z0} {x1} {Y + 2} {z1} dirt",
-       f"fill {x0 + 1} {Y + 1} {z0 + 1} {x1 - 1} {Y + 2} {z1 - 1} air")
-    prep(items=[("hotbar.0", "iron_pickaxe", 1), ("hotbar.1", "dirt", 64)], at=(CX + 0.5, Y + 1, CZ + 0.5))
+    rc(f"fill {x0 - 3} {Y + 1} {z0 - 3} {x1 + 3} {Y + 8} {z1 + 3} air",
+       f"fill {X0} {Y - 3} {Z0} {X1} {Y} {Z1} stone replace air")
+    prep(items=[("hotbar.0", "iron_pickaxe", 1), ("hotbar.1", "dirt", 64), ("hotbar.2", "dirt", 64)],
+         at=(CX + 6.5, Y + 1, CZ - 6.5))
     send("unwatch")
     inside = [(x, y, z) for x in range(x0 + 1, x1) for z in range(z0 + 1, z1) for y in (Y + 1, Y + 2)]
     for c in inside:
         send("watch %d %d %d" % c)
     time.sleep(0.5)
-    n = task(f"place dirt {x0} {Y + 3} {z0} {x1} {Y + 3} {z1}")
-    kind, text, _ = outcome(n, 240, "place")
+    n0, texts = len(log_lines()), []
+    for spec in (f"place dirt {x0} {Y + 1} {z0} {x1} {Y + 2} {z0}", f"place dirt {x0} {Y + 1} {z1} {x1} {Y + 2} {z1}",
+                 f"place dirt {x0} {Y + 1} {z0 + 1} {x0} {Y + 2} {z1 - 1}",
+                 f"place dirt {x1} {Y + 1} {z0 + 1} {x1} {Y + 2} {z1 - 1}",
+                 f"place dirt {x0} {Y + 3} {z0} {x1} {Y + 3} {z1}"):
+        n = task(spec)
+        kind, text, _ = outcome(n, 300, "place")
+        texts.append(f"{kind}: {text}")
     time.sleep(1.0)
     state, dig_on_block, dig_on_air = {}, 0, 0
-    for l in log_lines()[n:]:
+    for l in log_lines()[n0:]:
         p = l.split()
         if l.startswith("B ") and len(p) == 6:
             state[(int(p[2]), int(p[3]), int(p[4]))] = p[5]
@@ -129,10 +137,12 @@ def stray():
                 else:
                     dig_on_block += 1
     left = sum(not is_block(*c, "air") for c in inside)
+    roof = sum(is_block(x, Y + 3, z, "dirt") for x in range(x0, x1 + 1) for z in range(z0, z1 + 1))
     send("unwatch")
-    rc(f"fill {x0} {Y + 1} {z0} {x1} {Y + 6} {z1} air")
-    return dict(ok=kind == "goal_done" and dig_on_air == 0 and left == 0, outcome=kind, text=text,
-                dig_ticks_on_block=dig_on_block, dig_ticks_on_air=dig_on_air, scaffold_left_inside=left)
+    rc(f"fill {x0 - 3} {Y + 1} {z0 - 3} {x1 + 3} {Y + 8} {z1 + 3} air")
+    return dict(ok=texts[-1].startswith("goal_done") and dig_on_air == 0 and left == 0 and roof == 25, roof=texts[-1],
+                roof_cells=roof, dig_ticks_on_block=dig_on_block, dig_ticks_on_air=dig_on_air,
+                scaffold_left_inside=left)
 
 
 CASES = dict(stand=stand, pillar=pillar, stray=stray)
