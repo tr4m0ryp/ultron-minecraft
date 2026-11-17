@@ -4,6 +4,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::classify;
+use super::quick::Quick;
 
 /// The items one grid cell or furnace slot accepts (a tag or an ingredient list, expanded).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -170,6 +171,7 @@ pub struct RecipeBook {
     tags: Vec<(String, Vec<String>)>,
     in_hand: HashSet<String>,
     fetched: HashSet<String>,
+    quick: Quick,
 }
 
 /// The water bottle from an empty bottle at a water source, for a book to add.
@@ -187,6 +189,17 @@ pub fn bottle_fill() -> Recipe {
 impl RecipeBook {
     pub fn add(&mut self, r: Recipe) {
         self.by_result.entry(r.result.clone()).or_default().push(r);
+    }
+
+    /// A blasting or smoking recipe: the same result from the same input as a furnace
+    /// recipe, at a faster station.
+    pub fn add_quick(&mut self, station: &'static str, result: &str, input: Ingredient) {
+        self.quick.add(station, result, input);
+    }
+
+    /// The faster stations (blast furnace, smoker) that also run the furnace recipe `r`.
+    pub fn quick_stations(&self, r: &Recipe) -> Vec<&'static str> {
+        self.quick.stations(r)
     }
 
     /// A resolved item tag ("planks" with its items), used to name sets of items.

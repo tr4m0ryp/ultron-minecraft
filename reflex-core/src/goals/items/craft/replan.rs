@@ -10,6 +10,7 @@ use super::{Craft, Phase, MAX_STEPS, TABLE_RADIUS};
 use crate::crafting::{
     plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE, WATER,
 };
+use crate::crafting::Recipe;
 use crate::goals::task::GoalCx;
 
 impl Craft {
@@ -30,6 +31,11 @@ impl Craft {
         // A stand already standing is taken to hold fuel until a brew at it came out
         // unbrewed; one this goal puts down is new, and the plan asked for its powder
         // while no stand stood near.
+        // A blast furnace or a smoker near stands in for a furnace on the steps it takes.
+        let quick = |cx: &GoalCx, r: &Recipe| {
+            let stations = book.quick_stations(r);
+            stations.into_iter().find_map(|s| station::find(cx, s))
+        };
         let near = Stations {
             table: table.is_some(),
             furnace: furnace.is_some(),
@@ -38,7 +44,21 @@ impl Craft {
             stand_fuelled: stand.is_some() && !self.stand_empty,
         };
         let inv = cx.world.inventory();
-        let p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
+        let mut p = plan(&book, &inv, &self.item, wanted, near, self.smelt_only)?;
+        if furnace.is_none() {
+            // Planned as if a furnace stood near: holds when every furnace step has a
+            // faster station to go to. Else the plan makes or asks for a furnace.
+            let lent = Stations {
+                furnace: true,
+                ..near
+            };
+            if let Ok(q) = plan(&book, &inv, &self.item, wanted, lent, self.smelt_only) {
+                let smelts = |s: &&PlanStep| matches!(s, PlanStep::Smelt { .. });
+                if q.steps.iter().filter(smelts).all(|s| quick(cx, s.recipe()).is_some()) {
+                    p = q;
+                }
+            }
+        }
         // Water is found, never made: a plan that fills bottles ends here without any.
         let water = cx.world.water_source(cx.me_pos().block(), TABLE_RADIUS);
         let fills = |s: &PlanStep| s.recipe().station() == Some(WATER);
@@ -93,9 +113,12 @@ impl Craft {
                 recipe,
                 count,
                 fuel,
-            } => match at(cx, furnace, FURNACE, &recipe.result)? {
-                Ok(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel)),
-                Err(place) => place,
+            } => match quick(cx, &recipe) {
+                Some(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel).fast()),
+                None => match at(cx, furnace, FURNACE, &recipe.result)? {
+                    Ok(f) => Phase::Smelt(Smelting::new(f, recipe, count, fuel)),
+                    Err(place) => place,
+                },
             },
         };
         Ok(())

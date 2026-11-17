@@ -10,6 +10,7 @@ mod fuel;
 mod label;
 mod layout;
 mod plan;
+mod quick;
 
 #[cfg(test)]
 mod tests;
@@ -22,3 +23,4 @@ pub use fuel::{choose as choose_fuel, quarters as fuel_quarters};
 pub use label::name_set;
 pub use layout::{layout, matches, Layout};
 pub use plan::{plan, CraftPlan, PlanStep, Stations, BUDGET};
+pub use quick::{Quick, BLAST_FURNACE, SMOKER};

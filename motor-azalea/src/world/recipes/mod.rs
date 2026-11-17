@@ -120,9 +120,12 @@ pub fn load(path: &std::path::Path) -> Result<(RecipeBook, usize, Skipped), Stri
         .collect();
     let mut book = RecipeBook::default();
     for (id, v) in &raw_recipes {
-        match parse::recipe(id, v, &tags) {
-            Some(r) => book.add(r),
-            None => skip(bare(v["type"].as_str().unwrap_or("unreadable"))),
+        if let Some(r) = parse::recipe(id, v, &tags) {
+            book.add(r);
+        } else if let Some((station, result, input)) = parse::quick(v, &tags) {
+            book.add_quick(station, &result, input);
+        } else {
+            skip(bare(v["type"].as_str().unwrap_or("unreadable")));
         }
     }
     // The one recipe the data pack does not hold: a bottle filled at water.

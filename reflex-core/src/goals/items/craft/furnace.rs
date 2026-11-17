@@ -42,6 +42,8 @@ pub struct Smelting {
     stalls: u32,
     /// Collect visits that came back with the output still in the furnace.
     retakes: u32,
+    /// A blast furnace or a smoker: half the cooking time.
+    fast: bool,
 }
 
 impl Smelting {
@@ -55,13 +57,25 @@ impl Smelting {
             last_left: None,
             stalls: 0,
             retakes: 0,
+            fast: false,
         }
     }
 
+    /// The block at `pos` is a blast furnace or a smoker.
+    pub fn fast(mut self) -> Self {
+        self.fast = true;
+        self
+    }
+
     fn ticks(&self) -> u64 {
-        match &self.recipe.shape {
+        let ticks = match &self.recipe.shape {
             Shape::Smelt { ticks, .. } => u64::from(*ticks),
             _ => 200,
+        };
+        if self.fast {
+            ticks.div_ceil(2)
+        } else {
+            ticks
         }
     }
 

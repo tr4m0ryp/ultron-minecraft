@@ -58,7 +58,14 @@ impl Default for Furnacer {
 fn furnace_open(bot: &Client) -> bool {
     let ecs = bot.ecs.read();
     ecs.get::<Inventory>(bot.entity)
-        .is_some_and(|i| i.id != 0 && matches!(i.container_menu, Some(Menu::Furnace { .. })))
+        .is_some_and(|i| {
+            // A blast furnace and a smoker have the furnace's three slots.
+            let furnace = matches!(
+                i.container_menu,
+                Some(Menu::Furnace { .. } | Menu::BlastFurnace { .. } | Menu::Smoker { .. })
+            );
+            i.id != 0 && furnace
+        })
 }
 
 fn read(menu: &Menu) -> FurnaceSlots {

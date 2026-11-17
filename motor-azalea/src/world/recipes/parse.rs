@@ -3,11 +3,13 @@
 //! and smithing transforms (`stations`), with tag and list ingredients expanded into
 //! concrete items.
 //!
-//! Skipped, by kind (counts for 26.3, 444 in all):
-//! - stonecutting (351), blasting (25), smoking (9), campfire_cooking (9): another station
-//!   for a result the grid or the furnace already makes. Every cooked result has a smelting
-//!   recipe; every cut one a crafting recipe, except cobblestone and cobbled deepslate,
-//!   which are mined.
+//! Blasting (25) and smoking (9) entries are read as the faster station of the furnace
+//! recipe they repeat (`quick`), not as recipes of their own.
+//!
+//! Skipped, by kind (counts for 26.3, 410 in all):
+//! - stonecutting (351), campfire_cooking (9): another station for a result the grid or
+//!   the furnace already makes. Every cooked result has a smelting recipe; every cut one a
+//!   crafting recipe, except cobblestone and cobbled deepslate, which are mined.
 //! - smithing_trim (18): the result is the same armour with a pattern on it, which item
 //!   names do not carry.
 //! - crafting_dye (6), banner duplicate (16), map cloning (1, a transmute with no named
@@ -18,7 +20,7 @@
 
 use std::collections::HashMap;
 
-use reflex_core::crafting::{Ingredient, Recipe, Shape};
+use reflex_core::crafting::{Ingredient, Recipe, Shape, BLAST_FURNACE, SMOKER};
 use serde_json::Value;
 
 /// Resolved item tags: bare tag name to bare item names.
@@ -94,6 +96,18 @@ fn shaped(v: &Value, tags: &Tags) -> Option<Shape> {
         height: rows.len() as u8,
         cells,
     })
+}
+
+/// A blasting or smoking entry as (station, result, input): the furnace recipe it repeats
+/// at twice the speed.
+pub fn quick(v: &Value, tags: &Tags) -> Option<(&'static str, String, Ingredient)> {
+    let station = match bare(v["type"].as_str()?) {
+        "blasting" => BLAST_FURNACE,
+        "smoking" => SMOKER,
+        _ => return None,
+    };
+    let (result, _) = result(&v["result"])?;
+    Some((station, result, ingredient(&v["ingredient"], tags)?))
 }
 
 /// `None` for types the planner does not use, or an entry it cannot read.
