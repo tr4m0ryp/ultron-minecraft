@@ -211,7 +211,14 @@ impl Smelting {
             }
             if seen.fuel.is_none() {
                 let (picks, short) = choose_fuel(&cx.world.inventory(), left);
+                // An empty fuel slot is also what a burning furnace shows, and a load
+                // visit can read the input one short: live, a blast furnace with one of
+                // two items still cooking was called out of fuel. With nothing to add,
+                // one more cooking time is waited before that is said.
                 let Some(fuel) = picks.into_iter().next() else {
+                    if self.stalls < 2 {
+                        return self.cook(cx, left, false);
+                    }
                     return Smelted::Failed(format!(
                         "the furnace at {} ran out of fuel with {left} left; need {} coal",
                         self.at(),
@@ -225,6 +232,11 @@ impl Smelting {
                 return Smelted::Bid(Plan::hold("goal_smelt"));
             }
         }
+        self.cook(cx, left, load)
+    }
+
+    /// Leaves the furnace to cook the `left` items and comes back after their time.
+    fn cook(&mut self, cx: &mut GoalCx, left: u32, load: bool) -> Smelted {
         self.last_left = Some(left);
         let wait = u64::from(left) * self.ticks() + COOK_MARGIN;
         if load {
