@@ -161,7 +161,8 @@ impl State {
         let mut trial = self.clone();
         let node = trial.need_set(book, ing, rest, mode);
         self.budget = trial.budget;
-        node.via.filter(|_| node.missing() > 0)
+        let short = node.missing() > 0;
+        node.via.filter(|_| short)
     }
 
     /// `n` more of `item` (none taken from the inventory): its best recipe, or the closest
