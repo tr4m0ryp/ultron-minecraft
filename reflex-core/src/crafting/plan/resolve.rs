@@ -152,9 +152,11 @@ impl State {
     }
 
     /// Why an input a recipe takes only from the inventory is short: how the rest would
-    /// be made, when it cannot be made from here either. Nothing is planned or taken. One
-    /// such link per chain and only for an input that is one item (an ingot for nuggets):
-    /// behind "any other wool" the search would fan out sixteenfold at every level.
+    /// be made, when it cannot be made from here either (what can be is a goal of its own,
+    /// and the list then names the input). The plan has failed by then, so the steps and
+    /// stations of that link are kept for the list. One such link per chain and only for
+    /// an input that is one item (an ingot for nuggets): behind "any other wool" the
+    /// search would fan out sixteenfold at every level.
     fn explain(
         &mut self,
         book: &RecipeBook,
@@ -165,8 +167,12 @@ impl State {
         let mut trial = self.clone();
         trial.explaining = true;
         let node = trial.need_set(book, ing, rest, mode);
-        let short = node.missing() > 0;
-        node.via.filter(|_| short)
+        if node.missing() == 0 {
+            return None;
+        }
+        trial.explaining = false;
+        *self = trial;
+        node.via
     }
 
     /// `n` more of `item` (none taken from the inventory): its best recipe, or the closest

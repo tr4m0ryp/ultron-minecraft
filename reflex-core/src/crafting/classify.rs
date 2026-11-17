@@ -65,22 +65,17 @@ fn recycle(book: &RecipeBook, r: &Recipe) -> bool {
     }
 }
 
-/// What an ore drops when mined (coal, diamond, redstone): its only furnace recipes take
-/// the ore block itself, which a pickaxe never gives. Such an item is fetched, not made;
-/// iron and gold ingots are not among them (their ores drop raw metal to smelt).
-pub fn mined(book: &RecipeBook) -> HashSet<String> {
-    let mut out: HashSet<String> = HashSet::new();
-    let mut other: HashSet<&str> = HashSet::new();
-    for r in book.all() {
-        let Shape::Smelt { input, .. } = &r.shape else {
-            continue;
-        };
-        if input.0.iter().all(|i| i.ends_with("_ore")) {
-            out.insert(r.result.clone());
-        } else {
-            other.insert(&r.result);
-        }
-    }
-    out.retain(|i| !other.contains(i.as_str()));
+/// Items that are fetched, not made, though recipes give them: what an ore drops (coal,
+/// diamond, raw gold) or a crop. Every recipe for such an item unpacks its storage block
+/// (one block into several) or smelts the ore block itself, which a pickaxe never gives.
+/// Ingots are not among them: an ingot is also smelted from raw metal.
+pub fn fetched(book: &RecipeBook) -> HashSet<String> {
+    let unpack = |r: &Recipe| r.count > 1 && reversible(book, r);
+    let ore = |r: &Recipe| match &r.shape {
+        Shape::Smelt { input, .. } => input.0.iter().all(|i| i.ends_with("_ore")),
+        _ => false,
+    };
+    let mut out: HashSet<String> = book.all().map(|r| r.result.clone()).collect();
+    out.retain(|item| book.recipes_for(item).iter().all(|r| unpack(r) || ore(r)));
     out
 }
