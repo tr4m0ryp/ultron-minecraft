@@ -70,8 +70,10 @@ def server_pos():
 
 
 def prep(items=(), at=(X + 0.5, Y, Z + 0.5)):
-    rc(f"kill @e[type=!player,x={X},y={Y},z={Z},distance=..60]",
-       f"fill {X - 10} {Y - 1} {Z - 12} {X + 10} {Y - 1} {Z + 12} stone",
+    # A killed mob stays in the client's entity list for its 20-tick death animation.
+    rc(f"kill @e[type=!player,x={X},y={Y},z={Z},distance=..60]")
+    time.sleep(1.3)
+    rc(f"fill {X - 10} {Y - 1} {Z - 12} {X + 10} {Y - 1} {Z + 12} stone",
        f"fill {X - 10} {Y} {Z - 12} {X + 10} {Y + 8} {Z + 12} air",
        f"effect clear {NAME}", f"gamemode survival {NAME}", f"clear {NAME}",
        f"effect give {NAME} instant_health 1 5", f"effect give {NAME} saturation 1 20",
@@ -143,10 +145,18 @@ def edge():
     if z is None:
         return dict(ok=False, why="never walked")
     sent, ack = stimulate(f"fill {X - 2} {Y - 1} {gap} {X + 2} {Y - 1} {gap + 4} air")
-    r = result(tail, sent, ack, None, lambda r: r.get("note") == "edge_guard" or r.get("legs") == "R5",
-               wait=2.5, watch_cell=(X, Y - 1, gap))
-    p = server_pos()
+    time.sleep(2.5)
+    # A veto leaves the goal as the owner of the legs, so the response is read from the
+    # motion: the tick before the first one whose forward speed has dropped (a tick's
+    # `vel` is the result of the tick before it). The `edge_guard` event, printed the
+    # first time only, names the same tick.
     ticks, _, _ = tail.parsed()
+    vz = {t["tick"]: float(t["vel"].split(",")[2]) for t in ticks}
+    halted = {t for t in vz if t - 1 in vz and vz[t] < 0.9 * vz[t - 1]}
+    r = result(tail, sent, ack, None, lambda r: r["tick"] + 1 in halted, wait=0.0, watch_cell=(X, Y - 1, gap))
+    ev = [int(l.split()[1]) for l in tail.lines() if l.startswith("E ") and "edge_guard  R5" in l]
+    r["event_tick"] = ev[0] if ev else None
+    p = server_pos()
     at = next((t for t in ticks if t["tick"] == r.get("seen_tick")), None)
     r.update(fell=bool(p and p[1] < Y - 0.5), server_pos=p, edge_dist_seen=round(gap - at["pos"][2], 2) if at else None,
              edge_dist_end=round(gap - p[2], 2) if p else None)
@@ -159,6 +169,11 @@ def creeper():
     tail = Tail()
     sent, ack = stimulate(f"summon creeper {X + 0.5} {Y} {Z + 5.5} {{NoAI:1b,PersistenceRequired:1b}}")
     r = result(tail, sent, ack, lambda r: r["near"].startswith("creeper"), owns("D1", "legs"), wait=3.0)
+    ticks, _, _ = tail.parsed()
+    at = next((t for t in ticks if t["tick"] == r.get("seen_tick")), None)
+    moved = next((t for t in ticks if at and t["tick"] > at["tick"] and t["pos"] != at["pos"]), None)
+    # The legs command steers the next physics step: the first changed position.
+    r["move_ticks"] = moved["tick"] - at["tick"] if moved else None
     p = server_pos()
     r["dist_after_3s"] = round(((p[0] - X - 0.5) ** 2 + (p[2] - Z - 5.5) ** 2) ** 0.5, 2) if p else None
     return r
@@ -209,10 +224,12 @@ def retreat():
     rc(f"summon zombie {X + 0.5} {Y} {Z + 6.5} {{NoAI:1b,PersistenceRequired:1b}}")
     time.sleep(1.0)
     tail = Tail()
-    sent, ack = stimulate(f"damage {NAME} 13 minecraft:generic")
-    r = result(tail, sent, ack, lambda r: float(r["hp"]) < 8.0, owns("H2", "legs"), wait=2.5)
+    p0 = server_pos()
+    sent, ack = stimulate(f"damage {NAME} 15 minecraft:generic")
+    r = result(tail, sent, ack, lambda r: float(r["hp"]) < 8.0, owns("H2", "legs"), wait=1.2)
     p = server_pos()
-    r["dist_after"] = round(((p[0] - X - 0.5) ** 2 + (p[2] - Z - 6.5) ** 2) ** 0.5, 2) if p else None
+    d = lambda q: round(((q[0] - X - 0.5) ** 2 + (q[2] - Z - 6.5) ** 2) ** 0.5, 2) if q else None
+    r.update(dist_before=d(p0), dist_after=d(p))
     return r
 
 
@@ -227,7 +244,8 @@ def pct(v, q):
 def summary(name, rs):
     ok = [r for r in rs if r.get("ok")]
     out = dict(case=name, n=len(rs), measured=len(ok))
-    for key in ("body_ticks", "act_us", "link_sent_ms", "link_ack_ms", "rcon_ms", "shield_ticks"):
+    for key in ("body_ticks", "act_us", "link_sent_ms", "link_ack_ms", "rcon_ms", "shield_ticks", "move_ticks",
+                "edge_dist_seen", "edge_dist_end"):
         v = [r[key] for r in ok if r.get(key) is not None]
         if v:
             out[key] = dict(n=len(v), median=statistics.median(v), p90=pct(v, 0.9), max=max(v))
