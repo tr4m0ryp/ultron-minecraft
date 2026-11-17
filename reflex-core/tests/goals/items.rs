@@ -1,5 +1,4 @@
 use crate::sim::Sim;
-use reflex_core::channels::MainCmd;
 use reflex_core::BlockPos;
 
 #[test]
@@ -218,31 +217,4 @@ fn a_roof_is_never_laid_from_under_it() {
         spots.iter().all(|p| p.y >= 65),
         "eye above the wall top: {spots:?}"
     );
-}
-
-#[test]
-fn a_fill_never_digs_at_a_scaffold_cell_that_holds_no_block() {
-    // Live: a pillar cell stayed on the fill's scaffold list with no block in it, and the
-    // hand dug at the empty cell until the fill gave that cell up (60 ticks, and before
-    // that bound for good: one hut build hung for 4 minutes).
-    let mut s = Sim::new();
-    s.item("oak_planks", 8, Some(13));
-    s.place_on_top = true;
-    let ghost = BlockPos::new(2, 64, 0);
-    s.block(BlockPos::new(2, 64, 1), "dirt");
-    s.block(BlockPos::new(2, 65, 1), "dirt");
-    s.nav.state().placed.push(ghost);
-    s.goal("place oak_planks 2 66 0 2 66 1", true);
-    let mut dug_at_air = 0;
-    for _ in 0..1500 {
-        let out = s.step();
-        let empty = !s.world.state().blocks.contains_key(&ghost);
-        if out.main == Some(MainCmd::Dig(ghost)) && empty {
-            dug_at_air += 1;
-        }
-        if s.has_event("goal_done") || s.has_event("goal_failed") {
-            break;
-        }
-    }
-    assert_eq!(dug_at_air, 0, "ticks spent digging at a cell with no block");
 }

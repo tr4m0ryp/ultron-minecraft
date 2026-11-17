@@ -5,20 +5,27 @@
 //! stands (the wall top it stepped onto), before the roof closes over it.
 
 use crate::goals::items::{hand_sees, replaceable};
+use crate::goals::ports::World;
 use crate::goals::task::GoalCx;
 use crate::math::{BlockPos, Vec3};
 
 /// Eye to the top of the block, at most (survival reach is 4.5).
 const REACH: f64 = 4.3;
 
+/// A block stands in the listed cell: the list is a record of clicks and digs, and a cell
+/// on it that is air (the server refused the block, or the dig is done) is nothing to dig.
+/// Live, the hand dug at such a cell for 44 ticks a hut, and before the tick bound below
+/// for good.
+fn stands(world: &dyn World, b: BlockPos) -> bool {
+    world.block_at(b).is_some_and(|k| !replaceable(&k))
+}
+
 fn under(cover: &[BlockPos], p: BlockPos) -> bool {
     cover.iter().any(|c| c.x == p.x && c.z == p.z && c.y > p.y)
 }
 
 /// A scaffold block among `scaffold` that lies under the fill's cells and that the body,
-/// itself out from under them and not standing on it, can dig from here. Only a block
-/// that stands: the list is a record of clicks and digs, and a cell on it that is air (the
-/// server refused the block, or the dig is done) is nothing to dig.
+/// itself out from under them and not standing on it, can dig from here.
 pub fn reachable(cx: &GoalCx, cover: &[BlockPos], scaffold: &[BlockPos]) -> Option<BlockPos> {
     let me = &cx.snap().me;
     let feet = me.pos.block();
@@ -29,7 +36,7 @@ pub fn reachable(cx: &GoalCx, cover: &[BlockPos], scaffold: &[BlockPos]) -> Opti
     scaffold.iter().copied().find(|&b| {
         let top = b.feet_centre() + Vec3::new(0.0, 0.95, 0.0);
         under(cover, b)
-            && cx.world.block_at(b).is_some_and(|k| !replaceable(&k))
+            && stands(&*cx.world, b)
             && feet.below() != b
             && feet != b
             && eye.dist(top) <= REACH
@@ -72,6 +79,21 @@ impl Budget {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::goals::fakes::FakeWorld;
+
+    #[test]
+    fn a_listed_cell_with_no_block_in_it_is_not_scaffold_to_dig() {
+        let w = FakeWorld::default();
+        let (ghost, pillar) = (BlockPos::new(1, 64, 1), BlockPos::new(2, 64, 1));
+        w.state().blocks.insert(pillar, "dirt".into());
+        assert!(stands(&w, pillar));
+        assert!(
+            !stands(&w, ghost),
+            "air: refused by the server or already dug"
+        );
+        w.state().blocks.insert(ghost, "short_grass".into());
+        assert!(!stands(&w, ghost), "a plant is not a block to take down");
+    }
 
     #[test]
     fn a_block_that_will_not_break_is_given_up_after_its_ticks() {
