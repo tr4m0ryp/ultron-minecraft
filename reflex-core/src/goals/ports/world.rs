@@ -154,3 +154,46 @@ pub trait World {
     /// the inventory.
     fn toss(&mut self, item: &str, count: u32) -> u32;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::goals::fakes::FakeWorld;
+
+    #[test]
+    fn a_full_name_matches_itself_and_a_family_word_its_family() {
+        assert!(name_matches("healing_potion", "healing_potion", true));
+        assert!(!name_matches(
+            "healing_potion",
+            "strong_healing_potion",
+            true
+        ));
+        assert!(!name_matches("furnace", "blast_furnace", true));
+        assert!(name_matches("iron_ore", "deepslate_iron_ore", true));
+        assert!(!name_matches("gold_ore", "nether_gold_ore", true));
+        assert!(!name_matches("oak_log", "stripped_oak_log", true));
+        assert!(name_matches("bed", "red_bed", false));
+        assert!(name_matches("log", "stripped_oak_log", false));
+        assert!(!name_matches("log", "backlog", false));
+    }
+
+    #[test]
+    fn a_count_by_full_name_leaves_longer_names_out() {
+        let mut w = FakeWorld::default();
+        {
+            let mut s = w.state();
+            s.add_item("healing_potion", 1);
+            s.add_item("strong_healing_potion", 2);
+            s.add_item("beef", 3);
+            s.add_item("cooked_beef", 4);
+            s.add_item("oak_planks", 5);
+            s.add_item("birch_planks", 6);
+        }
+        assert_eq!(w.count_item("healing_potion"), 1);
+        assert_eq!(w.count_item("strong_healing_potion"), 2);
+        assert_eq!(w.count_item("beef"), 3);
+        assert_eq!(w.count_item("planks"), 11);
+        assert_eq!(w.toss("beef", 9), 3, "a toss takes only the named item");
+        assert_eq!(w.count_item("cooked_beef"), 4);
+    }
+}

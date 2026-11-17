@@ -95,8 +95,8 @@ pub fn item_matches(kind: &str, stack: &ItemStack) -> bool {
     item_name(stack).is_some_and(|n| matches(kind, n))
 }
 
-/// Every block kind the query kind asks for ("bed" gives all sixteen beds, "furnace" only
-/// the furnace).
+/// Every block kind the query kind asks for ("bed" gives every bed, "furnace" only the
+/// furnace).
 pub fn block_kinds(kind: &str) -> Vec<BlockKind> {
     let full = full_name(kind);
     (0u32..)
@@ -134,6 +134,7 @@ mod tests {
             .map(|k| bare(k.to_str()))
             .collect();
         assert_eq!(furnaces, ["furnace"]);
-        assert_eq!(block_kinds("bed").len(), 16);
+        let beds = block_kinds("bed");
+        assert!(beds.len() >= 16 && beds.iter().all(|k| k.to_str().ends_with("_bed")));
     }
 }
