@@ -8,7 +8,7 @@ use reflex_core::{Behaviour, Executor};
 
 use crate::{
     act::{self, HandState},
-    io::{dump_trace, Inbox, Trace},
+    io::{dump_trace, Inbox, Trace, Watches},
     sense::{self, EventBuffer, SenseState},
 };
 
@@ -17,6 +17,7 @@ struct Local {
     exec: Executor,
     inbox: Inbox,
     trace: Trace,
+    watches: Watches,
     goals: reflex_core::goals::GoalHandle,
     ledger_watch: crate::ledger::Watch,
     link: Option<super::Link>,
@@ -72,12 +73,18 @@ impl State {
                     exec: executor(&bot.username(), behaviours),
                     inbox: Inbox::spawn_stdin(),
                     trace: Trace::default(),
+                    watches: Watches::default(),
                     goals,
                     ledger_watch: Default::default(),
                     link: super::Link::mount(),
                 }
             });
             let mut say = l.inbox.drain(&mut l.exec);
+            let read = |p| crate::world::block_at(bot, p);
+            for probe in l.inbox.take_probes() {
+                l.watches.apply(probe, snap.tick, read);
+            }
+            l.watches.tick(snap.tick, read);
             l.exec.knobs.kept = l.goals.ledger().keep();
             super::link::sync_protected(&l.goals, &mut l.exec.knobs);
             let out = l.exec.tick(&snap);
@@ -96,6 +103,11 @@ impl State {
             (out, say)
         });
         act::apply(bot, &out, &snap.me, &mut inner.hands);
+        LOCAL.with_borrow_mut(|slot| {
+            if let Some(l) = slot {
+                l.trace.acted(snap.tick, started.elapsed());
+            }
+        });
         for text in say {
             bot.chat(text.as_str());
         }

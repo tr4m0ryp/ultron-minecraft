@@ -1,6 +1,8 @@
 //! Per-tick debug trace, enabled by `MOTOR_TRACE=1`: the snapshot vitals, the owner of each
 //! body channel, the block the hand works on (`hand=dig:x,y,z` or `place:x,y,z`) and every
-//! event the executor emitted this tick (including Log class).
+//! event the executor emitted this tick (including Log class). On a tick where the owner of
+//! any channel changed, `A <tick> us=<n>` follows once the output is written to the
+//! connection: microseconds from the start of sensing to the last packet handed over.
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -8,21 +10,38 @@ use reflex_core::{channels::MainCmd, Channel, Executor, MotorOutput, Snapshot};
 
 pub struct Trace {
     on: bool,
+    /// Channel owners of the last tick, to tell a tick on which a response begins.
+    owners: [Option<&'static str>; 5],
+    changed: bool,
 }
 
 impl Default for Trace {
     fn default() -> Self {
         Self {
             on: std::env::var_os("MOTOR_TRACE").is_some_and(|v| v != "0"),
+            owners: [None; 5],
+            changed: false,
         }
     }
 }
 
 impl Trace {
-    pub fn tick(&self, snap: &Snapshot, exec: &Executor, out: &MotorOutput, sensed: Duration) {
+    /// After the tick's output went to the connection; `took` counts from the start of
+    /// sensing.
+    pub fn acted(&mut self, tick: u64, took: Duration) {
+        if self.on && std::mem::take(&mut self.changed) {
+            println!("A {tick} us={}", took.as_micros());
+        }
+    }
+
+    pub fn tick(&mut self, snap: &Snapshot, exec: &Executor, out: &MotorOutput, sensed: Duration) {
         if !self.on {
             return;
         }
+        let owners =
+            [Channel::Legs, Channel::Gaze, Channel::Main, Channel::Off, Channel::Inv].map(|c| exec.owner(c));
+        self.changed = owners != self.owners;
+        self.owners = owners;
         let me = &snap.me;
         let held = me.hotbar[me.selected_slot as usize % 9]
             .as_ref()

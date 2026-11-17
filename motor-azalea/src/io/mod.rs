@@ -4,7 +4,9 @@
 mod inbox;
 mod outbox;
 mod trace;
+mod watch;
 
 pub use inbox::{BrainCmd, Inbox};
 pub use outbox::{dump_trace, publish};
 pub use trace::Trace;
+pub use watch::Watches;

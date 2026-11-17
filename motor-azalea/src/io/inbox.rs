@@ -1,7 +1,7 @@
 //! Line commands from stdin, read on a plain thread and drained once per tick.
 //!
 //! `goal <x> <y> <z> [priority] [spec...]`, `goal-end`, `mode <name>`, `gain <name> <value>`,
-//! `say <text>`.
+//! `say <text>`, and the block probes of `watch`.
 
 use std::{
     io::BufRead,
@@ -9,6 +9,8 @@ use std::{
 };
 
 use reflex_core::{math::Vec3, Executor, GainName, Mode};
+
+use super::watch::{self, ProbeCmd};
 
 #[derive(Debug, PartialEq)]
 pub enum BrainCmd {
@@ -23,10 +25,13 @@ pub enum BrainCmd {
     Mode(Mode),
     Gain(GainName, f32),
     Say(String),
+    /// A staged measurement's block probe; answered by the tick loop, not the executor.
+    Probe(ProbeCmd),
 }
 
 pub struct Inbox {
     rx: Receiver<BrainCmd>,
+    probes: Vec<ProbeCmd>,
 }
 
 impl Inbox {
@@ -46,11 +51,14 @@ impl Inbox {
                 }
             }
         });
-        Self { rx }
+        Self {
+            rx,
+            probes: Vec::new(),
+        }
     }
 
     /// Applies every pending knob command; returns the chat lines to send.
-    pub fn drain(&self, exec: &mut Executor) -> Vec<String> {
+    pub fn drain(&mut self, exec: &mut Executor) -> Vec<String> {
         let mut say = Vec::new();
         while let Ok(cmd) = self.rx.try_recv() {
             match cmd {
@@ -74,9 +82,15 @@ impl Inbox {
                 BrainCmd::Mode(m) => exec.knobs.set_mode(m),
                 BrainCmd::Gain(name, v) => exec.knobs.set_gain(name, v),
                 BrainCmd::Say(text) => say.push(text),
+                BrainCmd::Probe(p) => self.probes.push(p),
             }
         }
         say
+    }
+
+    /// Block probes that arrived since the last call.
+    pub fn take_probes(&mut self) -> Vec<ProbeCmd> {
+        std::mem::take(&mut self.probes)
     }
 }
 
@@ -129,6 +143,6 @@ pub fn parse(line: &str) -> Option<BrainCmd> {
             Some(BrainCmd::Gain(name, it.next()?.parse().ok()?))
         }
         "say" if !rest.trim().is_empty() => Some(BrainCmd::Say(rest.trim().to_string())),
-        _ => None,
+        _ => watch::parse(line).map(BrainCmd::Probe),
     }
 }
