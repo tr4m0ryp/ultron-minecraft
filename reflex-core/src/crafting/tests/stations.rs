@@ -90,10 +90,15 @@ fn an_impossible_potion_gives_the_whole_shopping_list() {
         e,
         "cannot craft healing_potion: need 1 crafting_table, have 0: craft 1 from 4 any plank; \
          need 4 any plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; \
+         need 1 furnace, have 0: craft 1 from 8 cobblestone/blackstone/cobbled_deepslate; \
+         need 8 cobblestone/blackstone/cobbled_deepslate, have 0; \
          need 1 awkward_potion, have 0: brew 1 from 1 water_potion \
          and 1 nether_wart; need 1 nether_wart, have 0; need 1 glistering_melon_slice, have 0: \
-         craft 1 from 8 gold_nugget and 1 melon_slice; need 8 gold_nugget, have 0; \
-         need 1 melon_slice, have 0. Get 1 any log, 1 nether_wart, 8 gold_nugget, 1 melon_slice."
+         craft 1 from 8 gold_nugget and 1 melon_slice; need 8 gold_nugget, have 0: craft 9 \
+         from 1 gold_ingot; need 1 gold_ingot, have 0: smelt 1 from 1 raw_gold; need 1 \
+         raw_gold, have 0; need 1 melon_slice, have 0; need fuel for 1 more smelt: 1 coal or \
+         1 log or plank. Get 1 any log, 8 cobblestone/blackstone/cobbled_deepslate, \
+         1 nether_wart, 1 raw_gold, 1 melon_slice, 1 coal."
     );
 }
 
@@ -126,8 +131,16 @@ fn a_diamond_pickaxe_is_upgraded_at_a_smithing_table() {
     let bare = inv(&[("diamond_pickaxe", 1)]);
     assert_eq!(
         plan(&book(), &bare, "netherite_pickaxe", 1, near, false).unwrap_err(),
-        "cannot craft netherite_pickaxe: need 1 netherite_upgrade_smithing_template, have 0; \
-         need 1 netherite_ingot, have 0. Get 1 netherite_upgrade_smithing_template, \
-         1 netherite_ingot."
+        "cannot craft netherite_pickaxe: need 1 crafting_table, have 0: craft 1 from 4 any \
+         plank; need 4 any plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; \
+         need 1 furnace, have 0: craft 1 from 8 cobblestone/blackstone/cobbled_deepslate; \
+         need 8 cobblestone/blackstone/cobbled_deepslate, have 0; \
+         need 1 netherite_upgrade_smithing_template, have 0; need 1 netherite_ingot, have 0: \
+         craft 1 from 4 netherite_scrap and 4 gold_ingot; need 4 netherite_scrap, have 0: \
+         smelt 4 from 4 ancient_debris; need 4 ancient_debris, have 0; need 4 gold_ingot, \
+         have 0: smelt 4 from 4 raw_gold; need 4 raw_gold, have 0; need fuel for 8 more \
+         smelts: 1 coal or 6 logs or planks. Get 1 any log, \
+         8 cobblestone/blackstone/cobbled_deepslate, 1 netherite_upgrade_smithing_template, \
+         4 ancient_debris, 4 raw_gold, 1 coal."
     );
 }
