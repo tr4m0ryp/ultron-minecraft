@@ -6,7 +6,7 @@ use std::sync::Arc;
 use super::stations::Stand;
 use crate::crafting::{Recipe, RecipeBook};
 use crate::goals::ports::{
-    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed,
+    name_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed,
 };
 use crate::math::BlockPos;
 use crate::snapshot::Slot;
@@ -24,6 +24,8 @@ pub struct FakeWorldState {
     pub tools: HashMap<String, ToolNeed>,
     pub book: Arc<RecipeBook>,
     pub drops: Vec<ItemDrop>,
+    /// Names the registry would know beyond the ones this world holds (see `full_name`).
+    pub names: Vec<String>,
     pub sleeping: bool,
     /// Right clicks on a bed (by day they only set the spawn point).
     pub bed_clicks: u32,
@@ -50,7 +52,19 @@ pub struct FakeWorldState {
     pub(super) furnace_seen: Option<FurnaceSlots>,
 }
 
+/// Words that name a family of blocks or items and nothing by themselves.
+const FAMILIES: [&str; 12] = [
+    "bed", "log", "planks", "wool", "door", "ore", "pickaxe", "axe", "sword", "shovel", "hoe",
+    "slab",
+];
+
 impl FakeWorldState {
+    /// The real adapter asks the game's registries. Here every name is a full one except
+    /// the family words above, so a test world matches by exact name as the live one does.
+    pub fn full_name(&self, kind: &str) -> bool {
+        !FAMILIES.contains(&kind) || self.names.iter().any(|n| n == kind)
+    }
+
     pub fn add_item(&mut self, name: &str, n: u32) {
         match self.inventory.iter_mut().find(|(k, _)| k == name) {
             Some((_, c)) => *c += n,
@@ -61,8 +75,9 @@ impl FakeWorldState {
     /// Removes up to `n` of the stacks matching `kind`; returns how many were removed.
     pub fn take_item(&mut self, kind: &str, n: u32) -> u32 {
         let mut left = n;
+        let full = self.full_name(kind);
         for (name, c) in self.inventory.iter_mut() {
-            if left > 0 && kind_matches(kind, name) {
+            if left > 0 && name_matches(kind, name, full) {
                 let t = (*c).min(left);
                 *c -= t;
                 left -= t;

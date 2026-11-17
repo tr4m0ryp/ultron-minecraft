@@ -10,7 +10,7 @@ mod target;
 
 pub use target::SEARCH_RADIUS;
 
-use crate::goals::ports::{kind_matches, NavTarget, Navigator, ToolNeed};
+use crate::goals::ports::{NavTarget, Navigator, ToolNeed};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::route::drop_of;
 use crate::goals::travel::{Walk, Walker};
@@ -81,7 +81,7 @@ impl Mine {
     fn is_target(&self, cx: &GoalCx, pos: BlockPos) -> bool {
         cx.world
             .block_at(pos)
-            .is_some_and(|n| kind_matches(&self.block, &n))
+            .is_some_and(|n| cx.world.matches(&self.block, &n))
     }
 
     fn skip(&mut self, cx: &mut GoalCx, pos: BlockPos, why: &str) -> Step {

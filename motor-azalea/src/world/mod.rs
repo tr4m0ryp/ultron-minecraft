@@ -67,6 +67,10 @@ impl AzaleaWorld {
 }
 
 impl World for AzaleaWorld {
+    fn full_name(&self, kind: &str) -> bool {
+        names::full_name(kind)
+    }
+
     fn block_at(&self, p: BlockPos) -> Option<String> {
         blocks::block_at(&self.bot, p)
     }

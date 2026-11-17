@@ -3,7 +3,6 @@
 //! reached from the side by the route planner. Never a block that would let water or lava
 //! in, never one inside a protected region or one the player placed.
 
-use crate::goals::ports::kind_matches;
 use crate::goals::task::GoalCx;
 use crate::math::BlockPos;
 
@@ -33,7 +32,9 @@ pub fn safe(cx: &GoalCx, p: BlockPos) -> bool {
 }
 
 fn is(cx: &GoalCx, kind: &str, p: BlockPos) -> bool {
-    cx.world.block_at(p).is_some_and(|n| kind_matches(kind, &n))
+    cx.world
+        .block_at(p)
+        .is_some_and(|n| cx.world.matches(kind, &n))
 }
 
 /// The block level with the body and next to it, if one is the kind.

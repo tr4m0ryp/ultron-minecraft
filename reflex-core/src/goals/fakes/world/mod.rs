@@ -13,7 +13,8 @@ use std::sync::Arc;
 
 use crate::crafting::{Recipe, RecipeBook};
 use crate::goals::ports::{
-    kind_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob, ToolNeed, World,
+    kind_matches, name_matches, FurnaceJob, FurnaceSlots, ItemDrop, MenuStatus, StationJob,
+    ToolNeed, World,
 };
 use crate::math::{BlockPos, Vec3};
 use crate::snapshot::{Slot, Snapshot};
@@ -28,6 +29,10 @@ impl FakeWorld {
 }
 
 impl World for FakeWorld {
+    fn full_name(&self, kind: &str) -> bool {
+        self.0.borrow().full_name(kind)
+    }
+
     fn block_at(&self, p: BlockPos) -> Option<String> {
         let s = self.0.borrow();
         let ground = s.ground_y.is_some_and(|y| p.y <= y);
@@ -46,11 +51,11 @@ impl World for FakeWorld {
             let (x, y, z) = (p.x - from.x, p.y - from.y, p.z - from.z);
             ((x * x + y * y + z * z) as f64).sqrt()
         };
-        self.0
-            .borrow()
-            .blocks
+        let s = self.0.borrow();
+        let full = s.full_name(kind);
+        s.blocks
             .iter()
-            .filter(|(p, n)| kind_matches(kind, n) && !exclude.contains(p))
+            .filter(|(p, n)| name_matches(kind, n, full) && !exclude.contains(p))
             .map(|(p, _)| *p)
             .filter(|p| d(p) <= radius as f64)
             .min_by(|a, b| {
@@ -70,9 +75,10 @@ impl World for FakeWorld {
 
     fn count_item(&self, item: &str) -> u32 {
         let s = self.0.borrow();
+        let full = s.full_name(item);
         s.inventory
             .iter()
-            .filter(|(n, _)| kind_matches(item, n))
+            .filter(|(n, _)| name_matches(item, n, full))
             .map(|(_, c)| c)
             .sum()
     }
@@ -96,9 +102,10 @@ impl World for FakeWorld {
     fn item_slot(&self, item: &str) -> Option<Slot> {
         let s = self.0.borrow();
         let held = |n: &String| s.inventory.iter().any(|(k, c)| k == n && *c > 0);
+        let full = s.full_name(item);
         s.slots
             .iter()
-            .filter(|(n, _)| kind_matches(item, n) && held(n))
+            .filter(|(n, _)| name_matches(item, n, full) && held(n))
             .map(|(_, slot)| *slot)
             .min()
     }
@@ -112,11 +119,10 @@ impl World for FakeWorld {
     }
 
     fn item_drops(&self, item: Option<&str>, around: Vec3, radius: f64) -> Vec<ItemDrop> {
-        self.0
-            .borrow()
-            .drops
+        let s = self.0.borrow();
+        s.drops
             .iter()
-            .filter(|d| item.is_none_or(|k| kind_matches(k, &d.item)))
+            .filter(|d| item.is_none_or(|k| name_matches(k, &d.item, s.full_name(k))))
             .filter(|d| d.pos.dist(around) <= radius)
             .cloned()
             .collect()
