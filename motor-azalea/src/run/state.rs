@@ -80,7 +80,7 @@ impl State {
                 }
             });
             let mut say = l.inbox.drain(&mut l.exec);
-            let read = |p| crate::world::block_at(bot, p);
+            let read = |p| crate::world::block_name_at(bot, p);
             for probe in l.inbox.take_probes() {
                 l.watches.apply(probe, snap.tick, read);
             }

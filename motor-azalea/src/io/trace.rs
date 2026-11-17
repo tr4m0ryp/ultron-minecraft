@@ -11,7 +11,7 @@ use reflex_core::{channels::MainCmd, Channel, Executor, MotorOutput, Snapshot};
 pub struct Trace {
     on: bool,
     /// Channel owners of the last tick, to tell a tick on which a response begins.
-    owners: [Option<&'static str>; 5],
+    owners: String,
     changed: bool,
 }
 
@@ -19,7 +19,7 @@ impl Default for Trace {
     fn default() -> Self {
         Self {
             on: std::env::var_os("MOTOR_TRACE").is_some_and(|v| v != "0"),
-            owners: [None; 5],
+            owners: String::new(),
             changed: false,
         }
     }
@@ -38,8 +38,16 @@ impl Trace {
         if !self.on {
             return;
         }
-        let owners =
-            [Channel::Legs, Channel::Gaze, Channel::Main, Channel::Off, Channel::Inv].map(|c| exec.owner(c));
+        let owners = [
+            Channel::Legs,
+            Channel::Gaze,
+            Channel::Main,
+            Channel::Off,
+            Channel::Inv,
+        ]
+        .map(|c| exec.owner(c).unwrap_or("-"))
+        .join(",")
+            + exec.legs_note().unwrap_or("-");
         self.changed = owners != self.owners;
         self.owners = owners;
         let me = &snap.me;
