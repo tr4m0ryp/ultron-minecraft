@@ -29,6 +29,8 @@ pub struct State {
     pub steps: Vec<PlanStep>,
     budget: u32,
     stack: Vec<String>,
+    /// Inside `explain`: no further explaining below.
+    explaining: bool,
 }
 
 impl State {
@@ -38,6 +40,7 @@ impl State {
             steps: Vec::new(),
             budget: BUDGET,
             stack: Vec::new(),
+            explaining: false,
         }
     }
 
@@ -115,7 +118,6 @@ impl State {
         for a in &alts {
             let mut trial = self.clone();
             let node = trial.make(book, a, rest, mode);
-            self.budget = trial.budget;
             if node.missing() == 0 {
                 *self = trial;
                 return Need {
@@ -150,7 +152,9 @@ impl State {
     }
 
     /// Why an input a recipe takes only from the inventory is short: how the rest would
-    /// be made, when it cannot be made from here either. Nothing is planned or taken.
+    /// be made, when it cannot be made from here either. Nothing is planned or taken. One
+    /// such link per chain and only for an input that is one item (an ingot for nuggets):
+    /// behind "any other wool" the search would fan out sixteenfold at every level.
     fn explain(
         &mut self,
         book: &RecipeBook,
@@ -159,8 +163,8 @@ impl State {
         mode: Mode,
     ) -> Option<Via> {
         let mut trial = self.clone();
+        trial.explaining = true;
         let node = trial.need_set(book, ing, rest, mode);
-        self.budget = trial.budget;
         let short = node.missing() > 0;
         node.via.filter(|_| short)
     }
@@ -182,7 +186,6 @@ impl State {
         for r in rs {
             let mut trial = self.clone();
             let node = trial.apply(book, r, n);
-            self.budget = trial.budget;
             if node.missing() == 0 {
                 *self = trial;
                 return node;
@@ -226,7 +229,7 @@ impl State {
                 let have = self.take(ing, want);
                 let mut leaf =
                     Need::leaf(name_set(book, &ing.0), want, have).weighing(weigh(book, &ing.0));
-                if have < want {
+                if have < want && !self.explaining && ing.0.len() == 1 {
                     leaf.via = self.explain(book, ing, want - have, sub_mode);
                 }
                 leaf
