@@ -36,8 +36,11 @@ fn three_bottles_brew_on_one_reagent_through_the_awkward_potion() {
     let four = plan(&book(), &kit, "awkward_potion", 4, STAND, false).unwrap_err();
     assert_eq!(
         four,
-        "cannot craft awkward_potion: need 4 water_potion, have 3; need 2 nether_wart, have 1. \
-         Get 1 water_potion, 1 nether_wart."
+        "cannot craft awkward_potion: need 1 crafting_table, have 0: craft 1 from 4 any plank; \
+         need 4 any plank, have 0: craft 4 from 1 any log; need 1 any log, have 0; \
+         need 4 water_potion, have 3: fill 1 from 1 glass_bottle; need 1 glass_bottle, have 0: \
+         craft 3 from 3 glass; need 3 glass, have 0; need 2 nether_wart, have 1. \
+         Get 1 any log, 3 glass, 1 nether_wart."
     );
 }
 
