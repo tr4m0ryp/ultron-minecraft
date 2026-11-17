@@ -853,6 +853,113 @@ vocabulary beyond two or three triggers, H3 sleep pressure, D6 to D12.
   kill 0 of 10. Written in the tick the server confirms the block: 10 of 10. A write
   rewrites and syncs the whole file: 6.3 ms with 2000 cells in it (debug build), on ticks
   that confirm a block only.
+- Reflex reaction time (tools/live/staged/reaction.py, 20 trials per reflex, 140 in all).
+  One RCON command stages each stimulus. From the trace: the tick whose sensed state first
+  holds the stimulus, and the tick the reflex first owns its channel; the outcome is read
+  back on the server. My body senses, decides and acts in one handler per 50 ms tick, so a
+  stimulus that stands in the snapshot is answered in that tick: 0 ticks at the median, at
+  p90 and at most for fall arrest R6 (teleported 30 blocks up with a water bucket; 0 health
+  lost in 20 of 20), creeper stance D1 (summoned 5 blocks away; 7.4 blocks from it after 3 s
+  in 20 of 20), ranged defence D3 (a skeleton summoned 10 away; 0 health lost in 8 s in 20
+  of 20), hunger H1 (food driven to the floor of 14 by a hunger effect; the food slot is
+  taken in the tick the bar reads 14), totem R11 (damaged to 5 health) and low-health
+  retreat H2 (damaged to 5 with a zombie near; 2.7 blocks from it before, 8.6 after 1.2 s).
+  Edge guard R5 (the floor ahead removed while walking): median 0, p90 1, at most 1 tick.
+  The 1-tick trials are the ones where the gap opened more than 0.73 blocks ahead (the
+  lookahead of 0.45 plus one step); the legs were held 0.20 blocks before the edge at the
+  median, 0.04 at the least, 0 falls in 20. Inside the tick, from the start of sensing to
+  the last packet handed to the connection: median 3.2 ms, p90 3.6, at most 6.2 over 120
+  response ticks (a later run of 20 had a median of 1.4 ms). After the command the channels
+  differ: a hand or inventory packet leaves in that tick; a legs command steers the next
+  physics step, so the first changed position came 1 tick later (20 of 20 for D1). By
+  design and not delay: D3 raises the shield when an arrow is due within 10 ticks, which
+  was 12 ticks after the draw was first seen at the median (p90 13, at most 14) of a
+  20-tick draw. Outside my body's control: from the RCON command being sent to the
+  stimulus standing in my snapshot took 42 ms at the median, p90 78, at most 98 (100
+  trials with an instant stimulus; RCON itself answered in 0 to 5 ms). That is the
+  server's own tick, the loopback and the wait for my next tick. The way back, from my
+  packet to the server acting on it, cannot be read from outside the server and is not
+  measured.
+- Totem swaps (found by that measurement). R11 repeats its swap command until the snapshot
+  shows the totem in the offhand, the server's answer takes a tick or two, and clicks went
+  out on consecutive ticks: every second one swapped the totem back. At the end of the
+  trial it was in the offhand in 15 of 20. A swap click now waits 5 ticks for its answer
+  before the next one (in the adapter, so the swaps that bring food or a tool to the hotbar
+  wait as well): 20 of 20, still commanded in the tick health reads 5.
+- The ghost block (tools/live/staged/goals/blocks/ghost.py). The client's world never held
+  one. My hands do not predict: a place or a dig is a packet, and the block appears or goes
+  only on the server's update. Forced refusals, on the build before and the build after: a
+  place goal into a cell an armour stand occupies (10 goals, 80 clicks, all refused) and a
+  pillar out of a bedrock well with an armour stand in it (10 goals, 660 clicks, all
+  refused): 0 cells where the client showed a block and the server air, 0 such cells in
+  the ledger, both builds. The belief was in the fill's scaffold list. A pillar cell stays
+  listed after its block is dug, the check for a scaffold block to take down never asked
+  whether a block still stood there, and the list was only tidied on the path the check
+  kept the fill from reaching. So the hand dug at an empty cell: 45 ticks per hut in 5 of
+  5 huts on the build before (15 ticks on the block, then 45 on air, cut off by the
+  60-tick bound; before that bound, for good, which was the 4-minute hang). Now the list
+  is tidied first and only a standing block counts: 0 ticks on air in 5 of 5 huts, 25 of
+  25 roof cells, 0 scaffold left. The 60-tick bound stays for a block that will not break.
+- Item names. A query that is itself the name of a block or an item now matches only that
+  name; a family word ("bed", "log", "planks", "pickaxe") still matches by its last words,
+  and an ore also takes its deepslate form. The adapter decides which it is from the game's
+  registries (potions by their contents included). Before, healing_potion counted
+  strong_healing_potion, "furnace" found a blast furnace, "beef" counted cooked beef,
+  "stone" took smooth stone and "dirt" coarse dirt, in every caller of the one matcher:
+  inventory counts, slots, tosses, drops, the nearest block, the tool for a block, and the
+  place, fill and mine goals. Unit tests on both sides; live, the suites that lean on it
+  ran again on the final build: crafting 50 of 50, stations 25 of 25, wool and meat 30 of
+  30, mining yield 5 of 5.
+- "Mined 0 iron_ore, picked up 2 raw_iron" (tools/live/staged/goals/mining/under.py: two
+  ores in bedrock boxes open underneath, two more in the open farther off, `mine iron_ore
+  2`). Explained and reproduced 5 of 5: the only way to a boxed ore is a tunnel under the
+  box and up, the route planner breaks the ore as part of that tunnel, and the goal counted
+  only blocks its own dig phase broke. The server showed the 2 boxed ores gone, 2 raw iron
+  held and the 2 open ores in place, which is what "both ores in place" was. A counting
+  fault, not a targeting one. A target the route's hand was breaking when it went now
+  counts as mined: the report equals the server in 5 of 5 ("mined 2 iron_ore, picked up 2
+  raw_iron"); the wake case with ores sealed on every side is unchanged, 5 of 5.
+- Shopping lists for deep chains. Three faults in how the list chose a route: the furnace
+  list that melts golden gear down was not seen as recycling (it holds horse armour, which
+  has no recipe, and the test asked for every input to be crafted), so 8 nuggets came "from
+  8 one of 12 kinds such as golden_pickaxe"; a recipe that takes its own result (copying a
+  smithing template) was offered as the way to the first one; and what an ore drops was
+  sent to the furnace as an ore block ("smelt 4 gold_ingot from 4 gold_ore"). Now a missing
+  leaf has a cost (1 for something mined, farmed or found, 2 for an ore block, 8 for a
+  crafted thing), the cheapest route is named, an input a recipe takes only from the
+  inventory is explained one link further when it cannot be made from here, and coal,
+  diamond, raw gold and the like are fetched, never made. The glistering melon now reads
+  "need 8 gold_nugget, have 0: craft 9 from 1 gold_ingot; need 1 gold_ingot, have 0: smelt
+  1 from 1 raw_gold". Plans that succeed are unchanged. Unit tests: 5 chains on the
+  fixture book and 6 on the real 26.3 recipes (glistering melon, potion of healing,
+  netherite pickaxe, diamond pickaxe, anvil, powered rail), each under 500 ms. Live, the
+  two impossible station cases gave the new lists word for word, 5 of 5 and 5 of 5.
+- Filling bottles at water (tools/live/staged/goals/brewing/bottles.py, a one-block water
+  source in the floor, counts read on the server, potions by their contents). The book
+  holds one recipe the data pack does not: an empty bottle used on a water source gives a
+  water bottle. The body walks to the nearest source with air over it within 16 blocks,
+  looks at its surface and uses the bottle, one use per bottle. 3 bottles filled 5 of 5; 3
+  glass to 3 bottles at a table it put down, then filled, 5 of 5; an awkward potion from 1
+  empty bottle, nether wart, a stand and blaze powder in one goal, 5 of 5; no water within
+  16 blocks failed once with the reason and kept the bottles, 5 of 5. 20 of 20.
+- Blast furnace and smoker (tools/live/staged/goals/smelting/quick.py, the station 4 blocks
+  from the body, no furnace on the site and nothing in the kit to make one from). The 25
+  blasting and 9 smoking entries are read as the faster station of the furnace recipe they
+  repeat; the planner still plans furnace steps and the craft goal takes a step to a blast
+  furnace or smoker near that accepts it, with half the cooking time. The library opens
+  both menus and their three slots are the furnace's. On the final build: 2 iron ingots at
+  a blast furnace 14 of 15 (13.6 s; the same at a furnace 23.8 s, 5 of 5), 2 cooked beef at
+  a smoker 5 of 5 (13.6 s), and charcoal with only a blast furnace near (it is not
+  blasted) failed once asking for a furnace, logs kept, 5 of 5. The one failure was the
+  first trial after the body joined and was teleported to the site: it did not yet see the
+  blast furnace and asked for a furnace; with 4 s between the teleport and the first
+  goal, 5 of 5. On the build before, 4 of 5: a load visit read 1 of 2 items, the next visit
+  found 1 left with an empty fuel slot (which a burning furnace also shows) and called it
+  out of fuel. One such visit now waits one more cooking time before saying so; the
+  furnace cases ran again after it, 10 of 10.
+  Not done: the stonecutter (351 recipes) and the campfire. The stonecutter needs a button
+  click whose number is the recipe's place in a list the server sends and the library
+  drops; not started.
 - PIANO's reflex modules and the parallel planning-acting paper were read at abstract or
   summary level only.
 

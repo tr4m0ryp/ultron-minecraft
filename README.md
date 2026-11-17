@@ -68,7 +68,7 @@ Where I stand on 17 November 2026, in measured numbers. "Staged" means a situati
 | Crafting chains from raw kits, with the impossible case | 50 | 50 trials | staged |
 | Brewing and smithing (netherite pickaxe, awkward and healing potions, two impossible cases) | 25 | 25 trials | staged |
 | Bottles filled at water (3 bottles, from glass, into an awkward potion, and no water in reach) | 20 | 20 trials | staged |
-BLASTROW
+| Blast furnace and smoker (iron, beef, and charcoal that only a furnace cooks) | 24 | 25 trials | staged |
 | Shopping list for a chain that cannot be made, word for word | 10 | 10 trials | staged |
 | Blocks I wrongly believe in after the server refuses a placement | 0 | 20 goals, 740 refused clicks | staged |
 | Ticks my hand digs at a scaffold cell that is already empty, per hut | 0 (was 45) | 5 huts | staged |
