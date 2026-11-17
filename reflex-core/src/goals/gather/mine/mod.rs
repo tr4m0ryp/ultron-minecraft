@@ -10,6 +10,7 @@ mod target;
 
 pub use target::SEARCH_RADIUS;
 
+use crate::channels::MainCmd;
 use crate::goals::ports::{NavTarget, Navigator, ToolNeed};
 use crate::goals::task::{GoalCx, GoalTask, Plan, Step};
 use crate::goals::travel::route::drop_of;
@@ -46,6 +47,8 @@ pub struct Mine {
     walker: Walker,
     skipped: Vec<BlockPos>,
     pickup: Pickup,
+    /// The target the route's own hand work was breaking on the way to it.
+    path_dug: Option<BlockPos>,
 }
 
 impl Mine {
@@ -60,6 +63,7 @@ impl Mine {
             walker: Walker::default(),
             skipped: Vec::new(),
             pickup: Pickup::default(),
+            path_dug: None,
         }
     }
 
@@ -107,10 +111,14 @@ impl Mine {
         if self.is_target(cx, pos) {
             return;
         }
+        self.count_broken(cx);
+        self.phase = Phase::Advance { pos, ticks: 0 };
+    }
+
+    fn count_broken(&mut self, cx: &mut GoalCx) {
         self.broken += 1;
         let (g, n) = (self.gained(cx), self.count);
         cx.progress(g, n, format!("{}, {g} of {n} wanted", self.tally(cx)));
-        self.phase = Phase::Advance { pos, ticks: 0 };
     }
 
     fn dig(&mut self, cx: &mut GoalCx, pos: BlockPos, ticks: u32) -> Step {
@@ -169,7 +177,18 @@ impl GoalTask for Mine {
             Phase::Find => Step::Bid(Plan::hold("goal_mine")),
             Phase::Approach(pos) => {
                 if !self.is_target(cx, pos) {
-                    self.phase = Phase::Find;
+                    // Gone before the body stood beside it. When the route itself broke it
+                    // (an ore reached from below is part of its own tunnel) it was mined
+                    // all the same: live, two such ores were reported as "mined 0
+                    // iron_ore, picked up 2 raw_iron".
+                    if self.path_dug.take() == Some(pos) {
+                        self.walker.stop(cx);
+                        self.count_broken(cx);
+                        self.pickup.arm();
+                        self.phase = Phase::Pickup(pos);
+                    } else {
+                        self.phase = Phase::Find;
+                    }
                     return Step::Bid(Plan::hold("goal_mine"));
                 }
                 if target::beside(cx.me_pos().block(), pos) {
@@ -185,7 +204,12 @@ impl GoalTask for Mine {
                         self.phase = Phase::Dig { pos, ticks: 0 };
                         self.dig(cx, pos, 0)
                     }
-                    Walk::Moving(plan) => Step::Bid(plan),
+                    Walk::Moving(plan) => {
+                        if plan.commands.main == Some(MainCmd::Dig(pos)) {
+                            self.path_dug = Some(pos);
+                        }
+                        Step::Bid(plan)
+                    }
                     Walk::Failed(f) => self.skip(cx, pos, &format!("unreachable ({f:?})")),
                 }
             }

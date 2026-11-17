@@ -158,7 +158,9 @@ impl GoalTask for Fill {
         }
         let place = self.current.as_mut().expect("set above");
         // A pillar the body climbed out on, now under the cells to fill: down it comes
-        // while it can still be reached (see `stray`).
+        // while it can still be reached (see `stray`). Cells already empty leave the list
+        // first, so a finished dig is never taken up again.
+        self.cleanup.tally(cx);
         let mut scaffold = self.cleanup.pending().to_vec();
         scaffold.extend_from_slice(place.scaffold());
         scaffold.retain(|b| !self.stray.given_up(*b));
@@ -168,7 +170,6 @@ impl GoalTask for Fill {
                 return Step::Bid(self.cleanup.dig(cx, b));
             }
         }
-        self.cleanup.tally(cx);
         let step = place.step(cx);
         if !matches!(step, Step::Bid(_) | Step::Idle) {
             // A scaffold block a route put into one of the fill's own cells is part of the
