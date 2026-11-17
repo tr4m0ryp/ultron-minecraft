@@ -171,3 +171,51 @@ fn smelt_goes_back_for_output_a_visit_left_in_the_furnace() {
     assert_eq!(said(&s, "goal_done"), "smelted 2 iron_ingot");
     assert_eq!(held(&s, "iron_ingot"), 2);
 }
+
+#[test]
+fn a_blast_furnace_near_takes_the_smelt_in_half_the_time() {
+    let mut s = sim();
+    s.item("raw_iron", 2, None);
+    s.item("oak_planks", 2, None);
+    s.block(BlockPos::new(3, 64, 0), "blast_furnace");
+    s.goal("smelt iron_ingot 2", true);
+    // A furnace is still cooking at 300 ticks (see the test above).
+    assert!(
+        s.run_until(300, |s| s.has_event("goal_done")),
+        "{:?}",
+        s.events("goal_failed")
+    );
+    assert_eq!(held(&s, "iron_ingot"), 2);
+    assert!(placed(&s, "furnace").is_empty(), "no furnace was needed");
+}
+
+#[test]
+fn a_smoker_cooks_food_and_a_furnace_near_is_left_alone() {
+    let mut s = sim();
+    s.item("beef", 2, None);
+    s.item("oak_planks", 2, None);
+    let (smoker, furnace) = (BlockPos::new(3, 64, 0), BlockPos::new(-3, 64, 0));
+    s.block(smoker, "smoker");
+    s.block(furnace, "furnace");
+    s.goal("smelt cooked_beef 2", true);
+    assert!(s.run_until(300, |s| s.has_event("goal_done")));
+    assert_eq!(held(&s, "cooked_beef"), 2);
+    let w = s.world.state();
+    assert!(w.furnaces.contains_key(&smoker) && !w.furnaces.contains_key(&furnace));
+}
+
+#[test]
+fn a_blast_furnace_is_no_furnace_for_what_it_does_not_take() {
+    // Charcoal is cooked in a furnace only: the blast furnace near is not used, and with
+    // nothing to make a furnace from the goal fails once, asking for one.
+    let mut s = sim();
+    s.item("oak_log", 2, None);
+    let blast = BlockPos::new(3, 64, 0);
+    s.block(blast, "blast_furnace");
+    s.goal("smelt charcoal 1", true);
+    assert!(s.run_until(200, |s| s.has_event("goal_failed")));
+    let e = said(&s, "goal_failed");
+    assert!(e.contains("need 1 furnace, have 0"), "{e}");
+    assert_eq!(s.events("goal_failed").len(), 1);
+    assert!(s.world.state().furnaces.is_empty(), "the blast furnace was never opened");
+}

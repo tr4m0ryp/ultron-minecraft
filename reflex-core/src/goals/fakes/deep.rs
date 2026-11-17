@@ -1,9 +1,10 @@
 //! Fixture recipes for deep chains, in the vanilla 26.3 shape: gold with its nuggets, its
 //! storage blocks and the furnace list that melts golden gear down (horse armour in it is
 //! only ever found), netherite, and the things an ore drops with the recipes that also give
-//! them (unpacking a storage block, smelting the ore block).
+//! them (unpacking a storage block, smelting the ore block). Also what a blast furnace and
+//! a smoker take.
 
-use crate::crafting::{Ingredient, RecipeBook};
+use crate::crafting::{Ingredient, RecipeBook, BLAST_FURNACE, SMOKER};
 
 use super::recipes::{shaped, shapeless, smelt, tag};
 
@@ -61,7 +62,12 @@ pub fn add(b: &mut RecipeBook) {
         shapeless("diamond", 9, vec![one("diamond_block")]),
         smelt("diamond_from_smelting_diamond_ore", one("diamond_ore")),
         smelt("iron_ingot_from_smelting_iron_ore", one("iron_ore")),
+        smelt("cooked_beef", one("beef")),
     ] {
         b.add(r);
     }
+    // What the faster furnaces repeat (the data pack's blasting and smoking entries).
+    b.add_quick(BLAST_FURNACE, "iron_ingot", one("raw_iron"));
+    b.add_quick(BLAST_FURNACE, "gold_ingot", one("raw_gold"));
+    b.add_quick(SMOKER, "cooked_beef", one("beef"));
 }

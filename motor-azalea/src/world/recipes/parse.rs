@@ -179,6 +179,9 @@ mod tests {
         let blast = json!({"type": "minecraft:blasting", "ingredient": "minecraft:raw_iron",
             "result": {"id": "minecraft:iron_ingot"}});
         assert!(recipe("b", &blast, &tags).is_none());
+        let (station, result, input) = quick(&blast, &tags).expect("a faster furnace recipe");
+        assert_eq!((station, result.as_str()), ("blast_furnace", "iron_ingot"));
+        assert!(input.accepts("raw_iron") && quick(&iron, &tags).is_none());
         tags.insert(
             "shulker_boxes".into(),
             vec!["shulker_box".into(), "black_shulker_box".into()],
