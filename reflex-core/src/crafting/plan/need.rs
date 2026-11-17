@@ -12,6 +12,8 @@ pub struct Need {
     pub need: u32,
     pub have: u32,
     pub via: Option<Via>,
+    /// What one missing unit costs to come by when nothing makes it here (see `weigh`).
+    pub weight: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -31,6 +33,21 @@ impl Need {
             need,
             have,
             via: None,
+            weight: FETCHED,
+        }
+    }
+
+    pub fn weighing(mut self, weight: u32) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// The effort the missing leaves stand for: the route with the least of it is the
+    /// one the shopping list names.
+    pub fn cost(&self) -> u32 {
+        match &self.via {
+            Some(v) => v.subs.iter().map(Need::cost).sum(),
+            None => self.need.saturating_sub(self.have) * self.weight,
         }
     }
 
@@ -39,6 +56,27 @@ impl Need {
             Some(v) => v.subs.iter().map(Need::missing).sum(),
             None => self.need.saturating_sub(self.have),
         }
+    }
+}
+
+/// One unit of something mined, farmed or found.
+pub const FETCHED: u32 = 1;
+/// An ore block as an item needs silk touch; what the ore drops is the usual way.
+const ORE_BLOCK: u32 = 2;
+/// A crafted thing the chain stops at (a tool to melt down, a link cut for a cycle).
+const MADE: u32 = 8;
+
+/// The cost of one missing unit of a set of acceptable items. Live, the list for a
+/// glistering melon read "smelt 8 gold_nugget from 8 one of 12 kinds such as
+/// golden_pickaxe" where one gold ingot, from one raw gold, would do.
+pub fn weigh(book: &RecipeBook, items: &[String]) -> u32 {
+    let made = items.iter().filter(|i| !book.is_raw(i)).count();
+    if made * 2 > items.len() {
+        MADE
+    } else if items.iter().all(|i| i.ends_with("_ore")) {
+        ORE_BLOCK
+    } else {
+        FETCHED
     }
 }
 

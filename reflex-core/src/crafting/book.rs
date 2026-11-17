@@ -162,6 +162,7 @@ pub struct RecipeBook {
     by_result: HashMap<String, Vec<Recipe>>,
     tags: Vec<(String, Vec<String>)>,
     in_hand: HashSet<String>,
+    mined: HashSet<String>,
 }
 
 impl RecipeBook {
@@ -182,6 +183,7 @@ impl RecipeBook {
         }
         self.tags.sort_by(|a, b| a.0.cmp(&b.0));
         self.in_hand = classify::in_hand_only(self);
+        self.mined = classify::mined(self);
     }
 
     pub fn recipes_for(&self, item: &str) -> &[Recipe] {
@@ -190,6 +192,12 @@ impl RecipeBook {
 
     pub fn has_recipe(&self, item: &str) -> bool {
         self.by_result.contains_key(item)
+    }
+
+    /// Fetched rather than made: nothing makes it, or it is what its ore drops (coal,
+    /// diamond), whose only recipes unpack a storage block or smelt the ore block.
+    pub fn is_raw(&self, item: &str) -> bool {
+        !self.has_recipe(item) || self.mined.contains(item)
     }
 
     pub fn all(&self) -> impl Iterator<Item = &Recipe> {

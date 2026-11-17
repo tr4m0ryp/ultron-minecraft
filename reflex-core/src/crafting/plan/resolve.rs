@@ -2,7 +2,7 @@
 //! recipes tried best-first (the share of their inputs already held), alternatives within a
 //! tag tried until one works, and on failure the closest attempt kept for the shopping list.
 
-use super::need::{widen, Need, Via};
+use super::need::{weigh, widen, Need, Via, FETCHED};
 use super::{PlanStep, BUDGET};
 use crate::crafting::book::{Ingredient, Recipe, RecipeBook};
 use crate::crafting::label::name_set;
@@ -95,8 +95,9 @@ impl State {
         let label = name_set(book, &ing.0);
         let have = self.take(ing, n);
         let rest = n - have;
+        let leaf = |label: String| Need::leaf(label, n, have).weighing(weigh(book, &ing.0));
         if rest == 0 || self.budget == 0 || self.stack.len() >= MAX_DEPTH {
-            return Need::leaf(label, n, have);
+            return leaf(label);
         }
         let usable = |a: &String| {
             !self.stack.contains(a) && book.recipes_for(a).iter().any(|r| mode.allows(r))
@@ -114,6 +115,7 @@ impl State {
         for a in &alts {
             let mut trial = self.clone();
             let node = trial.make(book, a, rest, mode);
+            self.budget = trial.budget;
             if node.missing() == 0 {
                 *self = trial;
                 return Need {
@@ -121,14 +123,18 @@ impl State {
                     need: n,
                     have,
                     via: node.via,
+                    weight: FETCHED,
                 };
             }
-            primary.get_or_insert((trial, node));
+            // The first alternative unless a later one is cheaper to come by.
+            if primary.as_ref().is_none_or(|(_, p)| node.cost() < p.cost()) {
+                primary = Some((trial, node));
+            }
         }
         // A set holding a raw material is itself raw: list it, do not pick a recipe for it.
-        let raw = ing.0.iter().any(|a| !book.has_recipe(a));
+        let raw = ing.0.iter().any(|a| book.is_raw(a));
         match primary {
-            Some((trial, node)) if !raw => {
+            Some((trial, node)) if !raw && node.via.is_some() => {
                 *self = trial;
                 let via = node.via.map(|v| widen(book, ing, v));
                 Need {
@@ -136,10 +142,26 @@ impl State {
                     need: n,
                     have,
                     via,
+                    weight: FETCHED,
                 }
             }
-            _ => Need::leaf(label, n, have),
+            _ => leaf(label),
         }
+    }
+
+    /// Why an input a recipe takes only from the inventory is short: how the rest would
+    /// be made, when it cannot be made from here either. Nothing is planned or taken.
+    fn explain(
+        &mut self,
+        book: &RecipeBook,
+        ing: &Ingredient,
+        rest: u32,
+        mode: Mode,
+    ) -> Option<Via> {
+        let mut trial = self.clone();
+        let node = trial.need_set(book, ing, rest, mode);
+        self.budget = trial.budget;
+        node.via.filter(|_| node.missing() > 0)
     }
 
     /// `n` more of `item` (none taken from the inventory): its best recipe, or the closest
@@ -155,16 +177,23 @@ impl State {
         let mut order: Vec<usize> = (0..rs.len()).collect();
         order.sort_by_key(|i| std::cmp::Reverse(keys[*i]));
         rs = order.into_iter().map(|i| rs[i]).collect();
-        let mut closest: Option<((bool, u32), State, Need)> = None;
+        let mut closest: Option<((u32, bool, u32), State, Need)> = None;
         for r in rs {
             let mut trial = self.clone();
             let node = trial.apply(book, r, n);
+            self.budget = trial.budget;
             if node.missing() == 0 {
                 *self = trial;
                 return node;
             }
-            // Shopping advice prefers a recipe that chains over one that needs its input held.
-            let key = (book.in_hand_only(r), node.missing());
+            // A recipe that takes its own result (copying a smithing template) is no way
+            // to come by the first one.
+            if r.inputs().iter().any(|(i, _)| i.accepts(&r.result)) {
+                continue;
+            }
+            // Shopping advice names the route that is cheapest to come by, then one that
+            // chains over one that needs its input held.
+            let key = (node.cost(), book.in_hand_only(r), node.missing());
             if closest.as_ref().is_none_or(|(k, _, _)| key < *k) {
                 closest = Some((key, trial, node));
             }
@@ -194,7 +223,12 @@ impl State {
             from.push((name_set(book, &ing.0), want));
             subs.push(if in_hand {
                 let have = self.take(ing, want);
-                Need::leaf(name_set(book, &ing.0), want, have)
+                let mut leaf =
+                    Need::leaf(name_set(book, &ing.0), want, have).weighing(weigh(book, &ing.0));
+                if have < want {
+                    leaf.via = self.explain(book, ing, want - have, sub_mode);
+                }
+                leaf
             } else {
                 self.need_set(book, ing, want, sub_mode)
             });
@@ -223,6 +257,7 @@ impl State {
             need: n,
             have: 0,
             via: Some(via),
+            weight: FETCHED,
         }
     }
 }

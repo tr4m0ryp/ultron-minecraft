@@ -51,12 +51,36 @@ fn reversible(book: &RecipeBook, r: &Recipe) -> bool {
     })
 }
 
-/// A smelt that melts crafted goods back down (iron tools into nuggets).
+/// A smelt that melts crafted goods back down (iron tools into nuggets). Most of its inputs
+/// are crafted, not all: the vanilla list also holds horse armour, which is only found, and
+/// with "all" the gold one counted as a way to make nuggets: the shopping list for a
+/// glistering melon asked for 8 golden pickaxes.
 fn recycle(book: &RecipeBook, r: &Recipe) -> bool {
     match &r.shape {
         Shape::Smelt { input, .. } => {
-            input.0.len() > 1 && input.0.iter().all(|i| book.has_recipe(i))
+            let made = input.0.iter().filter(|i| book.has_recipe(i)).count();
+            input.0.len() > 1 && made * 2 > input.0.len()
         }
         _ => false,
     }
+}
+
+/// What an ore drops when mined (coal, diamond, redstone): its only furnace recipes take
+/// the ore block itself, which a pickaxe never gives. Such an item is fetched, not made;
+/// iron and gold ingots are not among them (their ores drop raw metal to smelt).
+pub fn mined(book: &RecipeBook) -> HashSet<String> {
+    let mut out: HashSet<String> = HashSet::new();
+    let mut other: HashSet<&str> = HashSet::new();
+    for r in book.all() {
+        let Shape::Smelt { input, .. } = &r.shape else {
+            continue;
+        };
+        if input.0.iter().all(|i| i.ends_with("_ore")) {
+            out.insert(r.result.clone());
+        } else {
+            other.insert(&r.result);
+        }
+    }
+    out.retain(|i| !other.contains(i.as_str()));
+    out
 }
