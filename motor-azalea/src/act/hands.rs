@@ -29,6 +29,7 @@ pub struct HandState {
     slow_phase: u8,
     dig: DigState,
     pub(super) menu: super::menu::MenuGuard,
+    pub(super) swaps: super::inventory::Swaps,
 }
 
 impl HandState {

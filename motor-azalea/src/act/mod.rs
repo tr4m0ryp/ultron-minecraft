@@ -19,7 +19,7 @@ pub fn apply(bot: &Client, out: &MotorOutput, me: &SelfState, hands: &mut HandSt
     hands.sync(me.using_item);
     hands::apply_main(bot, out.main, hands, me, (out.yaw, out.pitch));
     hands::apply_off(bot, out.off, hands, (out.yaw, out.pitch));
-    inventory::apply(bot, out.inv, me.selected_slot);
+    inventory::apply(bot, out.inv, me.selected_slot, &mut hands.swaps);
     menu::apply(bot, &mut hands.menu);
     if let Some(text) = &out.chat {
         bot.chat(text.as_str());

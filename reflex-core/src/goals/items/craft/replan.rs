@@ -7,10 +7,10 @@ use super::furnace::Smelting;
 use super::smith::Smithing;
 use super::station::{self, Placing};
 use super::{Craft, Phase, MAX_STEPS, TABLE_RADIUS};
+use crate::crafting::Recipe;
 use crate::crafting::{
     plan, PlanStep, Stations, BREWING_STAND, FURNACE, SMITHING_TABLE, TABLE, WATER,
 };
-use crate::crafting::Recipe;
 use crate::goals::task::GoalCx;
 
 impl Craft {
@@ -54,7 +54,11 @@ impl Craft {
             };
             if let Ok(q) = plan(&book, &inv, &self.item, wanted, lent, self.smelt_only) {
                 let smelts = |s: &&PlanStep| matches!(s, PlanStep::Smelt { .. });
-                if q.steps.iter().filter(smelts).all(|s| quick(cx, s.recipe()).is_some()) {
+                if q.steps
+                    .iter()
+                    .filter(smelts)
+                    .all(|s| quick(cx, s.recipe()).is_some())
+                {
                     p = q;
                 }
             }
@@ -63,7 +67,12 @@ impl Craft {
         let water = cx.world.water_source(cx.me_pos().block(), TABLE_RADIUS);
         let fills = |s: &PlanStep| s.recipe().station() == Some(WATER);
         if water.is_none() && p.steps.iter().any(fills) {
-            let n: u32 = p.steps.iter().filter(|s| fills(s)).map(PlanStep::makes).sum();
+            let n: u32 = p
+                .steps
+                .iter()
+                .filter(|s| fills(s))
+                .map(PlanStep::makes)
+                .sum();
             return Err(format!(
                 "cannot craft {}: no water source within {TABLE_RADIUS} blocks to fill {n} \
                  glass_bottle at. Go to water, or carry a water_bucket and pour it out.",

@@ -66,7 +66,10 @@ mod tests {
         let mut q = Quick::default();
         q.add(BLAST_FURNACE, "iron_ingot", Ingredient::one("raw_iron"));
         q.add(SMOKER, "cooked_beef", Ingredient::one("beef"));
-        assert_eq!(q.stations(&smelt("iron_ingot", "raw_iron")), [BLAST_FURNACE]);
+        assert_eq!(
+            q.stations(&smelt("iron_ingot", "raw_iron")),
+            [BLAST_FURNACE]
+        );
         assert_eq!(q.stations(&smelt("cooked_beef", "beef")), [SMOKER]);
         assert!(q.stations(&smelt("stone", "cobblestone")).is_empty());
         assert!(q.stations(&smelt("iron_ingot", "iron_ore")).is_empty());

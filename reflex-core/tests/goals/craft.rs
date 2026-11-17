@@ -217,5 +217,8 @@ fn a_blast_furnace_is_no_furnace_for_what_it_does_not_take() {
     let e = said(&s, "goal_failed");
     assert!(e.contains("need 1 furnace, have 0"), "{e}");
     assert_eq!(s.events("goal_failed").len(), 1);
-    assert!(s.world.state().furnaces.is_empty(), "the blast furnace was never opened");
+    assert!(
+        s.world.state().furnaces.is_empty(),
+        "the blast furnace was never opened"
+    );
 }
